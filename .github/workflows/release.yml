@@ -110,9 +110,9 @@ jobs:
         id: get_version
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "version=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate changelog
@@ -123,11 +123,13 @@ jobs:
           if [ -z "$PREV_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"- %s" HEAD)
           else
-            CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+            CHANGELOG=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
           fi
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "changelog<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         id: create_release
