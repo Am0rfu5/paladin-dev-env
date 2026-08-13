@@ -905,11 +905,38 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
   1. A pull request that breaks a CLI snapshot or stops a benchmark compiling fails CI — closing a state where 43 snapshot tests never run in CI at all, and where benchmark regression *signalling* ships while the compile check that should precede it does not.
+     **Corrected (dated 2026-08-13, Phase 15, plan 15-10):** "43 snapshot tests" is superseded — the
+     real count, re-measured at execution time (`ls tests/cli/snapshots | wc -l`), is **86** snapshot
+     files backed by **97** `#[test]` functions across seven files. The criterion's substance holds
+     unchanged: a broken snapshot or a non-compiling benchmark now fails CI (`cli-tests`,
+     `bench-check` jobs, plan 15-01), only the "43" figure was stale. Original text retained above.
   2. A pull request that drops coverage below the recorded gate fails CI, and a developer can reproduce that number locally with `make coverage` — replacing today's split where the only coverage collection lives in an integration-only workflow, no gate exists, and the `Makefile` has no coverage target at all.
   3. The coverage threshold has one number with one rationale, chosen between a 78% hard gate and a phased 70 → 74 → 78 ramp against a measured 76-77% baseline — so the gate is set deliberately rather than by whichever document is read first, and it is consistent with the project-wide coverage answer.
+     **Corrected (dated 2026-08-13, Phase 15, plan 15-10):** all three figures in this criterion's
+     framing above are superseded. `.planning/decisions/0006-coverage-gate.md`'s Phase 15 amendment
+     rejected **both** the 78% hard gate and the 70→74→78 ramp (see its `## Considered Options`),
+     and the 76-77% baseline this criterion cites is not what the gate was derived from — the number
+     that landed (82%, floored from a fresh 82.39% workspace measurement under
+     `--features integration-tests`) comes from a scope neither position contemplated. The earlier
+     framing was wrong because it treated the threshold as a choice between two inherited PRD
+     positions rather than a fresh measurement under the extended scope ADR-0006 itself calls for.
+     See `.planning/decisions/0006-coverage-gate.md`'s `## Phase 15 amendment (2026-08-13)` for the
+     number, its derivation, and the rejected alternatives — not restated here. Original framing
+     retained above.
   4. `actionlint` reports zero errors across all three workflows and no deprecated action remains — the eight `actions-rs/toolchain@v1`, `actions/cache@v3` and `codecov/codecov-action@v3` references are gone.
   5. A developer writing an async service test reaches for shared, `Send + Sync` mocks that already exist rather than writing another one-off — closing the prerequisite that three registers name and none has built, and that roughly a quarter of the deferred coverage estimate consists of.
   6. `user_service.rs` and the listener orchestrator are covered to the gate, with the `user_service.rs` split-versus-test collision resolved by sequence rather than by whoever schedules first, and with the listener's stale 57.83% baseline re-measured against a module that Milestone 9 has since added tests to.
+     **Corrected (dated 2026-08-13, Phase 15, plan 15-10):** "covered to the gate" is ambiguous
+     between the workspace-wide CI floor and a module-specific bar; it resolves to the **≥ 80%
+     module bar as a phase-acceptance criterion, checked once by plans 15-07/15-09, not a standing
+     CI gate** (D-12) — no `--fail-under-lines` is scoped to either file individually.
+     `user_service.rs` reached **94.21%**; the listener orchestrator reached **96.90%**. The
+     "resolved by sequence" framing is also corrected: the split-versus-test collision was
+     **dissolved by ADR-0034**, not sequenced — the split is withdrawn, owned by nobody, so there
+     was no sequence to resolve by the time DEFER-02 executed. The listener's stale 57.83% baseline
+     was re-measured, with the delta stated: an entry attempt recorded honestly as NOT MEASURED
+     (`cargo-llvm-cov` uninstallable in this environment), then a real exit figure of 96.90% via
+     ADR-0006's own local raw-`llvm-cov` substitute. Original framing retained above.
 
 **Plans**: 10 plans in 8 waves. The two halves are wave-separated as the register requires: PIPE-01 … PIPE-05 occupy waves 1-4, DEFER-01 … DEFER-03 waves 5-7, and the record closes in wave 8. Waves 6 and 7 each run two plans in parallel (`user_service.rs` and `listener.rs` share no files). Plan 15-03 carries a blocking checkpoint because D-04's two-step landing needs a CI-produced figure that no local environment can generate — Docker is absent.
 
