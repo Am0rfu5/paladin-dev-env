@@ -174,3 +174,11 @@ Phase 15 is closed. Every requirement (`PIPE-01`…`05`, `DEFER-01`…`03`) is c
 ---
 *Phase: 15-coverage-ci-quality-gates*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/15-coverage-ci-quality-gates/15-10-SUMMARY.md`
+- FOUND commit `888492c` (Task 1)
+- FOUND commit `5f1f378` (Task 2)
+- FOUND commit `fc76249` (Task 3)
+- FOUND commit `e610ed5` (plan summary)
