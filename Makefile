@@ -184,6 +184,16 @@ test-ci: ## Run tests in CI mode
 	@echo "$(CYAN)Running tests in CI mode...$(NC)"
 	@./scripts/run_integration_tests.sh -m ci
 
+.PHONY: test-cli
+test-cli: ## Run CLI snapshot tests (86 snapshots, requires --features cli)
+	@echo "$(CYAN)Running CLI snapshot tests...$(NC)"
+	@$(CARGO) test -p paladin-ai --features cli --test cli
+
+.PHONY: bench-check
+bench-check: ## Compile-check benchmarks without running them
+	@echo "$(CYAN)Checking benchmark compilation...$(NC)"
+	@$(CARGO) bench --workspace --no-run
+
 ##@ Per-Crate Testing
 
 .PHONY: test-core
@@ -443,9 +453,13 @@ ci-test: ## Run CI test suite
 	@echo "$(CYAN)Running CI test suite...$(NC)"
 	@$(MAKE) clean-code
 	@$(MAKE) test
+	@$(MAKE) test-cli
 	@$(MAKE) test-doc
 	@$(MAKE) audit
 	@$(MAKE) test-ci
+
+.PHONY: ci-full
+ci-full: ci-test coverage ## Run the full CI gate locally (tests, then coverage)
 
 .PHONY: release-check
 release-check: ## Check if ready for release
