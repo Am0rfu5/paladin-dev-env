@@ -308,6 +308,211 @@ comparison is at-or-above, and 85.85% floors to 85%, still above the standing 84
 does **not** trigger the ratchet (which requires ≥ 2 whole points above the standing floor at a
 *milestone* close, not a phase close).
 
+## Phase 15 amendment (2026-08-13)
+
+**(Amended by Phase 15, dated 2026-08-13, citing plan 15-01's `coverage` CI job and plan
+15-03's checkpoint):** PIPE-02 extends this same ADR rather than writing a second one — the
+ratchet clause specifies in-place amendment, D-00g/D-00l make it the house convention, and
+RECON-07 exists precisely to eliminate the "choosing between two numbers" failure a second
+coverage ADR would recreate. Superseded text elsewhere in this document is retained, not
+deleted, per D-00d.
+
+### One — the measurement and its provenance
+
+**Run:** GitHub Actions run **31723620732** (`CI/CD Pipeline`, event `push`), job
+**94526445416** (`Coverage`), url
+`https://github.com/DF3NDR/paladin-dev-env/actions/runs/31723620732/job/94526445416`,
+started `2026-08-13T17:01:27Z`, completed `2026-08-13T17:07:12Z`, conclusion **success**,
+against commit `c33b0800f6dfb3d1d0c681c6102f71d88972388c` on `release/v0.7.0`.
+
+**The exact command**, verbatim, as landed by plan 15-01 (`.github/workflows/ci.yml`'s
+`coverage` job, "Measure coverage" step):
+
+```
+cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
+```
+
+with `USE_EXTERNAL_TEST_SERVICES=true` and live Redis (`localhost:6380`) / MinIO
+(`localhost:9010`) service containers, per D-01.
+
+**Ignored tests:** the command does not pass `--include-ignored`, so `#[ignore]`-gated tests
+are outside both the numerator and the denominator — standard `cargo test` default behaviour,
+stated explicitly per D-00e's reproducibility bar.
+
+**A data-integrity finding, discovered and corrected during this amendment (Rule 1
+auto-fix, T-15-08's mitigation exercised in practice).** The run's `lcov.info` and
+`coverage-summary.txt` artifacts were downloaded (`gh run download 31723620732 -n
+coverage-summary`) to transcribe the figure byte-identically per D-00e. Doing so surfaced
+that the job's **`Coverage summary` step** (`cargo llvm-cov report --summary-only`, no
+`--workspace` flag) reports coverage for **only the root `paladin-ai` package** (everything
+under `src/`), not the full workspace `--lcov` output already sitting beside it. The two are
+provably different scopes from the same run:
+
+| Scope | Source | Lines | Line % | Functions | Function % |
+|---|---|---|---|---|---|
+| Root package only (`src/**`, no `crates/*`) — what `Coverage summary` printed | `coverage-summary.txt` TOTAL row, `cargo llvm-cov report --summary-only` (no `--workspace`) | 14018 total / 2217 missed | **84.18%** | 1848 total / 407 missed | **77.98%** | 
+| Full workspace (`src/**` + all 12 `crates/*` members, 211 files) — what `--fail-under-lines` on the `--workspace` measure step actually gates | Summed directly from `lcov.info`'s `LF:`/`LH:`/`FNF:`/`FNH:` across every `SF:` record | 47618 total / 8385 missed | **82.39%** | 6115 total / 1511 missed | **75.29%** |
+
+Verified two ways: (a) summing `LF:`/`LH:` only for `SF:` records under `/src/` and excluding
+`/crates/` reproduces the root-package TOTAL row exactly — 14018/11801/84.18% lines,
+1848/1441/77.98% functions, byte-identical to `coverage-summary.txt`; (b) summing across all
+211 `SF:` records (root plus all twelve `crates/*` members: `paladin-core`, `paladin-ports`,
+`paladin-battalion`, `paladin-herald`, `paladin-llm`, `paladin-memory`, `paladin-storage`,
+`paladin-notifications`, `paladin-content`, `paladin-web`, `doc-examples`, plus the root
+`src/`) gives the workspace total above. The root-package TOTAL row was what plan 15-03's
+checkpoint captured and supplied for this amendment — it is retained here, marked, per D-00c,
+because it is real data from the cited run and D-00e forbids silently dropping a captured
+figure — but it is **not the workspace figure D-01 mandates and not what the armed gate
+checks**, so it is **not** the figure this amendment floors against.
+
+**The measured figure this ADR binds to: 82.39% workspace line coverage** — 47,618 first-party
+lines counted (root package plus all workspace member crates), 8,385 missed, transcribed from
+`lcov.info`'s per-file `LF:`/`LH:` records summed across all 211 `SF:` entries, reproducible by
+anyone who downloads the same run's `coverage-summary` artifact and reruns the same summation.
+Function coverage: **75.29%** (6,115 functions, 1,511 missed) — a ~7-point line/function gap,
+consistent in kind with the ADR's original 84.79%/77.34% gap and the Phase 8 85.85%/78.50% gap.
+Region coverage under the full workspace scope is **not** independently derivable from
+`lcov.info` — lcov's line/function/branch format carries no per-region granularity, and a
+region total requires `cargo llvm-cov report --summary-only --workspace` (the corrected form
+of the step this amendment fixes — see "Fix landed" below). The next CI run under the
+corrected step will print the true workspace TOTAL row, including regions, and can be
+cross-checked against the 82.39%/75.29% figures recorded here.
+
+**Fix landed alongside this amendment (Rule 1 — bug, no architectural change; same commit as
+Task 3's `--fail-under-lines`):** `.github/workflows/ci.yml`'s `Coverage summary` step gains
+`--workspace` (`cargo llvm-cov report --summary-only --workspace`), so its printed job-summary
+figure and artifact match the scope the gate actually enforces on every future run. Before this
+fix, the job summary a human reads would show a materially rosier number (84.18%) than the true
+gated figure (82.39%) — exactly the "gate that silently does not measure what it reports"
+failure shape T-15-09 already names for a different mechanism (Codecov), now closed for this
+one too.
+
+### Two — the scope extension, and why the earlier rejection does not contradict it
+
+The measurement is `--workspace --features integration-tests` with Redis and MinIO running
+(D-01), which is the extension this ADR itself names as scheduled work. ADR-0006 rejected
+"record a CI-produced figure" at Phase 1 *because no CI gate existed to produce one*; plan
+15-01 landed that gate, and this phase is what changes the premise. `--all-features` was
+rejected (D-01): `qdrant` requires a live Qdrant service and the vision/embedding suites
+require real provider API keys, so that code would enter the denominator with nothing in CI
+able to exercise it. Default-feature-only was rejected because it leaves this ADR's own
+extension instruction unfulfilled.
+
+**A further scope difference from the original 84.79% pipeline, observed and recorded rather
+than glossed:** the original `rustc`/`llvm-profdata` pipeline passed an explicit
+`--ignore-filename-regex` excluding `examples/`, `benches/`, and `crates/doc-examples/`. The
+`cargo llvm-cov` command plan 15-01 landed carries no equivalent flag. `examples/` and
+`benches/` remain absent from this run's denominator regardless (`cargo test` does not compile
+`[[example]]`/`[[bench]]` targets without `--examples`/`--benches`), but **`crates/doc-examples/`
+is now included** — 9 files, part of the 211 `SF:` records the workspace total above sums.
+Doctests remain excluded (no `--doctests` flag passed). Still one number, one scope: the figure
+above is the one this ADR binds to, and the difference from the original pipeline's exclusions
+is recorded rather than silently absorbed.
+
+### Three — the re-derived floor
+
+Applying this ADR's own arithmetic to the actual workspace figure: **measured 82.39%, truncated
+toward zero to a whole percent → floor 82%** — explicitly neither round-half-up nor
+round-half-even; a measurement already on a whole percent floors to itself (not exercised here,
+since 82.39% is not itself whole). The comparison is **at-or-above**: a later run measuring
+exactly 82% **passes**; a run measuring 81.99% **fails**. Because the floor is the measured
+figure truncated downward, **the gate cannot be red on the run that sets it** — this is the
+construction the ratchet clause depends on, and it is why the corrected 82.39% figure (not the
+root-package-only 84.18%) has to be the one this floor derives from: flooring at 84 from the
+uncorrected figure would have set a gate the very same run's true workspace measurement
+(82.39%) fails, breaking this ADR's own no-red-on-day-one guarantee on day one.
+
+**Relationship to the standing 84% floor and the Phase 8 85.85% figure — a scope change, not a
+regression.** The two commands' denominators agree only when the ignore regex, the doctest
+decision and the feature set all match (this ADR's own words, restated in section Two above),
+and here they deliberately do not: this run adds `--features integration-tests` (wider —
+exercises Redis/MinIO-backed code the default-feature runs never reached) and drops the
+`doc-examples` exclusion (also wider — adds files with no dedicated coverage push behind
+them). The lower resulting percentage (82.39% vs. 84.79%/85.85%) is the arithmetic result of a
+wider denominator, not fewer passing tests against the same code — nothing that used to count
+as covered now counts as missed; the denominator itself grew. `PIPE-02`'s own instruction was
+"reproduce those three or record why its figure differs" — recorded here.
+
+**`--fail-under-lines 82`** is the literal flag and value Task 3 arms in both
+`.github/workflows/ci.yml` and the `Makefile`.
+
+### Four — the two module-scoped gates, re-measured and recorded, not enforced
+
+Extracted directly from this same run's `lcov.info` (same commit, same job, same artifact —
+not a separate local measurement), summing each file's `LF:`/`LH:`/`FNF:`/`FNH:` records:
+
+| Module scope | Target | Measured (this run) | Gap | Owner |
+|---|---|---|---|---|
+| Herald (`REQ-herald-consolidation-quality-gates`) — `crates/paladin-core/src/platform/container/herald.rs` | ≥ 95% | **80.49%** line coverage (246 lines, 198 hit, 48 missed); function coverage 63.04% (46 functions, 29 hit) | ~14.51 points below target | Phase 15 / PIPE-02 (recorded, not closed — Herald's climb remains named forward work, no owner beyond this record) |
+| Autonomous components (`REQ-autonomous-completion-quality-gates`) — `planning_service.rs` 578/534/92.39%, `prompt_generation_service.rs` 235/208/88.51%, `temperature_service.rs` 395/371/93.92%, `handoff_service.rs` 239/228/95.40% (lines total/hit/line-%) | ≥ 90% | **92.67%** line-weighted aggregate — `(1447 - 106) / 1447 = 92.67%` | Aggregate clears the target by ~2.67 points; `prompt_generation_service.rs` individually sits ~1.49 points below it | Phase 15 / PIPE-02 |
+
+The single workspace floor (82%, above) remains the **only binding gate** — this ADR's own
+words are that module targets are "never a replacement for it." Herald's figure is essentially
+unchanged from the Phase 5 amendment's 80.49% (transcribed there from
+`01-coverage-measurement.md:317`) — the same file, independently re-measured under a materially
+different scope (`--features integration-tests` vs. default-feature-only), landing at the same
+percentage to two decimal places. The autonomous aggregate moved from 92.80% (1444 lines, 104
+missed, Phase 5 amendment) to 92.67% (1447 lines, 106 missed) here — three more lines in the
+denominator, two more missed, consistent with ordinary code change between phases rather than a
+scope effect (the four files are not feature-gated). A per-module no-regression ratchet was
+considered and rejected, as D-05 specifies: it reintroduces the multi-number failure RECON-07
+exists to prevent, in a smaller form.
+
+### Five — the three binaries, and a correction to this ADR's own D-06 premise for one of them
+
+`Cargo.toml:239-252`'s three `[[bin]]` targets: `paladin` and `paladin-cli` both carry
+`required-features = ["cli"]`; `paladin-server` carries `required-features = ["web-server"]`.
+D-06's premise was that under D-01's `--features integration-tests` scope **none** of the three
+compiles, so none enters the denominator — the same treatment this ADR already gives
+`minio.rs`. That premise holds for two of the three and is corrected for the third:
+
+- **`paladin` (`src/main.rs`) and `paladin-cli` (`src/bin/paladin-cli.rs`) — correctly absent.**
+  Neither file appears anywhere among this run's 211 `SF:` records in `lcov.info`. `cli` is
+  never activated for the root package under this measurement, so both stay outside the gated
+  denominator by construction, matching D-06 and the `minio.rs` precedent exactly.
+
+- **`paladin-server` (`src/bin/paladin-server.rs`) — unexpectedly present, 43.20% line
+  coverage.** `lcov.info` carries an `SF:` record for it: 206 lines, 89 hit, 117 missed —
+  **43.20%** — a real, in-scope measurement already folded into the 82.39% workspace total
+  above, not a scope exclusion. Traced to source: `crates/doc-examples/Cargo.toml:15` declares
+  `paladin-ai = { path = "../..", features = ["web-server"] }` — a normal (non-dev) dependency
+  of the `doc-examples` workspace member on the root package, requesting `web-server`
+  explicitly. Because `crates/doc-examples` is a workspace member (`members = [".",
+  "crates/*"]`, `Cargo.toml:2`) built in the same `cargo test --workspace` invocation as the
+  root package, Cargo's workspace feature resolution activates `web-server` for the root
+  package for the whole build — the root package and the `doc-examples`-requested dependency on
+  it are the same package instance, so its activated feature set is unified across the build
+  graph. This is **corrected here per D-00d**: the original text above ("Under D-01's feature
+  set none of them compiles") is superseded for `paladin-server` specifically and retained
+  for the two `cli`-gated binaries. `.codecov.yml`'s `src/bin/**` ignore entry (D-06) still
+  applies for Codecov's own report, unaffected by this correction — it is a reporting-only
+  exclusion and does not change what `--fail-under-lines` gates.
+
+### Six — two inherited dispositions that close by observation
+
+D-14a named "extracting a testable `run()` seam from `#[tokio::main] async fn main()`" as the
+concrete prerequisite Phase 15 inherits. Confirmed by direct read: `src/bin/paladin-server.rs:34`
+is `async fn main()`, `:49` is `async fn run() -> Result<(), Box<dyn std::error::Error>>` — the
+seam already exists. The recorded 0.00% figure for that file (D-14a, transcribed from
+`01-coverage-measurement.md:426`) is stale in two ways now: a `#[cfg(test)] mod tests` sits at
+`:256` (confirmed by direct read — Phase 14's D-15b addition), and per section Five above the
+file is not even 0%-covered under this phase's scope (43.20%, via the `doc-examples` feature
+unification). Both original claims are marked superseded here with the original text retained,
+per D-00c/D-00d. Neither requires code — both close by observation.
+
+### Seven — the tool-of-record note's premise has changed
+
+The raw `rustc`/`llvm-profdata` pipeline this ADR used through Phase 8 was forced by an HTTP 403
+to crates.io. `cargo-llvm-cov@0.8.7`, pinned via `taiki-e/install-action@v2` in plan 15-01's
+`coverage` job, installed and ran successfully in the cited run (job conclusion: success) — the
+403 that forced the raw pipeline is gone, `cargo llvm-cov` is the tool-of-record for this and
+future measurements. Docker remains absent from every local authoring environment (confirmed
+2026-08-12/13, unchanged since Phase 15's context-gathering), so the service-backed
+(`--features integration-tests`) figure necessarily still comes from CI, never a local run —
+this is the entire reason D-04's two-step (measure, then gate) landing exists.
+
+Do not author a new ADR and do not touch `PROMOTION.md` (D-00l).
+
 ## Considered Options
 
 - `REQ-test-coverage-target-v1` (80% unit / 70% integration, nine Milestone-1 PRDs) — rejected; the

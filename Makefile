@@ -253,7 +253,7 @@ coverage: ## Measure workspace coverage (mirrors CI's `coverage` job — require
 	@echo "$(CYAN)Measuring coverage...$(NC)"
 	@nc -z localhost 6380 || { echo "$(RED)Redis not reachable on port 6380 — start services first with 'make services-up'.$(NC)"; exit 1; }
 	@nc -z localhost 9010 || { echo "$(RED)MinIO not reachable on port 9010 — start services first with 'make services-up'.$(NC)"; exit 1; }
-	@$(CARGO) llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
+	@$(CARGO) llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info --fail-under-lines 82 -- --test-threads=1
 
 .PHONY: coverage-html
 coverage-html: ## Generate an HTML coverage report at target/coverage
