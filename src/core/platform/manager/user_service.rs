@@ -580,4 +580,187 @@ mod tests {
         assert!(result.token.is_none());
         assert!(result.token_expires_at.is_none());
     }
+
+    // -----------------------------------------------------------------
+    // Registration, validation and password-hashing coverage
+    // (DEFER-02, 15-06 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn register_user_persists_an_argon2_hash_that_only_verifies_the_original_password() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("frank_hash", "frank_hash@example.com"))
+            .await
+            .unwrap();
+
+        let hash = user.password_hash().to_string();
+        assert!(
+            hash.starts_with("$argon2"),
+            "stored password field should be an argon2 PHC-format hash, got: {hash}"
+        );
+        assert!(
+            service.verify_password("password123", &hash).unwrap(),
+            "hash should verify against the original password"
+        );
+        assert!(
+            !service
+                .verify_password("a-completely-different-password", &hash)
+                .unwrap(),
+            "hash should not verify against a different password"
+        );
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_byte_identical_duplicate_email() {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("gina", "dup@example.com"))
+            .await
+            .unwrap();
+
+        let err = service
+            .register_user(registration("gina-two", "dup@example.com"))
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, UserError::EmailAlreadyExists(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_accepts_a_case_variant_username_because_the_duplicate_check_is_on_email()
+    {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("harold", "harold@example.com"))
+            .await
+            .unwrap();
+
+        // The duplicate check in `register_user` only looks up by email; whether a
+        // case-variant username (with a distinct email) is accepted is a real property of
+        // the system, pinned here as observed rather than assumed.
+        let result = service
+            .register_user(registration("HAROLD", "harold-two@example.com"))
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "observed verdict: a username differing only in case from an existing one is \
+             accepted, because duplicate detection is email-scoped only; got: {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn register_user_called_twice_with_the_same_request_leaves_exactly_one_user_persisted() {
+        let service = build_service(false).await;
+        let request = registration("ivan", "ivan@example.com");
+
+        let first = service.register_user(request.clone()).await;
+        assert!(first.is_ok());
+
+        let second = service.register_user(request).await;
+        assert!(matches!(
+            second.unwrap_err(),
+            UserError::EmailAlreadyExists(_)
+        ));
+
+        assert_eq!(service.count_users().await.unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_empty_username() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("", "empty-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_whitespace_only_username() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("   ", "whitespace-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_empty_email() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("empty-email-user", ""))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_empty_password() {
+        let service = build_service(false).await;
+        let request = UserRegistrationRequest {
+            username: "empty-password-user".to_string(),
+            email: "empty-password@example.com".to_string(),
+            password: "".to_string(),
+            profile: None,
+        };
+        let err = service.register_user(request).await.unwrap_err();
+        assert!(matches!(err, UserError::InvalidPassword(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_accepts_a_multi_byte_unicode_username_within_the_byte_length_rule() {
+        let service = build_service(false).await;
+
+        // "\u{e9}\u{e9}" (two lowercase e-acute characters) is 2 `char`s but 4 UTF-8 bytes.
+        // `validate_username` enforces its minimum length via `str::len()` (byte length), not
+        // `chars().count()`, so this username clears the >= 3 check on byte length alone -- a
+        // char-count rule would reject it as too short. Registering it (and asserting success)
+        // pins the observed rule rather than an assumption about it.
+        let username = "\u{e9}\u{e9}";
+        assert_eq!(username.chars().count(), 2);
+        assert_eq!(username.len(), 4);
+
+        let result = service
+            .register_user(registration(username, "unicode-user@example.com"))
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "observed rule: validate_username enforces byte length, so a 2-char/4-byte \
+             username is accepted; got: {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_email_missing_the_at_symbol() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("email-shape-one", "not-an-email"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_email_missing_the_local_part() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("email-shape-two", "@domain-only.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_email_missing_the_domain_part() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("email-shape-three", "trailing-at@"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
 }
