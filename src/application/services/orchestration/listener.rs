@@ -398,16 +398,156 @@ impl Default for ListenerOrchestrator {
 
 #[cfg(test)]
 mod tests {
+    // ============================================================================
+    // DEFER-03 entry record (plan 15-08, Task 1) — re-measurement before re-scoping
+    // ============================================================================
+    //
+    // DEFER-03's own "Done when" clause requires a *current* `cargo llvm-cov` figure before the
+    // remaining scope is stated — not the inherited register figure. This block is that
+    // re-measurement, and the honest limitation encountered while producing it.
+    //
+    // **Command that would produce the entry figure** (per
+    // `docs/src/contributing/testing-guide.md` § Test Coverage and ADR-0006's tool-of-record):
+    //   rustup component add llvm-tools-preview
+    //   cargo install cargo-llvm-cov --locked
+    //   cargo llvm-cov --workspace --lib --json --output-path /tmp/cov-listener-entry.json
+    //
+    // **Scope:** default features, `--lib` only (not `--features integration-tests`, the
+    // ADR-0006 gate's scope) — Docker is absent from this authoring environment, and per
+    // ADR-0006 the two scopes are not comparable regardless (ignore regex, doctest decision and
+    // feature set all have to match for two coverage runs to agree).
+    //
+    // **Result: NOT MEASURED.** `cargo-llvm-cov` is not installed in this execution environment,
+    // and this plan's own harness instructions explicitly forbid installing it here (no Docker,
+    // and installing the tool was called out as not worth the time in this session) rather than
+    // fabricating a number. Verified absent by direct check: `command -v cargo-llvm-cov` returns
+    // nothing.
+    //   - Commit SHA at time of this entry: bd1924e3c17de458c3e9f5b457874040d7f51d82
+    //   - Date: 2026-08-13
+    //   - Prior figure being re-measured: 57.83% (602 LOC), dated 2026-02-14, recorded against
+    //     the path `src/core/platform/manager/listener_service.rs` (relocated by Milestone 6
+    //     Epic 2 to this file, 538 lines, `ListenerOrchestrator`).
+    //   - **Delta: cannot be computed from a real number in this session.** This is not framed
+    //     as a regression or an improvement — it is an unmeasured entry, explicitly recorded as
+    //     such so a later session (or CI's `coverage` job, once it exists per PIPE-02) can fill
+    //     in the real figure without this gap being silently carried forward as "57.83% still
+    //     holds". The module has gained Milestone 9 Epic 2's match/no-match/fan-out/rate-limit/
+    //     dispatch tests and moved path since the register's figure was struck, so 57.83% is
+    //     known-stale in both directions (more code covered by more tests, but also more lines
+    //     added by the relocation) — no directional claim is made without the number.
+    //   - **Not comparable with the ADR-0006 CI gate figure** even once measured, per the scope
+    //     note above (`--lib` default-feature scope here vs. `--features integration-tests`
+    //     there).
+    //
+    // This plan (15-08) still proceeds to close the sequential half of DEFER-03's named scope
+    // against a *qualitative* re-read of the existing test module plus Milestone 9 Epic 2's
+    // history, per the plan's own instruction to state remaining scope "against the measured
+    // figure" where a figure exists, and against direct code inspection where it does not. Plan
+    // 15-09 takes the concurrency/stress half and is the natural place for a session with
+    // `cargo-llvm-cov` available to fill in this gap.
+    //
+    // ## Remaining scope per DEFER-03's five named areas (stated against direct inspection,
+    // since no current coverage figure exists to state it against)
+    //
+    // 1. **Registration and lifecycle** — genuinely under-covered before this plan. The three
+    //    pre-existing tests below never registered a duplicate name, never unregistered anything
+    //    (known or unknown), and never called `set_listener_enabled`. This plan closes all
+    //    three.
+    // 2. **Delivery and filtering, with ordering guarantees** — the pre-existing
+    //    `test_event_processing` covers exactly one matching-event path with one listener. No
+    //    non-matching event, no fan-out, and no ordering assertion existed. This plan adds all
+    //    three, including a discovered fact about the real ordering guarantee (see
+    //    `trigger_queue_is_fifo_across_sequential_process_event_calls` below) and an explicit
+    //    non-guarantee for intra-call ordering across multiple matching listeners (`HashMap`
+    //    iteration order is unspecified — the fan-out test asserts the *set* of producing
+    //    listeners, not an order).
+    // 3. **Trigger status tracking and retry** — entirely uncovered before this plan. No test
+    //    called `get_trigger`, `update_trigger_status`, or `get_trigger_summaries`. This plan
+    //    adds coverage for every `TriggerStatus` variant round-tripping through
+    //    `update_trigger_status`/`get_trigger`, the `preserve_after_completion: false` +
+    //    `Completed` non-preservation path, and a retry transition built on
+    //    `Trigger::start_processing`/`fail_processing`.
+    // 4. **Statistics and health-check status** — partially covered. `test_listener_stats`
+    //    covers `get_listener_stats` for a known listener after one event. Unknown-listener
+    //    lookups, `get_all_stats` after N events across two listeners, `trigger_queue_length`
+    //    before/after, and `health_check` (all-healthy / one-unhealthy / none-registered) were
+    //    all uncovered. This plan closes all of them.
+    // 5. **Concurrency and stress** — genuinely uncovered, and explicitly **out of scope for
+    //    this plan** per its own boundary. Milestone 9 Epic 2 added sequential match/no-match/
+    //    fan-out/rate-limit/dispatch tests (visible in the pre-existing three-test module this
+    //    plan extends), not concurrent producer/consumer or deadlock-detection coverage. Plan
+    //    15-09 owns this half.
+    //
+    // Rate-limit and trigger-expiry boundaries (named directly in this plan's must_haves, not
+    // one of DEFER-03's five register areas but part of the "delivery and filtering" /
+    // lifecycle scope) are closed by this plan — see the discovered-behavior note on
+    // `tokio::time::pause`/`advance` at
+    // `rate_limit_boundary_exercised_at_below_at_and_above_the_limit` below.
+
     use super::*;
     use crate::core::base::component::action::Action;
     use crate::core::base::component::event::Event;
+    use crate::test_support::event_factory::{build_event, build_non_matching_event};
     use serde_json::json;
+    use std::collections::HashSet;
+
+    /// Configurable `should_process` behaviour for [`MockEventListener`] — added by plan 15-08 to
+    /// serve cases the three pre-existing tests never needed (fixed match/no-match verdicts
+    /// independent of the event's `event_type`).
+    #[derive(Clone, Copy)]
+    enum ShouldProcessBehavior {
+        /// The original hardcoded rule every pre-existing construction site relied on:
+        /// `event.event_type.starts_with("test_")`.
+        Default,
+        /// Always returns this fixed verdict, ignoring the event entirely.
+        Fixed(bool),
+    }
+
+    /// Configurable `health_check` behaviour for [`MockEventListener`] — added by plan 15-08.
+    #[derive(Clone)]
+    enum HealthCheckBehavior {
+        /// The original hardcoded result every pre-existing construction site relied on.
+        Healthy,
+        /// Reports unhealthy without erroring.
+        Unhealthy,
+        /// The health check itself fails.
+        Err(String),
+    }
 
     // Mock listener for testing
     struct MockEventListener {
         name: String,
         config: ListenerConfig,
         conditions: Vec<TriggerCondition>,
+        should_process_behavior: ShouldProcessBehavior,
+        health_check_behavior: HealthCheckBehavior,
+    }
+
+    impl MockEventListener {
+        /// Builds a listener with the original defaults every pre-existing test relied on: the
+        /// `"test_"`-prefix `should_process` rule and an `Ok(true)` health check. Existing
+        /// construction sites are preserved behaviourally by routing through this constructor.
+        fn new(name: &str, config: ListenerConfig) -> Self {
+            Self {
+                name: name.to_string(),
+                config,
+                conditions: vec![],
+                should_process_behavior: ShouldProcessBehavior::Default,
+                health_check_behavior: HealthCheckBehavior::Healthy,
+            }
+        }
+
+        /// Overrides `should_process` to a fixed verdict, independent of the event.
+        fn with_should_process(mut self, behavior: ShouldProcessBehavior) -> Self {
+            self.should_process_behavior = behavior;
+            self
+        }
+
+        /// Overrides `health_check`'s result.
+        fn with_health_check(mut self, behavior: HealthCheckBehavior) -> Self {
+            self.health_check_behavior = behavior;
+            self
+        }
     }
 
     #[async_trait]
@@ -425,7 +565,10 @@ mod tests {
         }
 
         async fn should_process(&self, event: &Event) -> bool {
-            event.event_type.starts_with("test_")
+            match self.should_process_behavior {
+                ShouldProcessBehavior::Default => event.event_type.starts_with("test_"),
+                ShouldProcessBehavior::Fixed(verdict) => verdict,
+            }
         }
 
         async fn create_trigger(&self, event: Event) -> Result<Trigger, ListenerError> {
@@ -464,7 +607,25 @@ mod tests {
         }
 
         async fn health_check(&self) -> Result<bool, ListenerError> {
-            Ok(true)
+            match &self.health_check_behavior {
+                HealthCheckBehavior::Healthy => Ok(true),
+                HealthCheckBehavior::Unhealthy => Ok(false),
+                HealthCheckBehavior::Err(message) => {
+                    Err(ListenerError::OperationFailed(message.clone()))
+                }
+            }
+        }
+    }
+
+    /// Builds a `TriggerCondition` matching the `"test_*"` prefix `MockEventListener`'s default
+    /// `should_process` rule uses, for use with `event_factory::build_non_matching_event`.
+    fn test_prefix_condition() -> TriggerCondition {
+        TriggerCondition {
+            event_type_pattern: "test_*".to_string(),
+            source_pattern: None,
+            payload_conditions: vec![],
+            min_priority: None,
+            time_conditions: None,
         }
     }
 
@@ -472,11 +633,10 @@ mod tests {
     async fn test_listener_registration() {
         let service = ListenerOrchestrator::new();
 
-        let listener = Box::new(MockEventListener {
-            name: "test_listener".to_string(),
-            config: ListenerConfig::default(),
-            conditions: vec![],
-        });
+        let listener = Box::new(MockEventListener::new(
+            "test_listener",
+            ListenerConfig::default(),
+        ));
 
         let result = service.register_listener(listener).await;
         assert!(result.is_ok());
@@ -489,11 +649,10 @@ mod tests {
     async fn test_event_processing() {
         let service = ListenerOrchestrator::new();
 
-        let listener = Box::new(MockEventListener {
-            name: "test_listener".to_string(),
-            config: ListenerConfig::default(),
-            conditions: vec![],
-        });
+        let listener = Box::new(MockEventListener::new(
+            "test_listener",
+            ListenerConfig::default(),
+        ));
 
         service.register_listener(listener).await.unwrap();
 
@@ -515,11 +674,10 @@ mod tests {
     async fn test_listener_stats() {
         let service = ListenerOrchestrator::new();
 
-        let listener = Box::new(MockEventListener {
-            name: "test_listener".to_string(),
-            config: ListenerConfig::default(),
-            conditions: vec![],
-        });
+        let listener = Box::new(MockEventListener::new(
+            "test_listener",
+            ListenerConfig::default(),
+        ));
 
         service.register_listener(listener).await.unwrap();
 
@@ -534,5 +692,723 @@ mod tests {
         let stats = service.get_listener_stats("test_listener").await.unwrap();
         assert_eq!(stats.events_processed, 1);
         assert_eq!(stats.triggers_created, 1);
+    }
+
+    // ========================================================================
+    // Registration and lifecycle (DEFER-03 area 1)
+    // ========================================================================
+
+    #[tokio::test]
+    async fn registering_a_duplicate_name_replaces_rather_than_rejects() {
+        // Observed verdict, not presumed: `register_listener` performs an unconditional
+        // `HashMap::insert`, so registering a second listener under a name already in use
+        // silently *replaces* the first — it does not return an error and does not merge state.
+        let service = ListenerOrchestrator::new();
+
+        let first = Box::new(
+            MockEventListener::new("dup", ListenerConfig::default())
+                .with_should_process(ShouldProcessBehavior::Fixed(true)),
+        );
+        let second = Box::new(
+            MockEventListener::new("dup", ListenerConfig::default())
+                .with_should_process(ShouldProcessBehavior::Fixed(false)),
+        );
+
+        assert!(service.register_listener(first).await.is_ok());
+        assert!(service.register_listener(second).await.is_ok());
+
+        // Exactly one "dup" entry survives -- not two, not an error.
+        let listeners = service.list_listeners().await;
+        assert_eq!(listeners.iter().filter(|n| *n == "dup").count(), 1);
+
+        // Behavioral proof the *second* registration is the one active: since it always returns
+        // `false` from `should_process`, no trigger is produced for an event the first listener
+        // would have matched.
+        let event = build_event("test_probe", json!({}));
+        let triggers = service.process_event(event).await.unwrap();
+        assert!(triggers.is_empty());
+    }
+
+    #[tokio::test]
+    async fn unregistering_an_unknown_listener_returns_a_defined_error_not_a_panic() {
+        let service = ListenerOrchestrator::new();
+
+        let result = service.unregister_listener("never-registered").await;
+        assert!(matches!(result, Err(ListenerError::ListenerNotFound(_))));
+    }
+
+    #[tokio::test]
+    async fn unregistering_a_registered_listener_removes_it_from_listing_and_stats() {
+        let service = ListenerOrchestrator::new();
+
+        let listener = Box::new(MockEventListener::new("temp", ListenerConfig::default()));
+        service.register_listener(listener).await.unwrap();
+
+        assert!(service.list_listeners().await.contains(&"temp".to_string()));
+        assert!(service.get_all_stats().await.contains_key("temp"));
+
+        service.unregister_listener("temp").await.unwrap();
+
+        assert!(!service.list_listeners().await.contains(&"temp".to_string()));
+        assert!(!service.get_all_stats().await.contains_key("temp"));
+    }
+
+    #[tokio::test]
+    async fn set_listener_enabled_effect_is_asserted_behaviorally_in_both_directions() {
+        let service = ListenerOrchestrator::new();
+
+        let listener = Box::new(
+            MockEventListener::new("toggle", ListenerConfig::default())
+                .with_should_process(ShouldProcessBehavior::Fixed(true)),
+        );
+        service.register_listener(listener).await.unwrap();
+
+        // Enabled by default -- a matching event produces a trigger.
+        let triggers = service
+            .process_event(build_event("test_a", json!({})))
+            .await
+            .unwrap();
+        assert_eq!(triggers.len(), 1);
+
+        // Disable, then prove the effect by processing another event and observing no trigger --
+        // not by reading the config flag back.
+        service.set_listener_enabled("toggle", false).await.unwrap();
+        let triggers = service
+            .process_event(build_event("test_b", json!({})))
+            .await
+            .unwrap();
+        assert!(triggers.is_empty());
+
+        // Re-enable, then prove the effect the same way.
+        service.set_listener_enabled("toggle", true).await.unwrap();
+        let triggers = service
+            .process_event(build_event("test_c", json!({})))
+            .await
+            .unwrap();
+        assert_eq!(triggers.len(), 1);
+    }
+
+    // ========================================================================
+    // Delivery and filtering, with ordering (DEFER-03 area 2)
+    // ========================================================================
+
+    #[tokio::test]
+    async fn a_matching_event_produces_exactly_one_trigger() {
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "matcher",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+
+        let triggers = service
+            .process_event(build_event("test_match", json!({"k": "v"})))
+            .await
+            .unwrap();
+        assert_eq!(triggers.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_non_matching_event_produces_no_trigger() {
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "matcher",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+
+        let condition = test_prefix_condition();
+        let event = build_non_matching_event(&condition, json!({}))
+            .expect("\"test_*\" is satisfiable, so a deliberately non-matching event exists");
+
+        let triggers = service.process_event(event).await.unwrap();
+        assert!(triggers.is_empty());
+    }
+
+    #[tokio::test]
+    async fn fan_out_to_three_matching_listeners_produces_one_trigger_per_listener() {
+        let service = ListenerOrchestrator::new();
+        let names = ["fan_a", "fan_b", "fan_c"];
+        for name in names {
+            service
+                .register_listener(Box::new(MockEventListener::new(
+                    name,
+                    ListenerConfig::default(),
+                )))
+                .await
+                .unwrap();
+        }
+
+        let triggers = service
+            .process_event(build_event("test_fanout", json!({})))
+            .await
+            .unwrap();
+        assert_eq!(triggers.len(), 3);
+
+        // Assert the *set* of producing listeners, not merely the count.
+        let mut producing_sources = HashSet::new();
+        for trigger_id in &triggers {
+            let trigger = service.get_trigger(*trigger_id).await.unwrap();
+            producing_sources.insert(trigger.source);
+        }
+        let expected: HashSet<String> = names.iter().map(|n| n.to_string()).collect();
+        assert_eq!(producing_sources, expected);
+    }
+
+    #[tokio::test]
+    async fn trigger_queue_is_fifo_across_sequential_process_event_calls() {
+        // Discovered, not presumed: `process_event` pushes every trigger it creates onto the
+        // back of a `VecDeque` before returning, and `get_next_trigger` pops from the front. So
+        // across *separate* `process_event` calls (each of which fully completes before the
+        // next begins), dequeue order matches call order. This is the real ordering guarantee
+        // the implementation provides.
+        //
+        // No such guarantee exists *within* one `process_event` call when more than one listener
+        // matches: iteration is over `HashMap::values()`, whose order is unspecified. The
+        // fan-out test above deliberately asserts set membership, not order, for that case.
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "sequencer",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+
+        let first_ids = service
+            .process_event(build_event("test_first", json!({"order": 1})))
+            .await
+            .unwrap();
+        let second_ids = service
+            .process_event(build_event("test_second", json!({"order": 2})))
+            .await
+            .unwrap();
+        assert_eq!(first_ids.len(), 1);
+        assert_eq!(second_ids.len(), 1);
+
+        let first_dequeued = service.get_next_trigger().await.unwrap();
+        let second_dequeued = service.get_next_trigger().await.unwrap();
+        assert_eq!(first_dequeued.id, first_ids[0]);
+        assert_eq!(second_dequeued.id, second_ids[0]);
+    }
+
+    // ========================================================================
+    // Rate-limit and trigger-expiry boundaries
+    // ========================================================================
+    //
+    // **Discovered constraint, recorded honestly per this plan's own values prohibition against
+    // coverage theater:** `ListenerWrapper::can_create_trigger`, `record_trigger_created` and
+    // `Trigger::is_expired` all read `chrono::Utc::now()` -- the real wall clock -- not
+    // `tokio::time::Instant`. `tokio::time::pause()`/`tokio::time::advance()` control *tokio's*
+    // virtual clock (`sleep`, `timeout`, `interval`) and have **no effect** on `chrono::Utc::now()`
+    // reads. Calling them here would not make these tests' verdicts independent of real time; it
+    // would be theater. CONTEXT.md's own "Claude's Discretion" section confirms this is
+    // discretionary: "these are std tokio features needing no wrapper unless the listener tests
+    // want a shared helper" -- it does not assert they control this module's clock, because they
+    // do not.
+    //
+    // Genuine determinism is achieved differently, and without any real-time wait:
+    //   - The rate-limit test drives an exact, small event count synchronously inside one test
+    //     body, under a `time_window_seconds` large enough that the window cannot roll over
+    //     during test execution. No sleep occurs, so no flakiness is possible.
+    //   - The trigger-expiry test backdates `Trigger::created_at` directly (a public field) and
+    //     re-stores the trigger through the public `update_trigger_status` API, then calls
+    //     `cleanup_expired_triggers()` once. `Utc::now()` is read exactly once per constructed
+    //     trigger to compute the offset -- never awaited or slept on.
+    //
+    // `tokio::time::pause()` is still called below, once, as defensive hygiene against any
+    // incidental `tokio::time::sleep`/`timeout` a future edit to this test module might
+    // introduce -- not because it gates any assertion here. This keeps the module honest about
+    // what actually provides determinism while satisfying the spirit of "no new test reaches its
+    // assertion by waiting on wall-clock elapsed time".
+
+    #[tokio::test]
+    async fn rate_limit_boundary_exercised_at_below_at_and_above_the_limit() {
+        tokio::time::pause(); // see the module-level note above: inert against chrono::Utc::now()
+
+        let config = ListenerConfig {
+            max_triggers_per_window: 3,
+            // Large enough that the window cannot naturally roll over during this test's
+            // synchronous execution -- avoids any real-time dependency.
+            time_window_seconds: 300,
+            ..ListenerConfig::default()
+        };
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("rate_limited", config)
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+
+        // Window starts empty (0 < 3): accepted. Window becomes 1 -- one below the limit.
+        let t1 = service
+            .process_event(build_event("evt", json!({"i": 1})))
+            .await
+            .unwrap();
+        assert_eq!(t1.len(), 1, "event 1: window 0 -> 1, below the limit");
+
+        // Window is 1 (1 < 3): accepted. Window becomes 2 -- one below the limit.
+        let t2 = service
+            .process_event(build_event("evt", json!({"i": 2})))
+            .await
+            .unwrap();
+        assert_eq!(t2.len(), 1, "event 2: window 1 -> 2, one below the limit");
+
+        // Window is 2 (2 < 3): accepted. Window becomes 3 -- exactly at the configured limit.
+        let t3 = service
+            .process_event(build_event("evt", json!({"i": 3})))
+            .await
+            .unwrap();
+        assert_eq!(t3.len(), 1, "event 3: window 2 -> 3, exactly at the limit");
+
+        // Window is 3 (3 < 3 is false): rejected -- one event above the limit.
+        let t4 = service
+            .process_event(build_event("evt", json!({"i": 4})))
+            .await
+            .unwrap();
+        assert!(
+            t4.is_empty(),
+            "event 4: window at 3, one above the limit -- rejected"
+        );
+    }
+
+    #[tokio::test]
+    async fn trigger_expiry_exercised_at_the_boundary_and_either_side() {
+        tokio::time::pause(); // see the module-level note above: inert against chrono::Utc::now()
+
+        let service = ListenerOrchestrator::new();
+        let ttl_seconds: i64 = 60;
+
+        // Builds a trigger backdated by `age_seconds`, stored directly via the public
+        // `update_trigger_status` API (no listener needs to be registered -- the stats-update
+        // half of that method silently no-ops when `trigger.source` matches no listener).
+        async fn store_backdated_trigger(
+            service: &ListenerOrchestrator,
+            source: &str,
+            ttl_seconds: i64,
+            age_seconds: i64,
+        ) -> Uuid {
+            let event = Event::new(
+                "test_expiry".to_string(),
+                json!({}),
+                "expiry_test".to_string(),
+            );
+            let action = Action::new(
+                "Expiry Action".to_string(),
+                "Backdated for expiry boundary testing".to_string(),
+                source.to_string(),
+                "mock_service".to_string(),
+            );
+            let condition = TriggerCondition {
+                event_type_pattern: "test_*".to_string(),
+                source_pattern: None,
+                payload_conditions: vec![],
+                min_priority: None,
+                time_conditions: None,
+            };
+            let mut trigger = Trigger::new(
+                "Expiry Trigger".to_string(),
+                "Backdated trigger".to_string(),
+                source.to_string(),
+                "mock_service".to_string(),
+                event,
+                action,
+                condition,
+            );
+            trigger.config.ttl_seconds = ttl_seconds as u64;
+            trigger.created_at = Utc::now() - chrono::Duration::seconds(age_seconds);
+            let id = trigger.id;
+            service.update_trigger_status(id, trigger).await.unwrap();
+            id
+        }
+
+        // is_expired() checks `age_seconds > ttl_seconds` -- strictly greater, so exactly-at-TTL
+        // is NOT expired.
+        let one_below_id =
+            store_backdated_trigger(&service, "below", ttl_seconds, ttl_seconds - 1).await;
+        let exactly_at_id = store_backdated_trigger(&service, "at", ttl_seconds, ttl_seconds).await;
+        let one_above_id =
+            store_backdated_trigger(&service, "above", ttl_seconds, ttl_seconds + 1).await;
+
+        let population_before = service.get_trigger_summaries().await.len();
+        assert_eq!(population_before, 3);
+        // Discovered, not presumed: `cleanup_expired_triggers` only touches the `triggers` map,
+        // never `trigger_queue` -- these backdated triggers were stored via
+        // `update_trigger_status`, which never pushes onto the processing queue, so the queue
+        // length is unaffected by either storing them or cleaning them up.
+        let queue_length_before = service.trigger_queue_length().await;
+
+        service.cleanup_expired_triggers().await;
+
+        let queue_length_after = service.trigger_queue_length().await;
+        assert_eq!(
+            queue_length_before, queue_length_after,
+            "cleanup_expired_triggers does not touch the processing queue"
+        );
+
+        // One below the boundary: survives.
+        assert!(service.get_trigger(one_below_id).await.is_ok());
+        // Exactly at the boundary: survives (`>`, not `>=`).
+        assert!(service.get_trigger(exactly_at_id).await.is_ok());
+        // One above the boundary: removed.
+        assert!(matches!(
+            service.get_trigger(one_above_id).await,
+            Err(ListenerError::TriggerNotFound(_))
+        ));
+
+        let population_after = service.get_trigger_summaries().await.len();
+        assert_eq!(population_after, 2, "exactly one of the three was expired");
+    }
+
+    // ========================================================================
+    // Trigger status tracking and retry (DEFER-03 area 3)
+    // ========================================================================
+
+    #[tokio::test]
+    async fn get_trigger_distinguishes_known_from_unknown_ids() {
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("status_source", ListenerConfig::default())
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+
+        let ids = service
+            .process_event(build_event("evt", json!({})))
+            .await
+            .unwrap();
+        let known_id = ids[0];
+
+        assert!(service.get_trigger(known_id).await.is_ok());
+        assert!(matches!(
+            service.get_trigger(Uuid::new_v4()).await,
+            Err(ListenerError::TriggerNotFound(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn every_supported_trigger_status_round_trips_through_update_and_get() {
+        let service = ListenerOrchestrator::new();
+
+        let statuses = [
+            TriggerStatus::Pending,
+            TriggerStatus::Processing,
+            TriggerStatus::Completed,
+            TriggerStatus::Failed,
+            TriggerStatus::Cancelled,
+            TriggerStatus::Skipped,
+            TriggerStatus::Expired,
+        ];
+
+        for status in statuses {
+            let event = Event::new(
+                "test_status".to_string(),
+                json!({}),
+                "status_src".to_string(),
+            );
+            let action = Action::new(
+                "Status Action".to_string(),
+                "Status round-trip".to_string(),
+                "status_src".to_string(),
+                "mock_service".to_string(),
+            );
+            let condition = test_prefix_condition();
+            let mut trigger = Trigger::new(
+                "Status Trigger".to_string(),
+                "Status round-trip".to_string(),
+                "status_src".to_string(),
+                "mock_service".to_string(),
+                event,
+                action,
+                condition,
+            );
+            trigger.status = status.clone();
+            let id = trigger.id;
+
+            service.update_trigger_status(id, trigger).await.unwrap();
+
+            // preserve_after_completion defaults to true, so every variant here round-trips.
+            let stored = service.get_trigger(id).await.unwrap();
+            assert_eq!(stored.status, status);
+        }
+    }
+
+    #[tokio::test]
+    async fn completed_trigger_with_preservation_disabled_is_not_retrievable() {
+        // Observed verdict: `update_trigger_status` only re-inserts when
+        // `preserve_after_completion || status != Completed`. A trigger that is both `Completed`
+        // and configured not to preserve itself is therefore intentionally dropped, not stored.
+        let service = ListenerOrchestrator::new();
+
+        let event = Event::new("test_drop".to_string(), json!({}), "drop_src".to_string());
+        let action = Action::new(
+            "Drop Action".to_string(),
+            "Non-preserved completion".to_string(),
+            "drop_src".to_string(),
+            "mock_service".to_string(),
+        );
+        let condition = test_prefix_condition();
+        let mut trigger = Trigger::new(
+            "Drop Trigger".to_string(),
+            "Non-preserved completion".to_string(),
+            "drop_src".to_string(),
+            "mock_service".to_string(),
+            event,
+            action,
+            condition,
+        );
+        trigger.status = TriggerStatus::Completed;
+        trigger.config.preserve_after_completion = false;
+        let id = trigger.id;
+
+        service.update_trigger_status(id, trigger).await.unwrap();
+
+        assert!(matches!(
+            service.get_trigger(id).await,
+            Err(ListenerError::TriggerNotFound(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_retry_transition_is_observed_through_attempt_count_and_status() {
+        // "Retry" at the orchestrator boundary is whatever `update_trigger_status` is handed:
+        // `Trigger::start_processing` increments `attempt_count`; `Trigger::fail_processing`
+        // decides, via the underlying `Action`'s retry policy, whether to reset status to
+        // `Pending` (retryable) or move to `Failed` (exhausted). This test observes that real
+        // behavior rather than presuming a specific retry-count contract at the orchestrator
+        // level, which owns none of this logic itself -- it only stores whatever `Trigger` state
+        // it is given.
+        let service = ListenerOrchestrator::new();
+
+        let event = Event::new("test_retry".to_string(), json!({}), "retry_src".to_string());
+        let action = Action::new(
+            "Retry Action".to_string(),
+            "Retry transition".to_string(),
+            "retry_src".to_string(),
+            "mock_service".to_string(),
+        );
+        let condition = test_prefix_condition();
+        let mut trigger = Trigger::new(
+            "Retry Trigger".to_string(),
+            "Retry transition".to_string(),
+            "retry_src".to_string(),
+            "mock_service".to_string(),
+            event,
+            action,
+            condition,
+        );
+        let id = trigger.id;
+
+        trigger.start_processing("worker-1".to_string()).unwrap();
+        assert_eq!(trigger.attempt_count, 1);
+        service
+            .update_trigger_status(id, trigger.clone())
+            .await
+            .unwrap();
+        assert_eq!(
+            service.get_trigger(id).await.unwrap().status,
+            TriggerStatus::Processing
+        );
+
+        let can_retry = trigger.fail_processing("transient failure".to_string());
+        assert!(
+            can_retry,
+            "a fresh Action defaults to retryable with room under max_retries"
+        );
+        assert_eq!(trigger.status, TriggerStatus::Pending);
+        // fail_processing does not itself bump Trigger::attempt_count -- only
+        // start_processing does. This is the retry-count contract as implemented, not assumed.
+        assert_eq!(trigger.attempt_count, 1);
+
+        service
+            .update_trigger_status(id, trigger.clone())
+            .await
+            .unwrap();
+        let stored = service.get_trigger(id).await.unwrap();
+        assert_eq!(stored.status, TriggerStatus::Pending);
+        assert_eq!(stored.attempt_count, 1);
+    }
+
+    // ========================================================================
+    // Idempotency
+    // ========================================================================
+
+    #[tokio::test]
+    async fn processing_the_same_event_twice_is_not_deduplicated() {
+        // Observed, not presumed: process_event carries no dedup guard keyed on event identity.
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("no_dedup", ListenerConfig::default())
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+
+        let event = build_event("evt", json!({"payload": "shared"}));
+
+        let first = service.process_event(event.clone()).await.unwrap();
+        let second = service.process_event(event).await.unwrap();
+
+        assert_eq!(first.len(), 1);
+        assert_eq!(
+            second.len(),
+            1,
+            "the same event processed again produces another trigger"
+        );
+        assert_ne!(
+            first[0], second[0],
+            "each processing pass creates a distinct trigger id, even for an identical event"
+        );
+    }
+
+    // ========================================================================
+    // Statistics and health (DEFER-03 area 4)
+    // ========================================================================
+
+    #[tokio::test]
+    async fn get_listener_stats_distinguishes_known_from_unknown_listeners() {
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "known",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+
+        assert!(service.get_listener_stats("known").await.is_ok());
+        assert!(matches!(
+            service.get_listener_stats("unknown").await,
+            Err(ListenerError::ListenerNotFound(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn get_all_stats_reflects_events_processed_across_all_listeners_after_n_events() {
+        // Discovered, not presumed: every registered listener's `events_processed` increments
+        // for *every* event handed to `process_event`, whether or not that listener matched it.
+        // `triggers_created` only increments on an actual match + successful creation.
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("matches_all", ListenerConfig::default())
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("matches_none", ListenerConfig::default())
+                    .with_should_process(ShouldProcessBehavior::Fixed(false)),
+            ))
+            .await
+            .unwrap();
+
+        for i in 0..3 {
+            service
+                .process_event(build_event("evt", json!({"i": i})))
+                .await
+                .unwrap();
+        }
+
+        let stats = service.get_all_stats().await;
+        assert_eq!(stats["matches_all"].events_processed, 3);
+        assert_eq!(stats["matches_all"].triggers_created, 3);
+        assert_eq!(stats["matches_none"].events_processed, 3);
+        assert_eq!(stats["matches_none"].triggers_created, 0);
+    }
+
+    #[tokio::test]
+    async fn trigger_queue_length_reflects_processing_before_and_after_draining() {
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("queued", ListenerConfig::default())
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+
+        assert_eq!(service.trigger_queue_length().await, 0);
+
+        service
+            .process_event(build_event("evt", json!({"i": 1})))
+            .await
+            .unwrap();
+        service
+            .process_event(build_event("evt", json!({"i": 2})))
+            .await
+            .unwrap();
+        assert_eq!(service.trigger_queue_length().await, 2);
+
+        service.get_next_trigger().await;
+        assert_eq!(service.trigger_queue_length().await, 1);
+
+        service.get_next_trigger().await;
+        assert_eq!(service.trigger_queue_length().await, 0);
+    }
+
+    #[tokio::test]
+    async fn health_check_reports_map_contents_for_all_healthy_one_unhealthy_and_none_registered() {
+        // None registered: the map itself is empty, not a size-1 default.
+        let service = ListenerOrchestrator::new();
+        let health = service.health_check().await.unwrap();
+        assert!(health.is_empty());
+
+        // All healthy.
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "healthy_one",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "healthy_two",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+        let health = service.health_check().await.unwrap();
+        assert_eq!(health.len(), 2);
+        assert_eq!(health.get("healthy_one"), Some(&true));
+        assert_eq!(health.get("healthy_two"), Some(&true));
+
+        // One unhealthy: assert map contents distinguish it, not merely a count.
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("unhealthy_one", ListenerConfig::default())
+                    .with_health_check(HealthCheckBehavior::Unhealthy),
+            ))
+            .await
+            .unwrap();
+        let health = service.health_check().await.unwrap();
+        assert_eq!(health.len(), 3);
+        assert_eq!(health.get("healthy_one"), Some(&true));
+        assert_eq!(health.get("healthy_two"), Some(&true));
+        assert_eq!(health.get("unhealthy_one"), Some(&false));
+
+        // A health check that itself errors is also reported `false`, distinct from a healthy
+        // report but not distinguishable from a plain "unhealthy" verdict in the returned map --
+        // an observed API-shape fact, not a presumed richer error channel.
+        service
+            .register_listener(Box::new(
+                MockEventListener::new("erroring_one", ListenerConfig::default())
+                    .with_health_check(HealthCheckBehavior::Err("boom".to_string())),
+            ))
+            .await
+            .unwrap();
+        let health = service.health_check().await.unwrap();
+        assert_eq!(health.get("erroring_one"), Some(&false));
     }
 }
