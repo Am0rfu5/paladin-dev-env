@@ -174,3 +174,11 @@ DEFER-03 is closed: both halves (15-08's sequential/lifecycle/status/health cove
 ---
 *Phase: 15-coverage-ci-quality-gates*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: `src/application/services/orchestration/listener.rs`
+- FOUND: `.planning/phases/15-coverage-ci-quality-gates/15-09-SUMMARY.md`
+- FOUND commit `f216c16` (Task 1)
+- FOUND commit `6a66719` (Task 2)
+- FOUND commit `3431460` (plan summary)
