@@ -32,7 +32,7 @@ key-decisions:
   - "development-setup.md was left untouched despite carrying the same stale 80%/70% coverage claims (lines 201-202) — out of this plan's files_modified scope (D-14's scope is coverage-number claims in the three named instruction files plus the testing guide only); flagged as a Known Stub / deferred item for DOCS-01 (Phase 16)."
   - "mdbook build docs fails in this environment on a pre-existing, unrelated defect (docs/mermaid.min.js is never committed to the repo, so book.toml's additional-js reference cannot resolve) — not caused by this plan's edits. Fell back to the acceptance criterion's alternate check (balanced code fences), which passes."
 
-requirements-completed: []  # PIPE-03 and PIPE-05 not marked complete — Task 3's checkpoint (human verification of local-vs-CI figure agreement, requires Docker) is unresolved. See Next Phase Readiness.
+requirements-completed: [PIPE-03, PIPE-05]  # Marked complete on checkpoint resolution — see "Checkpoint Resolution" below. PIPE-03's local-runnability half and PIPE-05's local-reproduction half are deferred, not verified; tracked in .planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md per the user's recorded decision.
 
 coverage:
   - id: D1
@@ -52,27 +52,35 @@ coverage:
         status: pass
     human_judgment: false
   - id: D3
-    description: "A developer reproduces the CI coverage number locally via the documented procedure, on a machine with Docker"
+    description: "The documented 82% threshold and its floor arithmetic (truncate toward zero, at-or-above) are confirmed against a live CI coverage measurement, and the `coverage`/`cli-tests`/`bench-check`/unit-test CI jobs pass"
+    requirement: "PIPE-03, PIPE-05"
+    verification:
+      - kind: other
+        ref: "GitHub Actions run 31727496744 (ci.yml), commit e9e3267f9ae6d8483be3ee52c04ffe6a763cbb37 — job Coverage: Lines 39233/47618 = 82.39% (truncates to 82, passes --fail-under-lines 82); job CLI Snapshot Tests: success; job Benchmark Compile Check: success; job Unit Tests (stable): success"
+        status: pass
+    human_judgment: false
+  - id: D4
+    description: "A developer reproduces the CI coverage number locally via the documented procedure end-to-end, on a machine with Docker, confirming no undocumented prerequisite step exists"
     requirement: "PIPE-03, PIPE-05"
     verification: []
     human_judgment: true
-    rationale: "Requires a machine with Docker to run `make services-up` + `make coverage` and compare against a live CI `coverage` job run — no authoring environment in this phase has Docker (confirmed in ADR-0006's own text, dated 2026-08-13). This is Task 3's blocking checkpoint; it did not run."
+    rationale: "No authoring environment in Phase 15 has Docker or cargo-llvm-cov installed, so the local `make services-up` / `make coverage` walkthrough could not run here. Deferred per the user's recorded decision at the Task 3 checkpoint (\"Accept, track local check\"); tracked in .planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md, owner: repo maintainer, no resolves_phase tag so it outlives Phase 15."
 
-duration: ~35min (Tasks 1-2 only; Task 3 checkpoint unresolved)
+duration: ~35min (Tasks 1-2); Task 3 resolved by deferral, not executed locally
 completed: 2026-08-13
-status: blocked
+status: complete
 ---
 
 # Phase 15 Plan 04: Coverage Documentation and Instruction-File Correction Summary
 
-**Rewrote the contributor Code Coverage section to reproduce ADR-0006's 82% CI figure, and corrected the rejected 80%/70% coverage claim in CLAUDE.md, copilot-instructions.md and TESTING.md — Task 3's Docker-dependent human-verification checkpoint remains open.**
+**Rewrote the contributor Code Coverage section to reproduce ADR-0006's 82% CI figure, and corrected the rejected 80%/70% coverage claim in CLAUDE.md, copilot-instructions.md and TESTING.md — Task 3's local-reproduction checkpoint resolved by user-accepted deferral, tracked as a todo.**
 
 ## Performance
 
-- **Duration:** ~35 min for Tasks 1-2
+- **Duration:** ~35 min for Tasks 1-2, plus checkpoint resolution
 - **Started:** 2026-08-13
-- **Tasks:** 2 of 3 completed (Task 3 is a blocking checkpoint, not executed)
-- **Files modified:** 4
+- **Tasks:** 3 of 3 resolved (Task 3's local Docker walkthrough deferred by recorded user decision, not executed)
+- **Files modified:** 4 (Tasks 1-2) + 1 todo created + REQUIREMENTS.md
 
 ## Accomplishments
 
@@ -86,9 +94,53 @@ status: blocked
 
 1. **Task 1: The Code Coverage section in the contributor testing guide** - `b6baf96` (docs)
 2. **Task 2: Correct the rejected coverage figure in the three instruction files** - `b7c74b2` (docs)
-3. **Task 3: Confirm a developer can reproduce the CI number locally** - NOT EXECUTED (blocking checkpoint, requires Docker; see below)
+3. **Task 3: Confirm a developer can reproduce the CI number locally** - RESOLVED BY DEFERRAL (see "Checkpoint Resolution" below); todo `2026-08-13-verify-local-coverage-reproduction.md` created and committed
 
 **Plan metadata:** this SUMMARY commit (below)
+
+## Checkpoint Resolution
+
+**Task 3 (`checkpoint:human-verify`, `gate="blocking"`) was resolved via the plan's own sanctioned
+second path — "recorded as an open item with an owner" — rather than by a local walkthrough.**
+
+**Decision and provenance.** The orchestrator presented the checkpoint to the human user via an
+interactive `AskUserQuestion` prompt. The user selected, verbatim, **"Accept, track local check."**
+This is a recorded human decision relayed by the orchestrator — not an agent-invented approval and
+not an auto-approval (auto-mode was off for the original checkpoint). The local-reproduction step
+was deferred rather than performed, by the user's explicit choice.
+
+**What IS confirmed (from CI, gathered by the orchestrator, not re-run here):** GitHub Actions run
+`31727496744` (workflow `ci.yml`), on commit `e9e3267f9ae6d8483be3ee52c04ffe6a763cbb37` — the exact
+base this plan's worktree branched from:
+- `Scope: --workspace --features integration-tests (the gated measurement)`
+- `Lines:     39233/47618 = 82.39%`
+- `Functions: 4604/6115 = 75.29%`
+- Floor arithmetic per ADR-0006: 82.39% truncates toward zero to 82; comparison is at-or-above;
+  `--fail-under-lines 82` → **gate passes**.
+- Job `Coverage` → success
+- Job `CLI Snapshot Tests` (equivalent to `make test-cli`) → success
+- Job `Benchmark Compile Check` (equivalent to `make bench-check`) → success
+- Job `Unit Tests (stable)` (the `ci-test` half of `make ci-full`) → success
+
+Two jobs in that same run failed, both outside this plan's scope: `License & Dependency Policy` and
+`Example Muster (Feature Matrix)`. The `Example Muster` `--offline` breakage is already known and
+scoped to Phase 15.1. Observed, not investigated further here.
+
+**What is NOT confirmed:** the local `make coverage` figure, and the human walkthrough of
+`docs/src/contributing/testing-guide.md`'s Code Coverage section end to end. This environment has
+no Docker and no `cargo-llvm-cov` installed, so `make services-up` → `make coverage` could not run
+here, and no authoring environment in Phase 15 has had either. This is the specific item deferred.
+
+**Tracking.** `.planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md` records the
+open item: walk the testing guide on a Docker-capable machine, run `make services-up` then
+`make coverage`, confirm the local figure agrees with CI's 82.39% at whole-percent precision, and
+fix any missing/wrong prerequisite step found. Owner: repo maintainer (the user). Deliberately
+carries no `resolves_phase` tag, so it is not auto-closed when Phase 15 completes — it is expected
+to outlive this phase.
+
+**Requirements.** PIPE-03 and PIPE-05 are marked complete in `REQUIREMENTS.md` on the strength of
+the CI evidence above plus the user's accept-and-track decision — their local-runnability /
+local-reproduction halves are deferred, not verified, and remain tracked by the todo.
 
 ## Files Created/Modified
 
@@ -96,6 +148,8 @@ status: blocked
 - `CLAUDE.md` - TDD working-agreement bullet now cites ADR-0006's 82% floor instead of unit≥80%/integration≥70%
 - `.github/copilot-instructions.md` - Coverage Requirements subsection corrected with a dated D-00c note and the single 82% floor
 - `.planning/codebase/TESTING.md` - Coverage section corrected with a dated D-00d note (ledger-class annotation), tarpaulin relabelled as a non-comparable informal alternative, "Enforced in CI pipeline" made precise
+- `.planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md` - New: tracks the deferred local-reproduction walkthrough, owner repo maintainer, no `resolves_phase` tag
+- `.planning/REQUIREMENTS.md` - PIPE-03 and PIPE-05 checkboxes and traceability rows marked complete
 
 ## Decisions Made
 
@@ -138,21 +192,22 @@ status: blocked
 
 ## User Setup Required
 
-None - no external service configuration required for Tasks 1-2. Task 3 (unresolved) requires a machine with Docker available — see below.
+None - no external service configuration required. The deferred local-verification item
+(`.planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md`) requires a
+Docker-capable machine, but that is tracked follow-up work, not setup blocking this plan.
 
 ## Next Phase Readiness
 
-**Task 3 — `checkpoint:human-verify`, `gate="blocking"` — did not execute.** It requires a machine with Docker, which no authoring environment in this phase has (this is stated explicitly in `.planning/decisions/0006-coverage-gate.md`'s own "Manual-only verification" note, dated 2026-08-13, and repeated in this plan's `<verification>` section). Tasks 1 and 2 — the two automatable tasks — are complete, committed, and pass every `<automated>` verify script and acceptance criterion in the plan. Task 3 needs a human, on a Docker-capable machine, to:
+**This plan is complete.** Tasks 1 and 2 are committed and pass every `<automated>` verify script
+and acceptance criterion. Task 3 is resolved via the plan's own sanctioned "recorded as an open
+item with an owner" path, per the user's recorded "Accept, track local check" decision — see
+"Checkpoint Resolution" above. PIPE-03 and PIPE-05 are marked complete in `REQUIREMENTS.md`.
 
-1. Follow `docs/src/contributing/testing-guide.md`'s Code Coverage section top to bottom, running only the commands it gives.
-2. Record the `make coverage` line-coverage percentage.
-3. Compare it against the CI `coverage` job's figure for the same commit (`gh run list --workflow=ci.yml` / `gh run view ... --job ...`).
-4. State whether they agree at whole-percent precision, and if not, why.
-5. Confirm `make ci-full`, `make test-cli` and `make bench-check` each pass.
-6. Report back per the plan's `<resume-signal>`.
-
-**PIPE-03 and PIPE-05 are not marked complete** pending this checkpoint's resolution — `requirements-completed` is deliberately left empty above. This plan cannot self-resolve Task 3; it is returned to the orchestrator as a `CHECKPOINT REACHED` with `gate: blocking`.
+The one open follow-up is the deferred local walkthrough tracked in
+`.planning/todos/pending/2026-08-13-verify-local-coverage-reproduction.md` — not a blocker for
+this plan or Phase 15, but real work a repo maintainer should still do on a Docker-capable machine
+to close the loop the checkpoint originally asked for.
 
 ---
 *Phase: 15-coverage-ci-quality-gates*
-*Completed: 2026-08-13 (Tasks 1-2 only; Task 3 blocked)*
+*Completed: 2026-08-13 (Task 3 resolved by recorded user decision to defer local verification)*
