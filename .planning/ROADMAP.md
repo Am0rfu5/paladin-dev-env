@@ -920,7 +920,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 15-02-PLAN.md — retire every deprecated action, delete the duplicate coverage path, land `.codecov.yml` and an `actionlint` job
+- [x] 15-02-PLAN.md — retire every deprecated action, delete the duplicate coverage path, land `.codecov.yml` and an `actionlint` job
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

@@ -2839,7 +2839,7 @@ threshold configuration and the local targets. Scope accordingly.
       alternatives; this note is the reverse pointer so a Phase 15 planner does not have to
       rediscover the link.
 
-- [x] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
+- [ ] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
       recorded threshold**. A `coverage` job installs `cargo-llvm-cov` via
       `taiki-e/install-action@v2` with `tool: cargo-llvm-cov@0.7.1` (pre-built binaries, ~30 s
       versus 3-5 min for `cargo install`), runs
@@ -4133,7 +4133,7 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | WEB-03 | Phase 14 | Complete |
 | WEB-04 | Phase 14 | Complete |
 | PIPE-01 | Phase 15 | Pending |
-| PIPE-02 | Phase 15 | Complete |
+| PIPE-02 | Phase 15 | Pending |
 | PIPE-03 | Phase 15 | Pending |
 | PIPE-04 | Phase 15 | Complete |
 | PIPE-05 | Phase 15 | Pending |
