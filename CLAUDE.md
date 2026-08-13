@@ -56,8 +56,10 @@ make health               # Service status
 
 ## Working agreements
 
-- **TDD (Red-Green-Refactor)** — write the failing test first. Coverage targets: unit ≥ 80%,
-  integration ≥ 70%. All public APIs need doc tests.
+- **TDD (Red-Green-Refactor)** — write the failing test first. Coverage floor: **82% workspace
+  line coverage** (single number, no separate unit/integration targets — superseded 2026-08-13,
+  see ADR-0006), gated by `cargo llvm-cov --fail-under-lines` in CI's `coverage` job. All public
+  APIs need doc tests.
 - **Dependencies flow inward only**: core → (nothing); application/ports → core; infrastructure
   adapters → core + ports. Never import infrastructure from core or application.
 - **Ubiquitous language**: always use the Medieval Military terms (Paladin, Battalion, Garrison,

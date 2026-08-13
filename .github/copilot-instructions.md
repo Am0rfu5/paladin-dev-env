@@ -152,8 +152,15 @@ infrastructure/
 3. **Refactor**: Improve code while keeping tests green
 
 **Coverage Requirements:**
-- Unit tests: ≥ 80% coverage
-- Integration tests: ≥ 70% coverage
+
+*(Corrected 2026-08-13, per [ADR-0006](../.planning/decisions/0006-coverage-gate.md), D-00c: this
+subsection previously stated two separate figures — a unit-test coverage target of 80 percent and
+an integration-test coverage target of 70 percent — matching ADR-0006's Considered Options
+position 1, which was explicitly rejected. The single binding figure below supersedes both.)*
+
+- **Coverage floor: 82% workspace line coverage** (ADR-0006), enforced by `cargo llvm-cov
+  --fail-under-lines` in the `coverage` CI job. There is no separate unit-test target and no
+  separate integration-test target.
 - All public APIs must have doc tests
 
 ```bash
