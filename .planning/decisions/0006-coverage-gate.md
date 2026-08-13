@@ -372,11 +372,38 @@ anyone who downloads the same run's `coverage-summary` artifact and reruns the s
 Function coverage: **75.29%** (6,115 functions, 1,511 missed) — a ~7-point line/function gap,
 consistent in kind with the ADR's original 84.79%/77.34% gap and the Phase 8 85.85%/78.50% gap.
 Region coverage under the full workspace scope is **not** independently derivable from
-`lcov.info` — lcov's line/function/branch format carries no per-region granularity, and a
+`lcov.info` — lcov's line/function/branch format carries no per-region granularity. ~~and a
 region total requires `cargo llvm-cov report --summary-only --workspace` (the corrected form
 of the step this amendment fixes — see "Fix landed" below). The next CI run under the
 corrected step will print the true workspace TOTAL row, including regions, and can be
-cross-checked against the 82.39%/75.29% figures recorded here.
+cross-checked against the 82.39%/75.29% figures recorded here.~~
+
+**Corrected 2026-08-13, same day, before the claim was relied on (D-00d — superseded text
+retained above, struck):** `cargo llvm-cov report --summary-only --workspace` is **not a valid
+invocation**. Run 31726154354 job 94535029936 returned, verbatim:
+
+```
+error: --workspace is specific to [test,nextest,nextest-archive,show-env,clean,no subcommand] and not supported for subcommand 'report'
+```
+
+The step exited non-zero, produced a **0-byte** `coverage-summary.txt`, and still reported
+**green** — `<cmd> | tee file` exits with `tee`'s status, so the failure was masked. Both forms
+of that command were therefore wrong: without `--workspace` it reports only the root package
+(the discrepancy this amendment documents), and with `--workspace` it does not run at all.
+
+**Fix actually landed:** the `Coverage summary` step now derives the figure by summing
+`lcov.info`'s per-file `LF:`/`LH:`/`FNF:`/`FNH:` records — the same summation this amendment
+used, applied to the very artifact the gate measured, so the reported number cannot drift from
+the gated one. `set -euo pipefail` was added so a failing summary can never again present as a
+green step. Verified against run 31726154354's artifact: the step's logic reproduces
+**82.39% lines / 75.29% functions** exactly as recorded above.
+
+**Consequence for region coverage:** a workspace-scope *region* total is **not currently
+produced by any step in this pipeline**, and no cheap invocation produces one (`report` cannot
+take `--workspace`; re-measuring with `--summary-only` instead of `--lcov` would re-run the
+whole Docker-backed suite). Region coverage is therefore **not** a figure this ADR binds to or
+tracks at workspace scope. The 84.76% region figure recorded in the table above is
+**root-package-only** and must not be read as a workspace number.
 
 **Fix landed alongside this amendment (Rule 1 — bug, no architectural change; same commit as
 Task 3's `--fail-under-lines`):** `.github/workflows/ci.yml`'s `Coverage summary` step gains

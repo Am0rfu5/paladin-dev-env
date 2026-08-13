@@ -616,18 +616,44 @@ jobs:
       # percentage never reaches the run log. Plan 15-03 has to read that figure
       # out of CI (docker is absent from every authoring environment, so it
       # cannot be produced locally) and its recorded method is to grep the log --
-      # which found nothing to grep. `report` reuses the profdata the step above
-      # already produced, so this re-measures nothing and re-runs no tests.
-      # Also emitted to the job summary so the number is readable without
-      # downloading logs. `--workspace` here is load-bearing (plan 15-03,
-      # ADR-0006 Phase 15 amendment section "One"): without it, `report`
-      # defaults to only the root `paladin-ai` package and prints a smaller,
-      # rosier figure than the line-coverage minimum gated above actually
-      # enforces -- exactly the discrepancy that amendment documents and
-      # this flag closes.
+      # which found nothing to grep.
+      #
+      # The summary is derived from `lcov.info` rather than from
+      # `cargo llvm-cov report`, because neither form of that command reports the
+      # gated scope:
+      #   * `cargo llvm-cov report --summary-only` covers only the root
+      #     `paladin-ai` package (14,018 of 47,618 lines) -- a smaller, rosier
+      #     figure than the line minimum above enforces. This is the discrepancy
+      #     ADR-0006's Phase 15 amendment documents.
+      #   * `cargo llvm-cov report --summary-only --workspace` is not a valid
+      #     invocation at all: "--workspace is specific to [test, nextest,
+      #     nextest-archive, show-env, clean, no subcommand] and not supported
+      #     for subcommand 'report'". It exits non-zero and prints nothing.
+      # `lcov.info` IS the artifact the gate measured, so summing its per-file
+      # LF/LH and FNF/FNH records cannot drift from what was gated -- the same
+      # summation the ADR amendment records and anyone can reproduce from the
+      # uploaded artifact.
+      #
+      # `set -o pipefail` is load-bearing: without it `<cmd> | tee file` exits
+      # with tee's status, so a failing command yields an empty file and a GREEN
+      # step. That is precisely how the invalid `--workspace` form went unnoticed.
       - name: Coverage summary
         run: |
-          cargo llvm-cov report --summary-only --workspace | tee coverage-summary.txt
+          set -euo pipefail
+          test -s lcov.info || { echo "::error::lcov.info missing or empty — coverage was not measured"; exit 1; }
+          python3 - <<'PY' | tee coverage-summary.txt
+          lf = lh = fnf = fnh = 0
+          for line in open("lcov.info"):
+              if   line.startswith("LF:"):  lf  += int(line[3:])
+              elif line.startswith("LH:"):  lh  += int(line[3:])
+              elif line.startswith("FNF:"): fnf += int(line[4:])
+              elif line.startswith("FNH:"): fnh += int(line[4:])
+          if lf == 0:
+              raise SystemExit("::error::lcov.info contains no LF: records")
+          print("Scope: --workspace --features integration-tests (the gated measurement)")
+          print(f"Lines:     {lh}/{lf} = {100*lh/lf:.2f}%")
+          print(f"Functions: {fnh}/{fnf} = {100*fnh/fnf:.2f}%")
+          PY
           {
             echo "### Coverage (workspace, --features integration-tests)"
             echo ""
