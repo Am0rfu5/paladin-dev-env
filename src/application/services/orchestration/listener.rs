@@ -398,6 +398,92 @@ impl Default for ListenerOrchestrator {
 
 #[cfg(test)]
 mod tests {
+    // ============================================================================
+    // DEFER-03 entry record (plan 15-08, Task 1) — re-measurement before re-scoping
+    // ============================================================================
+    //
+    // DEFER-03's own "Done when" clause requires a *current* `cargo llvm-cov` figure before the
+    // remaining scope is stated — not the inherited register figure. This block is that
+    // re-measurement, and the honest limitation encountered while producing it.
+    //
+    // **Command that would produce the entry figure** (per
+    // `docs/src/contributing/testing-guide.md` § Test Coverage and ADR-0006's tool-of-record):
+    //   rustup component add llvm-tools-preview
+    //   cargo install cargo-llvm-cov --locked
+    //   cargo llvm-cov --workspace --lib --json --output-path /tmp/cov-listener-entry.json
+    //
+    // **Scope:** default features, `--lib` only (not `--features integration-tests`, the
+    // ADR-0006 gate's scope) — Docker is absent from this authoring environment, and per
+    // ADR-0006 the two scopes are not comparable regardless (ignore regex, doctest decision and
+    // feature set all have to match for two coverage runs to agree).
+    //
+    // **Result: NOT MEASURED.** `cargo-llvm-cov` is not installed in this execution environment,
+    // and this plan's own harness instructions explicitly forbid installing it here (no Docker,
+    // and installing the tool was called out as not worth the time in this session) rather than
+    // fabricating a number. Verified absent by direct check: `command -v cargo-llvm-cov` returns
+    // nothing.
+    //   - Commit SHA at time of this entry: bd1924e3c17de458c3e9f5b457874040d7f51d82
+    //   - Date: 2026-08-13
+    //   - Prior figure being re-measured: 57.83% (602 LOC), dated 2026-02-14, recorded against
+    //     the path `src/core/platform/manager/listener_service.rs` (relocated by Milestone 6
+    //     Epic 2 to this file, 538 lines, `ListenerOrchestrator`).
+    //   - **Delta: cannot be computed from a real number in this session.** This is not framed
+    //     as a regression or an improvement — it is an unmeasured entry, explicitly recorded as
+    //     such so a later session (or CI's `coverage` job, once it exists per PIPE-02) can fill
+    //     in the real figure without this gap being silently carried forward as "57.83% still
+    //     holds". The module has gained Milestone 9 Epic 2's match/no-match/fan-out/rate-limit/
+    //     dispatch tests and moved path since the register's figure was struck, so 57.83% is
+    //     known-stale in both directions (more code covered by more tests, but also more lines
+    //     added by the relocation) — no directional claim is made without the number.
+    //   - **Not comparable with the ADR-0006 CI gate figure** even once measured, per the scope
+    //     note above (`--lib` default-feature scope here vs. `--features integration-tests`
+    //     there).
+    //
+    // This plan (15-08) still proceeds to close the sequential half of DEFER-03's named scope
+    // against a *qualitative* re-read of the existing test module plus Milestone 9 Epic 2's
+    // history, per the plan's own instruction to state remaining scope "against the measured
+    // figure" where a figure exists, and against direct code inspection where it does not. Plan
+    // 15-09 takes the concurrency/stress half and is the natural place for a session with
+    // `cargo-llvm-cov` available to fill in this gap.
+    //
+    // ## Remaining scope per DEFER-03's five named areas (stated against direct inspection,
+    // since no current coverage figure exists to state it against)
+    //
+    // 1. **Registration and lifecycle** — genuinely under-covered before this plan. The three
+    //    pre-existing tests below never registered a duplicate name, never unregistered anything
+    //    (known or unknown), and never called `set_listener_enabled`. This plan closes all
+    //    three.
+    // 2. **Delivery and filtering, with ordering guarantees** — the pre-existing
+    //    `test_event_processing` covers exactly one matching-event path with one listener. No
+    //    non-matching event, no fan-out, and no ordering assertion existed. This plan adds all
+    //    three, including a discovered fact about the real ordering guarantee (see
+    //    `trigger_queue_is_fifo_across_sequential_process_event_calls` below) and an explicit
+    //    non-guarantee for intra-call ordering across multiple matching listeners (`HashMap`
+    //    iteration order is unspecified — the fan-out test asserts the *set* of producing
+    //    listeners, not an order).
+    // 3. **Trigger status tracking and retry** — entirely uncovered before this plan. No test
+    //    called `get_trigger`, `update_trigger_status`, or `get_trigger_summaries`. This plan
+    //    adds coverage for every `TriggerStatus` variant round-tripping through
+    //    `update_trigger_status`/`get_trigger`, the `preserve_after_completion: false` +
+    //    `Completed` non-preservation path, and a retry transition built on
+    //    `Trigger::start_processing`/`fail_processing`.
+    // 4. **Statistics and health-check status** — partially covered. `test_listener_stats`
+    //    covers `get_listener_stats` for a known listener after one event. Unknown-listener
+    //    lookups, `get_all_stats` after N events across two listeners, `trigger_queue_length`
+    //    before/after, and `health_check` (all-healthy / one-unhealthy / none-registered) were
+    //    all uncovered. This plan closes all of them.
+    // 5. **Concurrency and stress** — genuinely uncovered, and explicitly **out of scope for
+    //    this plan** per its own boundary. Milestone 9 Epic 2 added sequential match/no-match/
+    //    fan-out/rate-limit/dispatch tests (visible in the pre-existing three-test module this
+    //    plan extends), not concurrent producer/consumer or deadlock-detection coverage. Plan
+    //    15-09 owns this half.
+    //
+    // Rate-limit and trigger-expiry boundaries (named directly in this plan's must_haves, not
+    // one of DEFER-03's five register areas but part of the "delivery and filtering" /
+    // lifecycle scope) are closed by this plan — see the discovered-behavior note on
+    // `tokio::time::pause`/`advance` at
+    // `rate_limit_boundary_exercised_at_below_at_and_above_the_limit` below.
+
     use super::*;
     use crate::core::base::component::action::Action;
     use crate::core::base::component::event::Event;
