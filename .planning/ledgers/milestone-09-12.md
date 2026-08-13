@@ -619,6 +619,34 @@ Owned by plan 13-07. This section has zero bare-`Verify` rows.
 | REQ-listener-service-test-coverage | D-13(b). **Relocation, recorded separately from the scope:** `ls src/core/platform/manager/listener_service.rs` fails (Milestone 6 Epic 2 relocation); `src/application/services/orchestration/listener.rs` exists this session as `pub struct ListenerOrchestrator` (`:141`), 538 lines (`wc -l`, re-measured — the source register's own 602-line figure is stale by path *and* number). **Open, with a stale baseline → DEFER-03.** `DEFERRED_COVERAGE.md:18,168-169` cites the dead path and a `~57.83%` estimate dated 2026-02-14 (`:405`); Milestone 9 Epic 2 (this ledger's own section above) added `tests/event_trigger_pipeline.rs` (5 passing tests, `cargo test --test event_trigger_pipeline` re-run this session) directly exercising `ListenerOrchestrator::get_next_trigger()`, so the coverage percentage has moved since the baseline was struck — the file's own in-module test count alone is 3 (`grep -c '#\[test\]\|#\[tokio::test\]'`), undercounting the coverage this module actually has via the top-level integration test. Scope real, arithmetic not. Owner **Phase 15 / DEFER-03**. **Closed (dated 2026-08-13, Phase 15, plan 15-10):** re-measurement attempted first and recorded honestly as **NOT MEASURED** (plan 15-08, `cargo-llvm-cov` uninstallable — crates.io HTTP 403 in every authoring environment); **exit figure 96.90% line coverage (1161 lines, 36 missed)**, produced via ADR-0006's own local raw `rustc`/`llvm-profdata`/`llvm-cov` substitute scoped to the module's own tests (plan 15-09, commit `6a66719`), clearing the 80% bar by 16.90 points. 27 tests total (3 pre-existing + 19 lifecycle/delivery/status/health from plan 15-08, commits `4291c44`/`53b1179`, + 4 concurrency/stress + 1 discovered-gap closure from plan 15-09, commit `f216c16`). Effort re-derived: low single-digit hours, superseding the inherited 20-25h estimate (the mock-clock infrastructure it budgeted for was never needed — this module reads `chrono::Utc::now()`, not `tokio::time::Instant`) |
 | REQ-deferred-coverage-register | **Open register → DEFER-01/02/03** — the third and last deferred register in the corpus, re-read this session. Sign-off block (`DEFERRED_COVERAGE.md:381-394`) quoted verbatim: "Approved By: AI Coding Agent (Epic 24 execution)", "Date: February 14, 2026", "Next Review: Epic 27 or Epic 28 planning" — that trigger has still never been reached (neither Epic has executed against this repo). **Materially less reliable than Milestone 8's two registers**: both module paths it names are stale (`user_service.rs` unsplit per ADR-0034 above; `listener_service.rs` relocated per the sibling row above) and both coverage baselines predate Milestone 9's test additions. Its three unchecked prerequisites (mock infrastructure, user-service coverage, listener-service coverage) are exactly DEFER-01/02/03's scope. Owner **Phase 15**. **Closed (dated 2026-08-13, Phase 15, plan 15-10):** all three prerequisites closed with named evidence in `DEFERRED_COVERAGE.md`'s own annotation — `src/test_support/` (mock infrastructure), `docs/src/contributing/testing-guide.md`'s Code Coverage section (testing best practices), and `listener.rs`'s four concurrency/stress tests (concurrency testing patterns), per plan 15-10 Task 3 |
 
+### Phase 15 declines (dated 2026-08-13, plan 15-10)
+
+Two items Phase 15 declined rather than built, each recorded with a reason, an owner and a
+reopening condition — so neither is silently absent from the record.
+
+1. **The native-arm64 CI rework.** The advisory Docker build-time budget comment in `ci.yml`
+   (around the `docker` job, `grep -n 'Owner:' .github/workflows/ci.yml`) proposed
+   `ubuntu-24.04-arm` runners in place of QEMU emulation so the multi-arch build-time budget could
+   be hard rather than advisory. **Declined for this phase**: no requirement ID in Phase 15 covers
+   it, and `.planning/phases/15-coverage-ci-quality-gates/15-CONTEXT.md`'s Deferred Ideas places it
+   out of scope. **Reason**: Phase 15's scope is coverage/CI *quality gates* (PIPE-01…05,
+   DEFER-01…03), not runner-topology changes to an unrelated job. **Owner**: a future
+   infrastructure phase — the `ci.yml` comment itself was edited in place to reassign the owner
+   away from "Phase 15 / PIPE" (which has now closed) so the pointer stays live rather than naming
+   a closed phase (plan 15-10). **Reopening condition**: a future infrastructure phase adopts
+   native arm64 runners for the `docker` job's multi-arch build, at which point the advisory budget
+   can convert to a hard one backed by a real measurement.
+2. **A second, feature-scoped coverage measurement.** ADR-0006's D-14b left open whether `minio.rs`
+   (behind the non-default `s3-storage` feature, outside D-01's default-and-`integration-tests`
+   scope) should get its own recorded coverage number. **Declined**: D-01 already chose one scope
+   for the binding gate, and a second recorded number is exactly the "two numbers" failure RECON-07
+   exists to close — see `.planning/decisions/0006-coverage-gate.md`'s "The two module-scoped
+   gates" and D-14b sections. **Reason**: one number, one scope, per RECON-07's own rule, restated
+   throughout ADR-0006's Phase 15 amendment. **Owner**: none — no second measurement is scheduled.
+   **Reopening condition**: a feature-gated subsystem needing its own recorded coverage number, at
+   which point the same one-number-one-scope rule applies to *that* subsystem's measurement rather
+   than retrofitting a second number onto this phase's gate.
+
 ### project-management (1 ID)
 
 Owned by plan 13-07. This section has zero bare-`Verify` rows.

@@ -63,6 +63,27 @@
 > note, the epic-priority ordering row, and both of Epic 27's open questions (still `Open` —
 > answering them is a precondition for ADR-0042's reintroduction trigger, not an afterthought).
 
+> **Correction (dated 2026-08-13, Phase 15 / PIPE-02, plan 15-10):** **G2**'s "threshold gate ≥ 78%
+> overall" (below) and **FR-25.3 item 10**'s "coverage threshold gate of **78%** minimum" (below,
+> `#### FR-25.3`) are both **superseded**. `.planning/decisions/0006-coverage-gate.md`'s
+> `## Phase 15 amendment (2026-08-13)` rejects the 78% hard gate outright (see its
+> `## Considered Options`) and binds instead to **82%**, floored from a fresh 82.39% workspace
+> measurement under a scope (`--features integration-tests`, Redis/MinIO live) neither this PRD nor
+> Epic 25 contemplated. The "measured 76-77%" baseline this PRD implicitly ramps from (via
+> `DEFERRED_COVERAGE.md`, corrected at that document's own head) is likewise superseded — not a
+> baseline the 82% floor derives from. **This PRD's own Open Question 3** — "Should the coverage
+> threshold gate be a hard fail (block merge) or a soft warning initially? Moving from no gate to
+> 78% hard fail could block legitimate PRs during ramp-up" (`## 10. Open Questions`, below) — is
+> **answered: hard-fail, from the first gated run.** `cargo llvm-cov --fail-under-lines` hard-fails
+> in `.github/workflows/ci.yml`'s `coverage` job from the run that sets the gate, and the
+> construction that makes this safe is what removed the ramp-up risk this question worried about:
+> the floor is derived by truncating the *same run's own measurement* downward, so **the gate
+> cannot be red on the run that sets it** — ADR-0006's own words, restated in its Phase 15
+> amendment. No ramp was needed because the gate was never at risk of failing on day one. Source:
+> ADR-0006 (`.planning/decisions/0006-coverage-gate.md`), original "Context" section (which
+> already recorded this same answer at Phase 1) and its Phase 15 amendment section Three. Original
+> text below is retained throughout, nothing deleted, per D-00c/D-00d.
+
 ## Document Info
 
 | Field | Value |
@@ -601,6 +622,7 @@ Epics 27, 28, and 29 can also run in parallel if multiple developers are availab
 | — | **Correction (dated 2026-08-12, WEB-04):** OQ-1 remains `Open`; its being unanswered is part of the reasoning ADR-0042 records for deferring Epic 27 — answering it is a precondition for the reintroduction trigger, not an afterthought. | see ADR-0042 | Open |
 | OQ-2 | Should `mockall` crate be adopted for Epics 28–29, or should mocks remain hand-written? `mockall` adds compile-time cost but reduces boilerplate. | Affects mock infrastructure design. | Open |
 | OQ-3 | Should the coverage threshold gate be a hard fail (block merge) or a soft warning initially? Moving from no gate to 78% hard fail could block legitimate PRs during ramp-up. | Affects Epic 25 CI configuration. | Open |
+| — | **Correction (dated 2026-08-13, Phase 15 / PIPE-02):** OQ-3 is **Answered: hard-fail, from the first run.** `cargo llvm-cov --fail-under-lines` hard-fails in `ci.yml`'s `coverage` job from the first gated run; the floor-from-same-measurement construction removes the ramp-up risk this question raised — the gate cannot be red on the run that sets it. See the correction banner at the top of this document. | see ADR-0006 | Answered |
 | OQ-4 | Are asciinema recordings acceptable, or does the team prefer a different format (e.g., VHS tape files, Terminalizer, or plain GIFs)? | Affects tooling choice in Epic 26. | Open |
 | OQ-5 | Should `LlmRequest.tools` use the OpenAI JSON Schema format as canonical, or should we define our own provider-agnostic schema? | Affects `ToolDefinition` struct design in Epic 27. | Open |
 | — | **Correction (dated 2026-08-12, WEB-04):** OQ-5 remains `Open`; its being unanswered is part of the reasoning ADR-0042 records for deferring Epic 27 — answering it is a precondition for the reintroduction trigger, not an afterthought. | see ADR-0042 | Open |

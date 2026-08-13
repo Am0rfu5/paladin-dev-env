@@ -1,5 +1,27 @@
 # PRD: CI/CD Pipeline Enhancement & Coverage Reporting
 
+> **Correction (dated 2026-08-13, Phase 15 / PIPE-02, plan 15-10):** **Appendix C**'s phased
+> 70% → 74% → 78% threshold rollout (below) and **FR-25.6** item 18's matching phase table (below,
+> `#### FR-25.6`) are both **superseded**, for the same reason the parent PRD's 78% hard gate is
+> superseded — see that document's own correction banner at its head.
+> `.planning/decisions/0006-coverage-gate.md`'s `## Phase 15 amendment (2026-08-13)` rejects the
+> ramp explicitly (`## Considered Options`: "Epic 25 FR-25.6 phased 70% → 74% → 78% ramp —
+> rejected, per D-09 explicitly: three numbers where RECON-07 asked for one") and binds to **one**
+> number, 82%, set once from a fresh measurement rather than advanced phase-by-phase. **This
+> Epic's own Open Question 3** — "Should the existing `integration-tests.yml` coverage step be
+> removed or kept with a different Codecov flag?" (`## 9. Open Questions`, below) — is **answered
+> by removal**, matching this PRD's own recommended default ("recommend removing once `ci.yml`
+> coverage is verified working"): the `Generate integration test coverage` /
+> `Upload integration coverage` step pair was deleted from `integration-tests.yml` entirely (plan
+> 15-02, commit `f9b5ad2`), not retained with a different Codecov flag. **Appendix B**'s
+> "Current `ci.yml` Job Listing (Pre-Change Reference)" table (below) is long superseded by the
+> tree regardless of this phase's changes — it predates several intervening milestones' own
+> additions. Rather than editing that historical table, the current job count is recorded here:
+> `.github/workflows/ci.yml` carries **19** job ids as of this correction
+> (`python3 -c "import yaml; print(len(yaml.safe_load(open('.github/workflows/ci.yml'))['jobs']))"`),
+> not the seven-job pre-change baseline the table records nor the "Jobs 8/9/10 added" post-change
+> note beneath it. Original text below retained throughout, nothing deleted, per D-00c/D-00d.
+
 ## Document Info
 
 | Field | Value |
@@ -506,6 +528,7 @@ actionlint .github/workflows/release.yml
 | OQ-1 | Should `CODECOV_TOKEN` be a repository secret or an organization-level secret? | Affects setup instructions and fork behavior. | **Open** |
 | OQ-2 | Should the `coverage` job include `--all-features` (which enables `live-api-tests`)? Live API tests skip without keys, but the flag adds compilation overhead. | Could add 30–60 seconds to CI. | **Open** — recommend `--all-features` for completeness; skip is graceful. |
 | OQ-3 | Should the existing `integration-tests.yml` coverage step be removed or kept with a different Codecov flag? | Duplicate uploads could confuse Codecov metrics. | **Open** — recommend removing once `ci.yml` coverage is verified working. |
+| — | **Correction (dated 2026-08-13, Phase 15 / PIPE-02):** OQ-3 is **Answered: removed**, matching this row's own recommendation. The `integration-tests.yml` coverage step (`cargo llvm-cov --features integration-tests --lcov` plus `codecov/codecov-action@v3`) was deleted entirely, not retained with a different flag — `ci.yml`'s new `coverage` job supersedes it. See the correction banner at the top of this document. | see plan 15-02, commit `f9b5ad2` | Answered |
 | OQ-4 | Should branch protection rules (requiring these new checks to pass before merge) be configured as part of this epic? | Enforcement only works if branch protection is enabled. | **Open** — recommend documenting as a follow-up ops task. |
 | OQ-5 | Should `cargo-llvm-cov` version be pinned in the Makefile too (via a variable)? | Local dev vs CI version drift. | **Open** — recommend documenting minimum version in CONTRIBUTING.md but not pinning in Makefile. |
 | OQ-6 | Should we add a `--fail-under-lines` flag to the `cargo llvm-cov` command in CI as a secondary enforcement mechanism (in addition to Codecov)? | Belt-and-suspenders approach vs. single source of truth. | **Open** — recommend Codecov-only threshold to avoid conflicting gates. |

@@ -808,7 +808,12 @@ jobs:
       # it is reported rather than enforced. The real fix is native arm64
       # runners (`ubuntu-24.04-arm`, free for public repos) instead of QEMU;
       # once that lands, a hard budget backed by a real measurement should be
-      # reinstated. Owner: Phase 15 / PIPE.
+      # reinstated. Owner: a future infrastructure phase (reassigned dated
+      # 2026-08-13, Phase 15 plan 15-10 — Phase 15 declined this rework as
+      # out of scope; no requirement ID covers it and CONTEXT.md's Deferred
+      # Ideas places it out of scope for this phase. See
+      # .planning/ledgers/milestone-09-12.md's decline record for the reason
+      # and reopening condition; Phase 15 has closed).
       #
       # The image-size budget below stays HARD — size is a property of the
       # artifact, not of the runner, and the last successful multi-arch build
