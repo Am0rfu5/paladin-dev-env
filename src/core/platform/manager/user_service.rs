@@ -467,13 +467,24 @@ impl UserServiceTrait for UserService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::services::notification_orchestrator::NotificationTemplateProcessor;
     use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
+    use crate::core::platform::container::log::{LogEntry, LogEntryExt};
+    use crate::core::platform::container::notification::{
+        NotificationChannel, NotificationContent, NotificationTemplate,
+    };
     use crate::infrastructure::adapters::auth::InMemoryTokenAuthAdapter;
     use crate::infrastructure::adapters::logs::system_log_adapter::{
         SystemLogAdapter, SystemLogAdapterConfig,
     };
     use crate::infrastructure::repositories::sqlite_user_repository::SqliteUserRepository;
+    use crate::test_support::FailingChannelHandler;
     use paladin_core::platform::container::notification::NotificationServiceConfig;
+    use paladin_ports::output::log_port::{
+        BatchWriteRequest, LogDestinationConfig, LogError, LogFormat, LogHealthCheck, LogQuery,
+        LogResult, LogStats,
+    };
+    use std::collections::HashMap;
 
     async fn build_service(with_auth: bool) -> UserService {
         let repo = Arc::new(SqliteUserRepository::new("sqlite::memory:").await.unwrap());
@@ -579,5 +590,449 @@ mod tests {
         assert!(result.success);
         assert!(result.token.is_none());
         assert!(result.token_expires_at.is_none());
+    }
+
+    // -----------------------------------------------------------------
+    // Registration, validation and password-hashing coverage
+    // (DEFER-02, 15-06 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn register_user_persists_an_argon2_hash_that_only_verifies_the_original_password() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("frank_hash", "frank_hash@example.com"))
+            .await
+            .unwrap();
+
+        let hash = user.password_hash().to_string();
+        assert!(
+            hash.starts_with("$argon2"),
+            "stored password field should be an argon2 PHC-format hash, got: {hash}"
+        );
+        assert!(
+            service.verify_password("password123", &hash).unwrap(),
+            "hash should verify against the original password"
+        );
+        assert!(
+            !service
+                .verify_password("a-completely-different-password", &hash)
+                .unwrap(),
+            "hash should not verify against a different password"
+        );
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_byte_identical_duplicate_email() {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("gina", "dup@example.com"))
+            .await
+            .unwrap();
+
+        let err = service
+            .register_user(registration("gina-two", "dup@example.com"))
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, UserError::EmailAlreadyExists(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_accepts_a_case_variant_username_because_the_duplicate_check_is_on_email()
+    {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("harold", "harold@example.com"))
+            .await
+            .unwrap();
+
+        // The duplicate check in `register_user` only looks up by email; whether a
+        // case-variant username (with a distinct email) is accepted is a real property of
+        // the system, pinned here as observed rather than assumed.
+        let result = service
+            .register_user(registration("HAROLD", "harold-two@example.com"))
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "observed verdict: a username differing only in case from an existing one is \
+             accepted, because duplicate detection is email-scoped only; got: {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn register_user_called_twice_with_the_same_request_leaves_exactly_one_user_persisted() {
+        let service = build_service(false).await;
+        let request = registration("ivan", "ivan@example.com");
+
+        let first = service.register_user(request.clone()).await;
+        assert!(first.is_ok());
+
+        let second = service.register_user(request).await;
+        assert!(matches!(
+            second.unwrap_err(),
+            UserError::EmailAlreadyExists(_)
+        ));
+
+        assert_eq!(service.count_users().await.unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_empty_username() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("", "empty-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_whitespace_only_username() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("   ", "whitespace-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_empty_email() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("empty-email-user", ""))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_empty_password() {
+        let service = build_service(false).await;
+        let request = UserRegistrationRequest {
+            username: "empty-password-user".to_string(),
+            email: "empty-password@example.com".to_string(),
+            password: "".to_string(),
+            profile: None,
+        };
+        let err = service.register_user(request).await.unwrap_err();
+        assert!(matches!(err, UserError::InvalidPassword(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_accepts_a_multi_byte_unicode_username_within_the_byte_length_rule() {
+        let service = build_service(false).await;
+
+        // "\u{e9}\u{e9}" (two lowercase e-acute characters) is 2 `char`s but 4 UTF-8 bytes.
+        // `validate_username` enforces its minimum length via `str::len()` (byte length), not
+        // `chars().count()`, so this username clears the >= 3 check on byte length alone -- a
+        // char-count rule would reject it as too short. Registering it (and asserting success)
+        // pins the observed rule rather than an assumption about it.
+        let username = "\u{e9}\u{e9}";
+        assert_eq!(username.chars().count(), 2);
+        assert_eq!(username.len(), 4);
+
+        let result = service
+            .register_user(registration(username, "unicode-user@example.com"))
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "observed rule: validate_username enforces byte length, so a 2-char/4-byte \
+             username is accepted; got: {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_email_missing_the_at_symbol() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("email-shape-one", "not-an-email"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_email_missing_the_local_part() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("email-shape-two", "@domain-only.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_an_email_missing_the_domain_part() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("email-shape-three", "trailing-at@"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidEmail(_)));
+    }
+
+    // -----------------------------------------------------------------
+    // Notification-dispatch failure coverage (DEFER-02, 15-06 Task 2)
+    // -----------------------------------------------------------------
+
+    /// A [`LogPort`] double that records every `write_entry` call's level and message.
+    ///
+    /// `UserService`'s `log_port` field is `Arc<dyn LogPort>`, so -- unlike
+    /// `notification_service`, which is a concrete `Arc<NotificationService>` -- this seam
+    /// already accepts a substitute with no production signature change. Used here to prove
+    /// that a notification-dispatch failure is logged at `Warn` rather than merely asserted in
+    /// prose.
+    #[derive(Debug, Default)]
+    struct RecordingLogPort {
+        entries: std::sync::Mutex<Vec<(LogLevel, String)>>,
+    }
+
+    impl RecordingLogPort {
+        fn new() -> Self {
+            Self::default()
+        }
+
+        fn entries(&self) -> Vec<(LogLevel, String)> {
+            self.entries
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .clone()
+        }
+
+        fn contains(&self, level: LogLevel, needle: &str) -> bool {
+            self.entries().into_iter().any(|(recorded_level, message)| {
+                recorded_level == level && message.contains(needle)
+            })
+        }
+    }
+
+    #[async_trait]
+    impl LogPort for RecordingLogPort {
+        async fn write_entry(&self, entry: LogEntry) -> LogResult<()> {
+            self.entries
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .push((entry.level(), entry.message.message.clone()));
+            Ok(())
+        }
+
+        async fn write_entries(&self, entries: Vec<LogEntry>) -> LogResult<()> {
+            for entry in entries {
+                self.write_entry(entry).await?;
+            }
+            Ok(())
+        }
+
+        async fn batch_write(&self, request: BatchWriteRequest) -> LogResult<()> {
+            self.write_entries(request.entries).await
+        }
+
+        async fn read_entries(&self, _query: LogQuery) -> LogResult<Vec<LogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn count_entries(&self, _query: LogQuery) -> LogResult<u64> {
+            Ok(self.entries().len() as u64)
+        }
+
+        async fn configure_destination(&self, _config: LogDestinationConfig) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn remove_destination(&self, _destination: LogDestination) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn list_destinations(&self) -> LogResult<Vec<LogDestination>> {
+            Ok(Vec::new())
+        }
+
+        async fn flush(&self) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn flush_destination(&self, _destination: LogDestination) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn rotate_logs(&self, _destination: LogDestination) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn get_stats(&self) -> LogResult<LogStats> {
+            Ok(LogStats::default())
+        }
+
+        async fn get_destination_stats(&self, _destination: LogDestination) -> LogResult<LogStats> {
+            Ok(LogStats::default())
+        }
+
+        async fn clear_logs(&self, _destination: LogDestination) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn clear_logs_before(
+            &self,
+            _destination: LogDestination,
+            _before: chrono::DateTime<chrono::Utc>,
+        ) -> LogResult<u64> {
+            Ok(0)
+        }
+
+        async fn health_check(&self) -> LogResult<Vec<LogHealthCheck>> {
+            Ok(Vec::new())
+        }
+
+        async fn health_check_destination(
+            &self,
+            _destination: LogDestination,
+        ) -> LogResult<LogHealthCheck> {
+            Err(LogError::DestinationNotFound(
+                "RecordingLogPort does not track destinations".to_string(),
+            ))
+        }
+
+        fn get_provider_name(&self) -> &'static str {
+            "recording-log-port-test-double"
+        }
+
+        async fn test_connection(&self) -> LogResult<()> {
+            Ok(())
+        }
+
+        async fn archive_logs(
+            &self,
+            _destination: LogDestination,
+            _before: chrono::DateTime<chrono::Utc>,
+        ) -> LogResult<String> {
+            Ok(String::new())
+        }
+
+        fn supported_formats(&self) -> Vec<LogFormat> {
+            vec![LogFormat::Text]
+        }
+    }
+
+    /// A no-op [`NotificationTemplateProcessor`] that renders a template by copying its body
+    /// straight through, ignoring variable substitution. Exists only so
+    /// `build_service_with_failing_notifications` can get `NotificationService::send_notification`
+    /// past its template-resolution step and reach the per-channel handler dispatch this plan's
+    /// test targets -- it is not a stand-in for a real template engine.
+    struct PassthroughTemplateProcessor;
+
+    #[async_trait]
+    impl NotificationTemplateProcessor for PassthroughTemplateProcessor {
+        async fn render_template(
+            &self,
+            template: &NotificationTemplate,
+            _variables: &HashMap<String, serde_json::Value>,
+        ) -> crate::application::services::notification_orchestrator::NotificationOrchestratorResult<
+            NotificationContent,
+        >{
+            Ok(NotificationContent::new(
+                template.name.clone(),
+                template.body_template.clone(),
+                "welcome".to_string(),
+            ))
+        }
+
+        async fn validate_template(
+            &self,
+            _template: &NotificationTemplate,
+        ) -> crate::application::services::notification_orchestrator::NotificationOrchestratorResult<()>
+        {
+            Ok(())
+        }
+    }
+
+    /// A `build_service`-sibling fixture: constructs the same real `NotificationService`,
+    /// registers a [`FailingChannelHandler`] on it through the public
+    /// `register_channel_handler` seam *before* the service is passed to `UserService::new`,
+    /// and swaps in a [`RecordingLogPort`] so a test can also inspect what was logged. Returns
+    /// the assembled `UserService` plus handles to both doubles. `build_service` itself is
+    /// left unchanged.
+    async fn build_service_with_failing_notifications() -> (
+        UserService,
+        Arc<FailingChannelHandler>,
+        Arc<RecordingLogPort>,
+    ) {
+        let repo = Arc::new(SqliteUserRepository::new("sqlite::memory:").await.unwrap());
+        let log_port = Arc::new(RecordingLogPort::new());
+        let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+        let notification_service = Arc::new(NotificationService::new(
+            NotificationServiceConfig::default(),
+            message_service,
+        ));
+
+        // `send_welcome_notification` addresses the "user_welcome" template on the Email
+        // channel. Without a cached template and a registered processor,
+        // `NotificationService::send_notification` fails during template resolution, before it
+        // ever looks up a channel handler -- which would make the failing-channel-handler path
+        // unreachable regardless of what is registered below. Both are wired here so the
+        // failure this test proves genuinely happens at channel dispatch.
+        notification_service
+            .cache_template(NotificationTemplate::new(
+                "user_welcome".to_string(),
+                "User Welcome".to_string(),
+                NotificationChannel::Email,
+                "Hello {{username}}, welcome!".to_string(),
+                vec!["username".to_string()],
+            ))
+            .await
+            .unwrap();
+        notification_service
+            .set_template_processor(Arc::new(PassthroughTemplateProcessor))
+            .await;
+
+        let failing_handler = Arc::new(FailingChannelHandler::new());
+        notification_service
+            .register_channel_handler(failing_handler.clone())
+            .await;
+
+        let service = UserService::new(repo, log_port.clone(), notification_service);
+        (service, failing_handler, log_port)
+    }
+
+    #[tokio::test]
+    async fn notification_failure_does_not_block_registration() {
+        let (service, failing_handler, log_port) = build_service_with_failing_notifications().await;
+
+        let user = service
+            .register_user(registration("nora", "nora@example.com"))
+            .await
+            .unwrap();
+
+        assert!(
+            service.get_user_by_id(user.uuid).await.unwrap().is_some(),
+            "the write should have committed despite the notification failure"
+        );
+        assert!(
+            failing_handler.call_count() > 0,
+            "the failure path should have been genuinely taken"
+        );
+        assert!(
+            log_port.contains(LogLevel::Warn, "Failed to send welcome notification"),
+            "a warning should have been logged rather than propagated; got: {:?}",
+            log_port.entries()
+        );
+    }
+
+    #[tokio::test]
+    async fn registration_succeeds_when_no_failing_handler_is_registered() {
+        let service = build_service(false).await;
+
+        let result = service
+            .register_user(registration("oscar", "oscar@example.com"))
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "registration should also succeed with no failing handler registered, so the \
+             failure-path test above is shown to discriminate; got: {result:?}"
+        );
     }
 }
