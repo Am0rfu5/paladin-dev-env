@@ -910,6 +910,7 @@ Plans:
      files backed by **97** `#[test]` functions across seven files. The criterion's substance holds
      unchanged: a broken snapshot or a non-compiling benchmark now fails CI (`cli-tests`,
      `bench-check` jobs, plan 15-01), only the "43" figure was stale. Original text retained above.
+
   2. A pull request that drops coverage below the recorded gate fails CI, and a developer can reproduce that number locally with `make coverage` — replacing today's split where the only coverage collection lives in an integration-only workflow, no gate exists, and the `Makefile` has no coverage target at all.
   3. The coverage threshold has one number with one rationale, chosen between a 78% hard gate and a phased 70 → 74 → 78 ramp against a measured 76-77% baseline — so the gate is set deliberately rather than by whichever document is read first, and it is consistent with the project-wide coverage answer.
      **Corrected (dated 2026-08-13, Phase 15, plan 15-10):** all three figures in this criterion's
@@ -923,6 +924,7 @@ Plans:
      See `.planning/decisions/0006-coverage-gate.md`'s `## Phase 15 amendment (2026-08-13)` for the
      number, its derivation, and the rejected alternatives — not restated here. Original framing
      retained above.
+
   4. `actionlint` reports zero errors across all three workflows and no deprecated action remains — the eight `actions-rs/toolchain@v1`, `actions/cache@v3` and `codecov/codecov-action@v3` references are gone.
   5. A developer writing an async service test reaches for shared, `Send + Sync` mocks that already exist rather than writing another one-off — closing the prerequisite that three registers name and none has built, and that roughly a quarter of the deferred coverage estimate consists of.
   6. `user_service.rs` and the listener orchestrator are covered to the gate, with the `user_service.rs` split-versus-test collision resolved by sequence rather than by whoever schedules first, and with the listener's stale 57.83% baseline re-measured against a module that Milestone 9 has since added tests to.
@@ -973,7 +975,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 15-10-PLAN.md — amend the eight requirements, ten ledger rows, ROADMAP criteria and three source documents at source
+- [x] 15-10-PLAN.md — amend the eight requirements, ten ledger rows, ROADMAP criteria and three source documents at source
 
 **Cross-cutting constraints:**
 
