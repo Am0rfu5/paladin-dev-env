@@ -573,6 +573,19 @@ jobs:
           TEST_MINIO_SECRET_KEY: testpass123
         run: cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
 
+      # Report-only: .codecov.yml sets informational: true on both status
+      # blocks, so this upload never gates a build. Without CODECOV_TOKEN
+      # an upload can fail silently (especially on fork PRs), which is why
+      # fail_ci_if_error is deliberately not set here (D-02) -- the real
+      # threshold gate is cargo llvm-cov --fail-under-lines above.
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          flags: combined
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   # CLI snapshot tests (PIPE-01) — a dedicated job, not a step inside
   # `crate-isolation`, per D-07: a distinctly named job makes a broken CLI
   # snapshot legible in the PR checks list instead of surfacing as a red
