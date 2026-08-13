@@ -57,6 +57,23 @@ jobs:
       - name: Check documentation
         run: cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt
 
+  # Lints every workflow file in .github/workflows/, including the five this
+  # job does not live in. Needs no toolchain, no cache and no services --
+  # the cheapest job in the pipeline. Pinned to a concrete release rather
+  # than `latest` (T-15-SC); fails the build on any finding, no
+  # continue-on-error, no narrowed file scope (T-15-04).
+  actionlint:
+    name: Workflow Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download and run actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint .github/workflows/*.yml
+
   # Security audit with controlled RustSec exceptions
   security-audit:
     name: Security Audit
@@ -160,10 +177,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install nightly toolchain
         run: rustup toolchain install nightly
@@ -398,6 +412,11 @@ jobs:
           --health-interval 30s
           --health-timeout 20s
           --health-retries 3
+        # MinIO requires an explicit command argument to start as a server
+        # (matches integration-tests.yml's identical MinIO block); actionlint
+        # flags `command` as an unrecognized `services` key against its
+        # strict schema, but GitHub Actions applies it at runtime. See
+        # .github/actionlint.yaml for the narrowly-scoped suppression.
         command: server /data --console-address ":9001"
 
     steps:
@@ -405,10 +424,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -435,7 +451,7 @@ jobs:
       - name: Wait for services
         run: |
           echo "Waiting for Redis..."
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if redis-cli -h localhost -p 6380 ping; then
               echo "Redis is ready"
               break
@@ -444,7 +460,7 @@ jobs:
           done
 
           echo "Waiting for MinIO..."
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if curl -f http://localhost:9010/minio/health/live; then
               echo "MinIO is ready"
               break
@@ -511,6 +527,11 @@ jobs:
           --health-interval 30s
           --health-timeout 20s
           --health-retries 3
+        # MinIO requires an explicit command argument to start as a server
+        # (matches integration-tests.yml's identical MinIO block); actionlint
+        # flags `command` as an unrecognized `services` key against its
+        # strict schema, but GitHub Actions applies it at runtime. See
+        # .github/actionlint.yaml for the narrowly-scoped suppression.
         command: server /data --console-address ":9001"
 
     steps:
@@ -552,7 +573,7 @@ jobs:
       - name: Wait for services
         run: |
           echo "Waiting for Redis..."
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if redis-cli -h localhost -p 6380 ping; then
               echo "Redis is ready"
               break
@@ -561,7 +582,7 @@ jobs:
           done
 
           echo "Waiting for MinIO..."
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if curl -f http://localhost:9010/minio/health/live; then
               echo "MinIO is ready"
               break
@@ -578,6 +599,19 @@ jobs:
           TEST_MINIO_ACCESS_KEY: testuser
           TEST_MINIO_SECRET_KEY: testpass123
         run: cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
+
+      # Report-only: .codecov.yml sets informational: true on both status
+      # blocks, so this upload never gates a build. Without CODECOV_TOKEN
+      # an upload can fail silently (especially on fork PRs), which is why
+      # fail_ci_if_error is deliberately not set here (D-02) -- the real
+      # threshold gate is cargo llvm-cov --fail-under-lines above.
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          flags: combined
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # CLI snapshot tests (PIPE-01) — a dedicated job, not a step inside
   # `crate-isolation`, per D-07: a distinctly named job makes a broken CLI
@@ -952,10 +986,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -1016,10 +1047,10 @@ jobs:
             echo "# commit: ${GITHUB_SHA}"
             echo "# timestamp: $(date -Iseconds)"
             echo "# APP_ENV=test"
-            APP_ENV=test cargo bench --bench config_benchmarks -- --noplot
-            APP_ENV=test cargo bench -p paladin-battalion --bench battalion_benchmarks -- --noplot
-            APP_ENV=test cargo bench -p paladin-memory --bench garrison_benchmarks -- --noplot
-            APP_ENV=test cargo bench -p paladin-llm --bench llm_serialization_benchmarks -- --noplot
+            env APP_ENV=test cargo bench --bench config_benchmarks -- --noplot
+            env APP_ENV=test cargo bench -p paladin-battalion --bench battalion_benchmarks -- --noplot
+            env APP_ENV=test cargo bench -p paladin-memory --bench garrison_benchmarks -- --noplot
+            env APP_ENV=test cargo bench -p paladin-llm --bench llm_serialization_benchmarks -- --noplot
           } | tee "$LOG"
 
       - name: Evaluate regression threshold
