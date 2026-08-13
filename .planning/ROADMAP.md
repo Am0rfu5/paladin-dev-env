@@ -924,7 +924,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 15-03-PLAN.md — capture the CI-produced figure, amend ADR-0006 in place, arm the gate
+- [x] 15-03-PLAN.md — capture the CI-produced figure, amend ADR-0006 in place, arm the gate
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
