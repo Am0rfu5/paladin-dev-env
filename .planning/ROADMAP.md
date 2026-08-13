@@ -916,7 +916,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 15-01-PLAN.md — tracer: the `coverage` job (measure-only) and `make coverage`, plus the `cli-tests` and `bench-check` gates and the Makefile targets
+- [x] 15-01-PLAN.md — tracer: the `coverage` job (measure-only) and `make coverage`, plus the `cli-tests` and `bench-check` gates and the Makefile targets
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
