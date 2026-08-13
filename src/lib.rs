@@ -142,6 +142,13 @@ pub mod infrastructure;
 /// Prelude: convenient re-exports of the most commonly used types.
 pub mod prelude;
 
+/// Shared test infrastructure for co-located `#[cfg(test)]` modules in `src/` — the doubles the
+/// coverage work in DEFER-01/02/03 consumes. Declared `#[cfg(test)]` **on the module declaration
+/// itself**, so nothing here reaches a release build even if an individual item were left
+/// ungated. `tests/helpers/` remains the separate home for `tests/`-side integration doubles.
+#[cfg(test)]
+pub mod test_support;
+
 // ============================================================================
 // CLI Module (Internal/Testing Support)
 // ============================================================================
