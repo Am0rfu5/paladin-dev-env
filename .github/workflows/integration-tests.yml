@@ -1,10 +1,16 @@
 name: Integration Tests
 
 on:
+  # `release/**` added so a PR into a release branch runs the integration suite.
+  # No `push:` trigger is added here on purpose: ci.yml already carries its own
+  # `integration-tests` job which DOES run on push to release/**, so a push
+  # trigger here would double the most expensive suite in the repo for no extra
+  # signal. PR + the daily schedule + ci.yml's job is the intended coverage.
   pull_request:
     branches:
       - main
       - develop
+      - 'release/**'
   # Runs on pull requests only (plus the daily schedule), to avoid duplicate
   # runs (one for `push`, one for `pull_request`) on a branch with an open PR.
   # TROUBLESHOOTING: to run on every commit of a branch WITHOUT opening a PR,

@@ -8,9 +8,21 @@ on:
   # CI coverage on every push, per REL-05/SC5.
   push:
     branches: [ main, develop, 'feature/**', 'release/**' ]
+  # `release/**` added: a PR targeting a release branch must run CI. Without it
+  # a PR into release/** showed almost no checks, because every workflow filtered
+  # pull_request to [main, develop] only.
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'release/**' ]
   workflow_dispatch:
+
+concurrency:
+  # Collapses the duplicate push+pull_request runs the trigger comment above
+  # describes. `head_ref` is set only on pull_request; on push it is empty and
+  # this falls back to `ref`, so both runs for one branch share a group.
+  # Not cancel-in-progress on main: a completed run on the default branch is a
+  # release-history record, not just a PR signal.
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   CARGO_TERM_COLOR: always
