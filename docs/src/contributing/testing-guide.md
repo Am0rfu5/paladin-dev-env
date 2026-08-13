@@ -27,6 +27,7 @@ cargo test --features "live-api-tests"   # requires real API keys
 
 ## Table of Contents
 
+- [Quick Reference: Test Commands](#quick-reference-test-commands)
 - [Testing Philosophy](#testing-philosophy)
 - [Test Organization](#test-organization)
 - [Unit Testing](#unit-testing)
@@ -35,6 +36,8 @@ cargo test --features "live-api-tests"   # requires real API keys
 - [Test Coverage](#test-coverage)
 - [Mocking and Fixtures](#mocking-and-fixtures)
 - [CI Integration](#ci-integration)
+- [Testing Best Practices](#testing-best-practices)
+- [Next Steps](#next-steps)
 
 ## Testing Philosophy
 
@@ -61,11 +64,12 @@ Paladin follows **Test-Driven Development (TDD)** with the Red-Green-Refactor cy
 
 ### Coverage Requirements
 
-| Test Type | Target Coverage | Minimum Required |
-|-----------|----------------|------------------|
-| **Unit Tests** | ≥ 90% | ≥ 80% |
-| **Integration Tests** | ≥ 80% | ≥ 70% |
-| **Public APIs** | 100% | 100% (doc tests) |
+There is a single binding coverage floor, recorded in [ADR-0006](../../../.planning/decisions/0006-coverage-gate.md):
+**82% workspace line coverage**, gated by `cargo llvm-cov --fail-under-lines` in CI's `coverage`
+job and mirrored locally by `make coverage`. There is no separate unit-test target and no separate
+integration-test target — see [Test Coverage](#test-coverage) below for the full procedure,
+scope, and threshold policy. Public APIs still require doc tests (100%), which coverage
+tooling counts separately from the line-coverage gate.
 
 ## Test Organization
 
@@ -393,42 +397,130 @@ async fn test_formation_sequential_execution() {
 
 ## Test Coverage
 
-### Measuring Coverage
+This section is the single documented procedure for reproducing the coverage number CI's
+`coverage` job reports. Follow it top to bottom; every command here is the same command CI runs,
+not an approximation of it.
+
+### Prerequisites
+
+Coverage uses [`cargo-llvm-cov`](https://github.com/taiki-e/cargo-llvm-cov), the LLVM
+source-based instrumentation tool and the tool of record per
+[ADR-0006](../../../.planning/decisions/0006-coverage-gate.md). Install it:
 
 ```bash
-# Install llvm-cov
-cargo install cargo-llvm-cov
+# Required: the LLVM tools component cargo-llvm-cov instruments with.
+# Without it, `cargo llvm-cov` fails immediately with a missing-component error —
+# it cannot instrument the build at all.
+rustup component add llvm-tools-preview
 
-# Run tests with coverage
-cargo llvm-cov --html
+# Install cargo-llvm-cov itself
+cargo install cargo-llvm-cov --locked
 
-# Open coverage report
-open target/llvm-cov/html/index.html
-
-# Generate lcov format for CI
-cargo llvm-cov --lcov --output-path lcov.info
+# Faster alternative to `cargo install`: cargo binstall downloads a prebuilt
+# binary instead of compiling from source.
+cargo binstall cargo-llvm-cov
 ```
 
-### Coverage Configuration
+The gated measurement runs against `--features integration-tests`, which needs live Redis and
+MinIO. **Start them first** — `make services-up` — or your local figure will not match CI's.
 
-```toml
-# .cargo/config.toml
-[target.'cfg(all())']
-rustflags = ["-C", "instrument-coverage"]
+### Local generation
 
-[build]
-target-dir = "target/llvm-cov-target"
+Two-step sequence — measuring does not implicitly start services (a Make dependency that spins up
+containers as a side effect of reading a number would be surprising):
+
+```bash
+# 1. Start Redis and MinIO (once per session)
+make services-up
+
+# 2. Measure coverage — LCOV report plus the fail-under-lines threshold check
+make coverage
+
+# 3. Optional: browsable HTML report at target/coverage
+make coverage-html
 ```
 
-### Exclude from Coverage
+`make coverage` is a thin wrapper — this is the full underlying invocation, so you can see it is
+not a different measurement from what CI runs:
 
-```rust,ignore
-// Exclude test utilities from coverage
-#[cfg(not(tarpaulin_include))]
-pub fn test_helper() {
-    // Helper code
-}
+```bash
+cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info \
+  --fail-under-lines 82 -- --test-threads=1
 ```
+
+If `make coverage` fails with a Redis/MinIO connection error, that is `make coverage` itself
+telling you to run `make services-up` first — it fails loudly with a pointer rather than starting
+containers for you.
+
+### The scope, and why it is that scope
+
+The command above measures `--workspace --features integration-tests`, deliberately **not**
+`--all-features`. `qdrant` requires a live Qdrant service and the vision/embedding suites require
+real provider API keys — under `--all-features` that code would enter the denominator with
+nothing in CI able to exercise it, depressing the number for no signal.
+
+The three `[[bin]]` targets (`paladin`, `paladin-cli`, `paladin-server`) are feature-gated behind
+`cli` and `web-server` respectively. `paladin` and `paladin-cli` sit outside the denominator by
+construction under this feature set, matching `.codecov.yml`'s `src/bin/**` ignore entry (a
+reporting-only exclusion for Codecov, not what the CI gate itself measures).
+
+`#[ignore]`-gated tests are **outside both the numerator and the denominator** — the measurement
+does not pass `--include-ignored`, which is `cargo test`'s default behavior, per ADR-0006's Phase
+15 amendment.
+
+### The threshold policy
+
+**The floor: 82%**, from [ADR-0006](../../../.planning/decisions/0006-coverage-gate.md)'s Phase
+15 amendment. This is the single binding number — there is no separate unit-test target and no
+separate integration-test target.
+
+The derivation rule: the measured percentage is **truncated toward zero** to a whole percent —
+explicitly neither round-half-up nor round-half-even — and the comparison is **at-or-above**. A
+run measuring exactly 82% passes; a run measuring 81.99% fails. Because the floor is the measured
+figure truncated downward at the time it was set, the gate cannot be red on the run that sets it.
+
+The floor only moves up. ADR-0006's ratchet clause raises it at a qualifying milestone close — by
+amending the ADR in place with the new figure, command, and date — and it never falls.
+
+### Reading the output
+
+`make coverage` prints an LCOV summary; `make coverage-html` writes a browsable report to
+`target/coverage/html/index.html`. The report breaks down by region, function, and line:
+
+- **Region** — sub-expression-level coverage (e.g., both branches of an `if`).
+- **Function** — whether a function was called at all.
+- **Line** — whether a source line executed.
+
+**Only the line figure is what the gate compares.** `--fail-under-lines` reads the line-coverage
+percentage exclusively; region and function percentages are informational context, not gated.
+
+### Codecov behaviour
+
+Codecov posts a PR comment with a diff view, but it **does not gate** — `.codecov.yml` sets both
+the `project` and `patch` status blocks to `informational: true`. This is deliberate: without
+`CODECOV_TOKEN` set, an upload can fail silently, especially on fork PRs, and a gate that silently
+does not run is worse than no gate at all. The actual threshold gate is `cargo llvm-cov
+--fail-under-lines` inside the `coverage` job — the same flag `make coverage` runs.
+
+### Troubleshooting
+
+**`error: llvm-tools-preview component not found`** — `rustup component add llvm-tools-preview`
+was skipped or targeted the wrong toolchain. Re-run it against the active toolchain
+(`rustup show`).
+
+**Local figure lower than CI's** — the services were not running. `--features integration-tests`
+exercises Redis- and MinIO-backed code paths; if `make services-up` was not run first, those tests
+skip or fail, and the lines they would have covered count as missed. Run `make services-up`, then
+re-run `make coverage`.
+
+**Low patch coverage on a PR, overall coverage unaffected** — Codecov's patch view (informational
+only) can flag newly added lines with no covering test even when the workspace-wide `--fail-under-lines`
+gate still passes. Add a test for the flagged lines; it is not a CI failure, but it is a real gap.
+
+**Codecov upload fails or is silently skipped** — `CODECOV_TOKEN` is unset or invalid, most
+commonly on a fork PR where secrets are not available to the workflow. This is **not a build
+failure**: `.codecov.yml`'s informational status blocks mean the PR still passes. The actual gate
+(`--fail-under-lines`) is unaffected by a Codecov upload failure.
 
 ## Mocking and Fixtures
 
