@@ -350,7 +350,7 @@ provably different scopes from the same run:
 
 | Scope | Source | Lines | Line % | Functions | Function % |
 |---|---|---|---|---|---|
-| Root package only (`src/**`, no `crates/*`) — what `Coverage summary` printed | `coverage-summary.txt` TOTAL row, `cargo llvm-cov report --summary-only` (no `--workspace`) | 14018 total / 2217 missed | **84.18%** | 1848 total / 407 missed | **77.98%** | 
+| Root package only (`src/**`, no `crates/*`) — what `Coverage summary` printed | `coverage-summary.txt` TOTAL row, `cargo llvm-cov report --summary-only` (no `--workspace`) | 14018 total / 2217 missed | **84.18%** | 1848 total / 407 missed | **77.98%** |
 | Full workspace (`src/**` + all 12 `crates/*` members, 211 files) — what `--fail-under-lines` on the `--workspace` measure step actually gates | Summed directly from `lcov.info`'s `LF:`/`LH:`/`FNF:`/`FNH:` across every `SF:` record | 47618 total / 8385 missed | **82.39%** | 6115 total / 1511 missed | **75.29%** |
 
 Verified two ways: (a) summing `LF:`/`LH:` only for `SF:` records under `/src/` and excluding
