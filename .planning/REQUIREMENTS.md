@@ -2882,7 +2882,7 @@ threshold configuration and the local targets. Scope accordingly.
       `### Phase 6 CLOSE-02 scope` section for the full reason and the two rejected alternatives;
       this note is the reverse pointer so a Phase 15 planner does not have to rediscover the link.
 
-- [ ] **PIPE-03**: Coverage and the two new test targets are runnable locally. A new **Coverage**
+- [x] **PIPE-03**: Coverage and the two new test targets are runnable locally. A new **Coverage**
       section in the `Makefile` between Testing and Code Quality with `coverage`
       (`cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info`) and
       `coverage-html` (`--html --output-dir target/coverage`); `test-cli` (`cargo test --test cli`)
@@ -2913,7 +2913,7 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-modernize-github-actions (FR-25.1, FR-25.2), REQ-workspace-ci-upgrade (run 3);
       `intel/code-verification.md` run-5 verified-open finding 3.*
 
-- [ ] **PIPE-05**: `CONTRIBUTING.md` has a Code Coverage section that matches what CI does.
+- [x] **PIPE-05**: `CONTRIBUTING.md` has a Code Coverage section that matches what CI does.
       Prerequisites (`cargo install cargo-llvm-cov` / `cargo binstall`), local generation
       (`make coverage`, `make coverage-html`), how to read LCOV and HTML output, Codecov PR-comment
       behaviour and the dashboard link, **the threshold policy PIPE-02 settles** and what `project`
@@ -4134,9 +4134,9 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | WEB-04 | Phase 14 | Complete |
 | PIPE-01 | Phase 15 | Pending |
 | PIPE-02 | Phase 15 | Pending |
-| PIPE-03 | Phase 15 | Pending |
+| PIPE-03 | Phase 15 | Complete |
 | PIPE-04 | Phase 15 | Complete |
-| PIPE-05 | Phase 15 | Pending |
+| PIPE-05 | Phase 15 | Complete |
 | DEFER-01 | Phase 15 | Pending |
 | DEFER-02 | Phase 15 | Pending |
 | DEFER-03 | Phase 15 | Pending |

@@ -308,23 +308,49 @@ pub fn create_test_paladin_with_mock(mock: Arc<MockLlmAdapter>) -> Paladin {
 
 ## Coverage
 
+> **Correction, 2026-08-13 (Phase 15 / PIPE-05, per [ADR-0006](../decisions/0006-coverage-gate.md), D-00d):**
+> This section previously carried three defects. First, it stated two separate coverage figures —
+> a unit-test target of 80 percent and an integration-test target of 70 percent — matching
+> ADR-0006's Considered Options position 1, which was explicitly rejected; the single binding
+> floor is recorded below. Second, it documented `cargo tarpaulin` as the local measurement tool;
+> tarpaulin uses ptrace-based instrumentation and produces numbers that are not comparable with
+> `cargo-llvm-cov`'s LLVM source-based instrumentation, ADR-0006's tool of record — retained below
+> only as a labelled informal alternative. Third, it claimed coverage was "Enforced in CI
+> pipeline" — false when written (no coverage gate existed in `ci.yml`), now true because of this
+> phase's `coverage` job, and made precise below.
+
 **Requirements:**
-- Unit tests: ≥ 80% coverage (stated in `.github/copilot-instructions.md`)
-- Integration tests: ≥ 70% coverage
+- **Coverage floor: 82% workspace line coverage** (ADR-0006), the single binding figure — there
+  is no separate unit-test target and no separate integration-test target
 - All public APIs: Documentation tests (`/// # Examples`)
 
 **View Coverage:**
 ```bash
-# Generate HTML coverage report
-cargo tarpaulin --out Html
+# Tool of record (ADR-0006): cargo-llvm-cov, LLVM source-based instrumentation.
+# Mirrors CI's `coverage` job — requires `make services-up` first.
+make coverage
 
-# Or use LLVM-based coverage
+# Browsable HTML report at target/coverage
+make coverage-html
+
+# Underlying invocation, for reference:
+cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info \
+  --fail-under-lines 82 -- --test-threads=1
+```
+
+Informal alternative, **not** the tool of record and **not comparable** to the figure above —
+`cargo tarpaulin`'s ptrace-based instrumentation measures differently and will not match the CI
+gate:
+```bash
+cargo tarpaulin --out Html
 cargo +nightly tarpaulin --exclude-files tests
 ```
 
 **Coverage Configuration:**
 - Not explicitly configured in `Cargo.toml` (uses defaults)
-- Enforced in CI pipeline (see `.github/workflows/ci.yml`)
+- **Enforced in CI pipeline**: the `coverage` job in `.github/workflows/ci.yml` runs
+  `cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info
+  --fail-under-lines 82`; a run measuring below 82% workspace line coverage fails the job
 
 **Documentation Test Examples** (from `src/application/services/paladin/paladin_builder.rs`):
 ```rust
