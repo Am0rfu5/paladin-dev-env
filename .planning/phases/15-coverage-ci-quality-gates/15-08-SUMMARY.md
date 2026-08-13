@@ -163,3 +163,11 @@ Plan 15-09 (concurrency/stress half of DEFER-03) can proceed independently — t
 ---
 *Phase: 15-coverage-ci-quality-gates*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: `src/application/services/orchestration/listener.rs`
+- FOUND: `.planning/phases/15-coverage-ci-quality-gates/15-08-SUMMARY.md`
+- FOUND commit `4291c44` (Task 1)
+- FOUND commit `53b1179` (Task 2)
+- FOUND commit `ce867bb` (plan summary)
