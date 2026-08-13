@@ -69,11 +69,11 @@ order.
 
 ### Inherited from Phases 1, 5, 7, 8, 9, 10, 11, 12, 13 and 14 — locked, not re-litigated
 
-- **D-00a:** ADRs live in `.planning/decisions/`, flat sequential numbering, file shape
+- **D-00a [informational]:** ADRs live in `.planning/decisions/`, flat sequential numbering, file shape
   `Status / Context / Decision / Considered Options / Code Locations / Code Conformance /
   Downstream Consumers`, **no frontmatter** (matching 0001-0042). **`PROMOTION.md:66` records 0043
   as next free** — verified this session. Update that line if this phase authors an ADR.
-- **D-00b:** Precedence order is **ADR → shipped tree → `.planning/codebase/` map →
+- **D-00b [informational]:** Precedence order is **ADR → shipped tree → `.planning/codebase/` map →
   `intel/code-verification.md` → PRD → DOC → task-list checkbox.** An ADR that contradicts shipped
   code is an instruction to change the code. *(Phase 1 D-02.)*
 - **D-00c:** Source corrections under `.project/` are **annotation, not rewriting** — a dated
@@ -90,7 +90,7 @@ order.
   *(Phase 7 D-17.)*
 - **D-00h [informational]:** Medieval-military ubiquitous language is mandatory in code, docs and
   comments. *(CLAUDE.md.)* Applies where a domain noun is coined, not to CI/tooling terms of art.
-- **D-00i:** Provenance of `--auto` decisions is carried forward rather than laundered. *(Phase 12
+- **D-00i [informational]:** Provenance of `--auto` decisions is carried forward rather than laundered. *(Phase 12
   hand-off item 6.)*
 - **D-00l — ADR-0006 is the binding coverage record and is amended, never duplicated.** Its own
   ratchet clause specifies in-place amendment, D-00g makes it the house convention, and RECON-07
@@ -100,7 +100,7 @@ order.
   sequenced: the split is owned by nobody, the full relocation by the run-3 v2 tech-debt item, the
   tests by DEFER-02 / this phase. Phase 15 is explicitly free to size DEFER-02 against the unsplit
   file. Do not re-open the sequencing question REQUIREMENTS.md still describes as live.
-- **D-00n — the project is at 0.8.0.** Phase 14's D-17 bumped all twelve manifests lockstep;
+- **D-00n [informational] — the project is at 0.8.0.** Phase 14's D-17 bumped all twelve manifests lockstep;
   `release.toml:17` sets `shared-version = true`. This phase ships under 0.8.0 and is not expected
   to be a breaking change.
 
@@ -108,8 +108,8 @@ order.
 
 ### Coverage scope and what fails the build (PIPE-02, PIPE-03)
 
-- **D-01: The CI coverage job measures `--workspace --features integration-tests` with Redis and
-  MinIO running.** This is the extension ADR-0006 explicitly names as scheduled work ("PIPE-02 must
+- **D-01: The CI coverage job measures `--workspace --features integration-tests` with Redis and MinIO running.**
+  This is the extension ADR-0006 explicitly names as scheduled work ("PIPE-02 must
   either reproduce those three or record why its figure differs"; "must also extend the recorded
   scope to the Docker-backed `integration-tests.yml` suite this ADR could not reach"). The floor is
   **re-derived from the figure measured under this scope**, using ADR-0006's own arithmetic —
@@ -123,16 +123,16 @@ order.
   — **Reversibility:** costly — the floor is a published gate number; moving the scope again means
   re-measuring and re-deriving, and every intervening comparison becomes non-comparable.
 
-- **D-02: `cargo llvm-cov --fail-under-lines <floor>` in the workflow is the gate. Codecov reports,
-  it does not gate.** `.codecov.yml` still lands per PIPE-02 (PR comments, diff view, dashboard) but
+- **D-02: `cargo llvm-cov --fail-under-lines <floor>` in the workflow is the gate. Codecov reports, it does not gate.**
+  `.codecov.yml` still lands per PIPE-02 (PR comments, diff view, dashboard) but
   carries no blocking status. Rationale is PIPE-02's own warning: without `CODECOV_TOKEN` an upload
   can fail **silently**, especially on fork PRs — a gate that silently does not run is worse than no
   gate. The in-workflow threshold also runs identically under `make coverage`, which is exactly
   PIPE-03's stated purpose.
   — **Reversibility:** reversible.
 
-- **D-03: A dedicated `coverage` job in `ci.yml`, and `integration-tests.yml`'s coverage step is
-  deleted.** The new job reuses the Redis/MinIO service block pattern already present in `ci.yml`'s
+- **D-03: A dedicated `coverage` job in `ci.yml`, and `integration-tests.yml`'s coverage step is deleted.**
+  The new job reuses the Redis/MinIO service block pattern already present in `ci.yml`'s
   own `integration-tests` job, and runs on every push and PR — the gate belongs on the workflow that
   gates merges, not on one that runs on PR plus a daily cron. Deleting
   `integration-tests.yml`'s `continue-on-error: true` coverage step and its `codecov-action@v3`
@@ -163,8 +163,8 @@ order.
   reintroduces the multi-number failure RECON-07 exists to prevent, in a smaller form.
   — **Reversibility:** reversible.
 
-- **D-06: The three binaries are outside the gated denominator by construction, and this is recorded
-  explicitly.** `paladin` and `paladin-cli` require `cli`; `paladin-server` requires `web-server`
+- **D-06: The three binaries are outside the gated denominator by construction, and this is recorded explicitly.**
+  `paladin` and `paladin-cli` require `cli`; `paladin-server` requires `web-server`
   (`Cargo.toml:239-252`). Under D-01's feature set none of them compiles, so none enters the
   denominator — the identical treatment ADR-0006 already gives `minio.rs`, and it must be written
   down the same way rather than left as a silent absence. `.codecov.yml` gets `src/bin/**` in its
@@ -185,8 +185,8 @@ order.
 
 ### Mock and test infrastructure (DEFER-01)
 
-- **D-08: The shared test infrastructure lives in `src/`, behind `#[cfg(test)]` — not
-  `tests/common/`.** Both coverage targets test from *inside* `src/` via co-located
+- **D-08: The shared test infrastructure lives in `src/`, behind `#[cfg(test)]` — not `tests/common/`.**
+  Both coverage targets test from *inside* `src/` via co-located
   `#[cfg(test)] mod tests` (`user_service.rs:467`, `listener.rs`), and `tests/` is a **separate
   crate** that `src/` cannot import from. `tests/common/` therefore cannot serve the two
   requirements DEFER-01 exists to unblock. A `src/test_support/` module (name at the planner's

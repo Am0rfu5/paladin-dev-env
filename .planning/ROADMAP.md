@@ -914,16 +914,43 @@ Plans:
 **Plans**: 10 plans in 8 waves. The two halves are wave-separated as the register requires: PIPE-01 … PIPE-05 occupy waves 1-4, DEFER-01 … DEFER-03 waves 5-7, and the record closes in wave 8. Waves 6 and 7 each run two plans in parallel (`user_service.rs` and `listener.rs` share no files). Plan 15-03 carries a blocking checkpoint because D-04's two-step landing needs a CI-produced figure that no local environment can generate — Docker is absent.
 
 Plans:
+**Wave 1**
+
 - [ ] 15-01-PLAN.md — tracer: the `coverage` job (measure-only) and `make coverage`, plus the `cli-tests` and `bench-check` gates and the Makefile targets
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 15-02-PLAN.md — retire every deprecated action, delete the duplicate coverage path, land `.codecov.yml` and an `actionlint` job
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 15-03-PLAN.md — capture the CI-produced figure, amend ADR-0006 in place, arm the gate
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 15-04-PLAN.md — the contributor coverage documentation and the three corrected instruction files
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 15-05-PLAN.md — `src/test_support/`: the shared `Send + Sync` doubles both coverage epics consume
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 15-06-PLAN.md — `user_service.rs`: registration, validation, hashing and the notification-failure path
-- [ ] 15-07-PLAN.md — `user_service.rs`: authentication, profile, queries, concurrency, and the module measurement
 - [ ] 15-08-PLAN.md — `listener.rs`: re-measure the stale baseline, then lifecycle, delivery, filtering and health
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 15-07-PLAN.md — `user_service.rs`: authentication, profile, queries, concurrency, and the module measurement
 - [ ] 15-09-PLAN.md — `listener.rs`: the concurrency and stress suite, and the exit measurement
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
 - [ ] 15-10-PLAN.md — amend the eight requirements, ten ledger rows, ROADMAP criteria and three source documents at source
+
+**Cross-cutting constraints:**
+
+- The production half of `listener.rs` — everything above the `#[cfg(test)]` marker — is byte-identical to its pre-plan state.
 
 ### Phase 16: Documentation Currency & the Architecture Gap
 

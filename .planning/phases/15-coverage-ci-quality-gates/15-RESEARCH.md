@@ -666,9 +666,14 @@ comparison: measured >= floor   # at-or-above passes; below fails
 
 **If this table is empty:** N/A — three low-risk assumptions logged above, none blocking planning.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All three were closed at planning time (2026-08-13). Each resolution is recorded below and carried
+> in the cited plan's "Recorded discretion resolutions" section.
 
 1. **Should `taiki-e/install-action`'s `tool:` input pin an exact `cargo-llvm-cov` version, or float to latest?**
+   - **RESOLVED (plan 15-01):** pin explicitly, per the recommendation below — consistent with the
+     project's `--locked` convention.
    - What we know: crates.io currently serves 0.8.7; REQUIREMENTS.md's original text specifies a
      stale `0.7.1` pin.
    - What's unclear: whether the project's general policy (seen elsewhere, e.g.
@@ -678,6 +683,8 @@ comparison: measured >= floor   # at-or-above passes; below fails
      elsewhere in the Makefile (`cargo install --locked cargo-release`, `cargo-deny`).
 
 2. **Does the new `coverage` job also need a Codecov upload step, or does `.codecov.yml` alone suffice for reporting?**
+   - **RESOLVED (plan 15-02):** yes — the coverage job carries a `codecov/codecov-action@v5` upload
+     step, non-blocking per D-02, so `.codecov.yml` has a report to act on.
    - What we know: D-02 says Codecov reports but doesn't gate; `.codecov.yml` "lands" per PIPE-02.
    - What's unclear: `.codecov.yml` configures Codecov's *interpretation* of uploaded reports (PR
      comment layout, ignore paths, status blocks) — it has no effect without something actually
@@ -691,6 +698,8 @@ comparison: measured >= floor   # at-or-above passes; below fails
      any of CONTEXT.md's D-01…D-14.
 
 3. **Which six workflows get `actionlint` run against them, and how (CI job vs. local/pre-commit)?**
+   - **RESOLVED (plan 15-02):** a standing `actionlint` CI job over all six workflow files, not a
+     one-time check — so PIPE-04's "zero errors" bar is re-established on every push.
    - What we know: PIPE-04's text says "all three workflows" but six exist
      (`ci`, `docs`, `feature-flags`, `integration-tests`, `pre-commit`, `release`) — CONTEXT.md's
      Claude's Discretion section already flags this and defers the choice to the planner.
