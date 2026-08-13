@@ -483,13 +483,184 @@ mod tests {
     // lifecycle scope) are closed by this plan — see the discovered-behavior note on
     // `tokio::time::pause`/`advance` at
     // `rate_limit_boundary_exercised_at_below_at_and_above_the_limit` below.
+    //
+    // ============================================================================
+    // DEFER-03 exit record (plan 15-09, Task 2) — measured exit figure, closes DEFER-03
+    // ============================================================================
+    //
+    // Plan 15-08 left the DEFER-03 entry figure as **NOT MEASURED** (`cargo-llvm-cov` not
+    // installable in that session's environment). This block is the exit measurement Task 2
+    // requires, produced in *this* session with a different, already-proven substitute for
+    // `cargo-llvm-cov`: the same raw `rustc -C instrument-coverage` + `llvm-profdata` +
+    // `llvm-cov` pipeline ADR-0006 itself used for every local measurement through Phase 8,
+    // using the rustup-toolchain-bundled `llvm-profdata`/`llvm-cov` binaries (confirmed present
+    // at `$(rustc --print sysroot)/lib/rustlib/x86_64-unknown-linux-gnu/bin/`) rather than the
+    // `cargo-llvm-cov` wrapper crate.
+    //
+    // **Why not the plan's literal `cargo llvm-cov --workspace --lib --json` command:**
+    // `cargo-llvm-cov` is still not installed in this authoring environment, and `cargo install
+    // cargo-llvm-cov --locked` still cannot complete here — `curl -sSI https://crates.io/`
+    // returns HTTP 403 in this session (reconfirmed 2026-08-13, unchanged from the constraint
+    // ADR-0006 and plan 15-08 both record), and a direct `cargo install` attempt did not
+    // complete inside a 30-second bound. This is the same environmental constraint plan 15-08
+    // hit, re-verified rather than assumed.
+    //
+    // **The exact command actually run**, verbatim:
+    //
+    //   export CARGO_TARGET_DIR=/workspace/target
+    //   export RUSTFLAGS="-C instrument-coverage"
+    //   export LLVM_PROFILE_FILE="/tmp/cov15-09/paladin-%p-%m.profraw"
+    //   cargo test -p paladin-ai --lib application::services::orchestration::listener --offline
+    //
+    //   /usr/local/rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/lib/rustlib/\
+    //     x86_64-unknown-linux-gnu/bin/llvm-profdata merge -sparse /tmp/cov15-09/*.profraw \
+    //     -o /tmp/cov15-09/paladin.profdata
+    //
+    //   <same-toolchain>/bin/llvm-cov report --instr-profile=/tmp/cov15-09/paladin.profdata \
+    //     --ignore-filename-regex='(^|/)(examples|benches)/|crates/doc-examples/|registry/src/|rustlib/src/' \
+    //     --object=/workspace/target/debug/deps/paladin-<hash-of-the-paladin-ai-test-binary>
+    //
+    // **Scope, stated explicitly per this document's own reproducibility bar (D-00e):** this
+    // measurement runs *only* the listener module's own 27 `#[tokio::test]`s (`cargo test -p
+    // paladin-ai --lib application::services::orchestration::listener`) — the exact "scoped
+    // test invocation" this plan's own harness policy names as the allowed pattern, not the
+    // plan's originally-specified unfiltered `--workspace --lib` (every lib test in every
+    // workspace member). This is narrower than the plan's literal command in one direction
+    // (only this module's own tests run, not every workspace lib test that might incidentally
+    // touch this file) and is offline/local rather than CI's Docker-backed run in another. It is
+    // NOT comparable to ADR-0006's 82.39% workspace `--features integration-tests` gate figure,
+    // for all the reasons ADR-0006 itself already states (ignore regex, doctest decision and
+    // feature set all have to match for two coverage runs to agree, and none of the three match
+    // here).
+    //
+    // **Result: 96.90% line coverage** for `src/application/services/orchestration/listener.rs`
+    // — 1161 lines counted, 36 missed, 1125 covered (region coverage 96.68%, 1809/60; function
+    // coverage 94.35%, 124/7 — transcribed byte-identical from the `llvm-cov report` row for
+    // this file, same column order ADR-0006 uses: regions/missed/cover, functions/missed/cover,
+    // lines/missed/cover, branches/missed/cover).
+    //   - Measured against the working-tree state this same commit (Task 2, plan 15-09)
+    //     captures, including the
+    //     `update_trigger_status_increments_the_registered_listeners_completed_and_failed_counters`
+    //     test this commit also adds (resolvable via `git log -1 -- <this file>`).
+    //   - Date: 2026-08-13
+    //   - **Clears the 80% module bar by 16.90 points.**
+    //
+    // **Entry-to-exit delta: not computable as a number, by design.** Plan 15-08's entry figure
+    // was recorded as NOT MEASURED, not a number — there is no prior figure to subtract from
+    // 96.90% under a matching scope. What *is* comparable in kind, stated the way ADR-0006
+    // states its own baseline deltas: 96.90% sits far above every stale baseline this module has
+    // ever carried (57.83%, the Deferred-QA register, dated 2026-02-14) and is now the first
+    // *real*, reproducible figure this module has had since the register's own baseline went
+    // stale.
+    //
+    // **Not comparable with the ADR-0006 CI gate figure (82.39%, `--features
+    // integration-tests`, full workspace).** Stated explicitly, per this task's own instruction:
+    // different scope (one module's own tests vs. the whole workspace under a wider feature
+    // set), different tool invocation (raw `llvm-cov` binary vs. the `cargo-llvm-cov` wrapper),
+    // different environment (local vs. CI). Do not read 96.90% as contributing to or competing
+    // with the 82% workspace floor.
+    //
+    // ## Untested paths, named and justified (DEFER-03's own "no silent absence" requirement)
+    //
+    // Every one of the 36 remaining missed lines was inspected individually (`llvm-cov export
+    // --format=text`, filtered to this file, cross-referenced against source). They fall into
+    // exactly two genuine categories, plus a third that is a tooling artifact rather than a real
+    // gap:
+    //
+    // 1. **`impl std::fmt::Debug for ListenerWrapper` (lines 66-77) and the two
+    //    `MockEventListener` trait methods it would call through (`description()`,
+    //    `conditions()` — test-only code, not production, flagged for completeness).** No
+    //    test ever formats a `ListenerWrapper` with `{:?}` or `{:#?}`, so the hand-written
+    //    `Debug` impl's body never executes. **Justification:** boilerplate diagnostic
+    //    formatting with no branching logic — every field is threaded through `.field(...)`
+    //    calls with no conditional behavior to verify; an assertion against its output would
+    //    only prove the field list did not change, which `cargo clippy`'s dead-code and
+    //    unused-import lints (both clean) already provide adjacent protection against.
+    //    Deliberately left untested; owner: none, no further action recommended.
+    // 2. **The `create_trigger` failure arm in `process_event` (the `Err(e) => { log::error!
+    //    (...) }` block).** `MockEventListener::create_trigger` — this test module's only
+    //    `EventListener` implementation — always returns `Ok(..)`, so there is no way to drive
+    //    this branch without either a second mock implementation whose `create_trigger`
+    //    deliberately returns `Err`, or extending `MockEventListener` further than this
+    //    plan's own scope authorizes. **Justification:** genuinely untested, not merely
+    //    hard-to-reach — named here rather than silently absorbed. **Owner: a future plan that
+    //    extends `MockEventListener` (or adds a second implementor) with a
+    //    `create_trigger`-failure mode, if this error path is ever prioritized; not scoped to
+    //    15-09.**
+    // 3. **Tooling artifact, not a real gap:** a handful of the remaining flagged lines (the
+    //    window-cleanup `if` inside `can_create_trigger`, `with_default_config`'s struct
+    //    literal, `get_next_trigger`'s `?`, `set_listener_enabled`'s `?`, `Default::default`,
+    //    and several `assert!(matches!(...))` continuation lines inside this plan's and 15-08's
+    //    own test bodies) are `llvm-cov` line-vs-region attribution artifacts on multi-line
+    //    `match`/`?`/macro-expansion constructs, where the tool attributes a region's hit count
+    //    to a different physical line than the one it visually spans. The enclosing statement
+    //    demonstrably executes — every test containing one of these lines passes, and in
+    //    several cases (`Default::default`, the window-cleanup `if`) the same logical branch is
+    //    directly exercised by a passing test elsewhere in this module. Named here rather than
+    //    silently dropped from the accounting, per this task's own "no silent absence"
+    //    instruction, but not treated as a real coverage gap requiring a fix.
+    //
+    // A third genuine gap was found and **closed in this same commit**, not merely justified:
+    // the pre-existing `every_supported_trigger_status_round_trips_through_update_and_get` test
+    // (15-08) never registers a listener under the trigger's `source` name, so
+    // `update_trigger_status`'s `listeners.get(&trigger.source)` lookup always missed and the
+    // `triggers_completed`/`triggers_failed` increment arms never executed. See the new
+    // `update_trigger_status_increments_the_registered_listeners_completed_and_failed_counters`
+    // test below, which registers a listener first and asserts both counters move by exactly
+    // one per matching status, and not at all for a non-matching one.
+    //
+    // ## Re-derived effort (supersedes the register's inherited estimate)
+    //
+    // `DEFERRED_COVERAGE.md`'s Module 2 entry
+    // (`.project/Deferred-QA-CICD-Completion/DEFERRED_COVERAGE.md:245`) estimates **20-25
+    // hours** for this module alone, and its "Overall Coverage Strategy" section combines this
+    // with Module 1 (`user_service.rs`, 15-20 hours) for a **35-45 hour** register total. **Both
+    // figures are superseded as of this commit, not merely updated:**
+    //   - The register's estimate assumed building net-new infrastructure this workspace
+    //     already had by the time Phase 15 started: a dedicated `MockEventSource`/
+    //     `MockTriggerExecutor` pair (8-10 h) that turned out to be unnecessary — the
+    //     pre-existing `MockEventListener`, extended in-place by 15-08 with two small marker
+    //     enums, served every scenario both plans needed.
+    //   - The register's "Async Testing Framework" line item (4-6 h) budgeted for a "mock
+    //     clock for time-based testing" that this session discovered does not apply: the module
+    //     reads `chrono::Utc::now()`, not `tokio::time::Instant`, so no mock-clock framework
+    //     could have controlled it regardless of how much time was spent building one —
+    //     determinism instead came from exact synchronous event-count sequencing (15-08) and
+    //     `Trigger::created_at` backdating through the public API (15-08), plus
+    //     `tokio::time::timeout` guards and `Weak`-reference teardown proof for the concurrency
+    //     suite (15-09). None of this matches the register's envisioned framework shape.
+    //   - **Actual effort consumed across both plans:** 2 plans, 4 tasks (15-08 Task 1 + Task
+    //     2; 15-09 Task 1 + Task 2), ~50 minutes for 15-08 (per its own SUMMARY) plus this
+    //     plan's session — on the order of low single-digit hours total, not 20-25. The
+    //     register's estimate was authored 2026-02-14 against a codebase state that no longer
+    //     exists (a different path, Milestone 9 Epic 2's tests not yet written, this session's
+    //     `event_factory` bulk constructor not yet built) — it is not merely optimistic, it
+    //     described different work.
+    //
+    // ## DEFERRED_COVERAGE's remaining prerequisite this suite satisfies
+    //
+    // `DEFERRED_COVERAGE.md`'s Module 2 "Future Plan" section names "Create concurrency stress
+    // tests" as part of its own recommended follow-on (Epic 29). Task 1's four
+    // `#[tokio::test(flavor = "multi_thread")]` scenarios — multi-producer emission, concurrent
+    // registration/unregistration, a 1000-plus event burst, and drop-during-active-processing —
+    // are exactly that prerequisite, satisfied with exact (not approximate) assertions and a
+    // documented 20-consecutive-run stability check. This module's tests are now the reference
+    // implementation for that pattern in this workspace: any future plan writing a concurrency
+    // test against a `tokio::sync::Mutex`/`RwLock`-guarded orchestrator can cite
+    // `concurrent_emission_from_multiple_producers_yields_the_exact_expected_trigger_total` and
+    // its three siblings above as the house pattern for exact-assertion, timeout-guarded,
+    // `multi_thread` concurrency coverage. Plan 15-10 is the requirement's formal closure
+    // record; this is the evidence it cites.
 
     use super::*;
     use crate::core::base::component::action::Action;
     use crate::core::base::component::event::Event;
-    use crate::test_support::event_factory::{build_event, build_non_matching_event};
+    use crate::test_support::event_factory::{
+        build_event, build_event_batch, build_non_matching_event,
+    };
     use serde_json::json;
     use std::collections::HashSet;
+    use std::time::Duration;
 
     /// Configurable `should_process` behaviour for [`MockEventListener`] — added by plan 15-08 to
     /// serve cases the three pre-existing tests never needed (fixed match/no-match verdicts
@@ -1142,6 +1313,86 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn update_trigger_status_increments_the_registered_listeners_completed_and_failed_counters()
+     {
+        // Discovered during this plan's (15-09, Task 2) exit coverage measurement: the
+        // pre-existing `every_supported_trigger_status_round_trips_through_update_and_get` test
+        // above never registers a listener under the trigger's `source` name, so
+        // `update_trigger_status`'s `listeners.get(&trigger.source)` lookup always misses and
+        // the `triggers_completed`/`triggers_failed` increment arms never execute. This test
+        // closes that gap directly by registering a listener first and asserting the counters
+        // it owns move by exactly one per matching status update, and not at all for a status
+        // that is neither `Completed` nor `Failed`.
+        let service = ListenerOrchestrator::new();
+        service
+            .register_listener(Box::new(MockEventListener::new(
+                "stat_source",
+                ListenerConfig::default(),
+            )))
+            .await
+            .unwrap();
+
+        async fn store_trigger_with_status(service: &ListenerOrchestrator, status: TriggerStatus) {
+            let event = Event::new(
+                "test_stat_increment".to_string(),
+                json!({}),
+                "stat_source".to_string(),
+            );
+            let action = Action::new(
+                "Stat Action".to_string(),
+                "Stat increment".to_string(),
+                "stat_source".to_string(),
+                "mock_service".to_string(),
+            );
+            let condition = test_prefix_condition();
+            let mut trigger = Trigger::new(
+                "Stat Trigger".to_string(),
+                "Stat increment".to_string(),
+                "stat_source".to_string(),
+                "mock_service".to_string(),
+                event,
+                action,
+                condition,
+            );
+            trigger.status = status;
+            let id = trigger.id;
+            service.update_trigger_status(id, trigger).await.unwrap();
+        }
+
+        let before = service.get_listener_stats("stat_source").await.unwrap();
+        assert_eq!(before.triggers_completed, 0);
+        assert_eq!(before.triggers_failed, 0);
+
+        store_trigger_with_status(&service, TriggerStatus::Completed).await;
+        let after_completed = service.get_listener_stats("stat_source").await.unwrap();
+        assert_eq!(
+            after_completed.triggers_completed, 1,
+            "Completed increments triggers_completed by exactly one"
+        );
+        assert_eq!(
+            after_completed.triggers_failed, 0,
+            "Completed must not touch triggers_failed"
+        );
+
+        store_trigger_with_status(&service, TriggerStatus::Failed).await;
+        let after_failed = service.get_listener_stats("stat_source").await.unwrap();
+        assert_eq!(
+            after_failed.triggers_completed, 1,
+            "a later Failed update must not re-touch triggers_completed"
+        );
+        assert_eq!(
+            after_failed.triggers_failed, 1,
+            "Failed increments triggers_failed by exactly one"
+        );
+
+        // A status that is neither Completed nor Failed must leave both counters untouched.
+        store_trigger_with_status(&service, TriggerStatus::Pending).await;
+        let after_pending = service.get_listener_stats("stat_source").await.unwrap();
+        assert_eq!(after_pending.triggers_completed, 1);
+        assert_eq!(after_pending.triggers_failed, 1);
+    }
+
+    #[tokio::test]
     async fn completed_trigger_with_preservation_disabled_is_not_retrievable() {
         // Observed verdict: `update_trigger_status` only re-inserts when
         // `preserve_after_completion || status != Completed`. A trigger that is both `Completed`
@@ -1410,5 +1661,321 @@ mod tests {
             .unwrap();
         let health = service.health_check().await.unwrap();
         assert_eq!(health.get("erroring_one"), Some(&false));
+    }
+
+    // ========================================================================
+    // Concurrency and stress (DEFER-03 area 5, plan 15-09)
+    // ========================================================================
+    //
+    // Every test below runs under `#[tokio::test(flavor = "multi_thread")]` -- a single-threaded
+    // runtime cannot surface a real lock-ordering problem between `listeners` (`RwLock`),
+    // `triggers` (`RwLock`) and `trigger_queue` (`Mutex`) -- and every concurrent section is
+    // wrapped in an explicit `tokio::time::timeout` with a generous but finite bound, asserted
+    // not to have elapsed. A lock-ordering deadlock therefore fails the test with a named
+    // panic/timeout rather than hanging the runner until a workflow-level timeout kills the
+    // whole CI job with no useful signal (T-15-22).
+    //
+    // Every listener registered below is given a `max_triggers_per_window` comfortably above
+    // the number of events it will actually see and a `time_window_seconds` large enough not to
+    // roll over during the test, so the rate limiter documented and exercised above cannot
+    // silently absorb part of the exact totals these tests assert (T-15-25's exactness
+    // requirement would otherwise be defeated by an unrelated boundary this suite already
+    // covers elsewhere).
+
+    /// A rate-limit configuration wide enough that it never interferes with the exact-count
+    /// assertions the concurrency tests below make -- `max_triggers_per_window` comfortably
+    /// exceeds any event count used here, and `time_window_seconds` is large enough that the
+    /// window cannot naturally roll over during a test's execution.
+    fn non_interfering_config() -> ListenerConfig {
+        ListenerConfig {
+            max_triggers_per_window: 100_000,
+            time_window_seconds: 3600,
+            ..ListenerConfig::default()
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_emission_from_multiple_producers_yields_the_exact_expected_trigger_total() {
+        const PRODUCERS: usize = 8;
+        const EVENTS_PER_PRODUCER: usize = 50;
+        const LISTENERS: usize = 3;
+
+        let service = Arc::new(ListenerOrchestrator::new());
+        for i in 0..LISTENERS {
+            service
+                .register_listener(Box::new(
+                    MockEventListener::new(
+                        &format!("multi_producer_listener_{i}"),
+                        non_interfering_config(),
+                    )
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+                ))
+                .await
+                .unwrap();
+        }
+
+        let mut handles = Vec::with_capacity(PRODUCERS);
+        for producer_id in 0..PRODUCERS {
+            let service_clone = Arc::clone(&service);
+            handles.push(tokio::spawn(async move {
+                let mut produced = 0usize;
+                for event_index in 0..EVENTS_PER_PRODUCER {
+                    let event = build_event(
+                        "test_concurrent_multi_producer",
+                        json!({"producer": producer_id, "event": event_index}),
+                    );
+                    produced += service_clone.process_event(event).await.unwrap().len();
+                }
+                produced
+            }));
+        }
+
+        let total = tokio::time::timeout(Duration::from_secs(30), async move {
+            let mut sum = 0usize;
+            for handle in handles {
+                sum += handle.await.expect("producer task must not panic");
+            }
+            sum
+        })
+        .await
+        .expect(
+            "multi-producer emission must complete inside the timeout -- a lock-ordering \
+             deadlock between `listeners` and `trigger_queue` would hang here instead of failing",
+        );
+
+        // Exact equality, not a lower bound: a lost update under `RwLock`/`Mutex` contention
+        // would show up as a count below this product, which a `>=` assertion would silently
+        // tolerate.
+        assert_eq!(
+            total,
+            PRODUCERS * EVENTS_PER_PRODUCER * LISTENERS,
+            "trigger total must equal the exact arithmetic product of producers, events and \
+             matching listeners"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_registration_and_unregistration_during_active_processing_stays_consistent()
+    {
+        let service = Arc::new(ListenerOrchestrator::new());
+
+        // Two listeners the churn task never touches, so the processing task always has
+        // something stable to hit regardless of how the churn task interleaves.
+        for name in ["steady_a", "steady_b"] {
+            service
+                .register_listener(Box::new(
+                    MockEventListener::new(name, non_interfering_config())
+                        .with_should_process(ShouldProcessBehavior::Fixed(true)),
+                ))
+                .await
+                .unwrap();
+        }
+
+        let processor_handle = Arc::clone(&service);
+        let processor = tokio::spawn(async move {
+            for i in 0..300 {
+                processor_handle
+                    .process_event(build_event("test_registration_churn", json!({"i": i})))
+                    .await
+                    .unwrap();
+                tokio::task::yield_now().await;
+            }
+        });
+
+        const CHURN_LISTENERS: usize = 50;
+        let churn_handle = Arc::clone(&service);
+        let churner = tokio::spawn(async move {
+            for i in 0..CHURN_LISTENERS {
+                let name = format!("churn_{i}");
+                churn_handle
+                    .register_listener(Box::new(MockEventListener::new(
+                        &name,
+                        non_interfering_config(),
+                    )))
+                    .await
+                    .unwrap();
+                tokio::task::yield_now().await;
+                // Unregister every even-indexed churn listener, deliberately leaving the
+                // odd-indexed half registered -- this exercises both register and unregister
+                // concurrently with active processing rather than only one direction.
+                if i % 2 == 0 {
+                    churn_handle.unregister_listener(&name).await.unwrap();
+                }
+                tokio::task::yield_now().await;
+            }
+        });
+
+        tokio::time::timeout(Duration::from_secs(30), async {
+            let (processor_result, churner_result) = tokio::join!(processor, churner);
+            processor_result.expect("processing task must not panic");
+            churner_result.expect("registration/unregistration churn task must not panic");
+        })
+        .await
+        .expect(
+            "registration/unregistration churn concurrent with active processing must complete \
+             inside the timeout -- a lock-ordering problem between the listener map and the \
+             trigger queue would hang here instead of failing",
+        );
+
+        // Consistency check: `list_listeners` and `get_all_stats` must agree exactly on the
+        // surviving set -- no listener present in one and absent from the other, and no call
+        // above returned a poisoned-state error (every `.unwrap()`/`.expect()` above already
+        // asserts that).
+        let listed: HashSet<String> = service.list_listeners().await.into_iter().collect();
+        let stat_keys: HashSet<String> = service.get_all_stats().await.into_keys().collect();
+        assert_eq!(
+            listed, stat_keys,
+            "list_listeners and get_all_stats must agree on the surviving listener set"
+        );
+
+        assert!(listed.contains("steady_a"));
+        assert!(listed.contains("steady_b"));
+        let surviving_churn = listed.iter().filter(|n| n.starts_with("churn_")).count();
+        assert_eq!(
+            surviving_churn,
+            CHURN_LISTENERS / 2,
+            "exactly the odd-indexed (never-unregistered) half of the churn listeners should \
+             remain"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_1000_plus_event_burst_across_several_producers_yields_exact_aggregate_counts() {
+        const BURST_SIZE: usize = 1200;
+        const LISTENERS: usize = 2;
+        const PRODUCER_TASKS: usize = 4;
+
+        let service = Arc::new(ListenerOrchestrator::new());
+        for i in 0..LISTENERS {
+            service
+                .register_listener(Box::new(
+                    MockEventListener::new(
+                        &format!("burst_listener_{i}"),
+                        non_interfering_config(),
+                    )
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+                ))
+                .await
+                .unwrap();
+        }
+
+        // Built in one call via the shared bulk constructor -- what makes a 1000-plus-event
+        // burst expressible without a hand-copied loop.
+        let events = build_event_batch("test_burst", BURST_SIZE);
+        let chunk_size = BURST_SIZE.div_ceil(PRODUCER_TASKS);
+
+        let mut handles = Vec::with_capacity(PRODUCER_TASKS);
+        for chunk in events.chunks(chunk_size) {
+            let chunk_owned: Vec<Event> = chunk.to_vec();
+            let service_clone = Arc::clone(&service);
+            handles.push(tokio::spawn(async move {
+                for event in chunk_owned {
+                    service_clone.process_event(event).await.unwrap();
+                }
+            }));
+        }
+
+        tokio::time::timeout(Duration::from_secs(60), async move {
+            for handle in handles {
+                handle.await.expect("burst producer task must not panic");
+            }
+        })
+        .await
+        .expect(
+            "1000-plus-event burst across several concurrent producers must complete inside \
+             the timeout -- a lock-ordering deadlock would hang here instead of failing",
+        );
+
+        // Exact equality on both the shared queue and every per-listener counter, so a
+        // discrepancy between the two would surface rather than cancel out -- a lost increment
+        // under `Mutex`/`RwLock` contention shows up as a count low by a small amount, which
+        // only an exact assertion (not a range or a lower bound) would ever notice.
+        let queue_length = service.trigger_queue_length().await;
+        assert_eq!(
+            queue_length,
+            BURST_SIZE * LISTENERS,
+            "trigger_queue_length must equal the exact arithmetic total across all listeners"
+        );
+
+        let stats = service.get_all_stats().await;
+        for i in 0..LISTENERS {
+            let name = format!("burst_listener_{i}");
+            let listener_stats = stats
+                .get(&name)
+                .unwrap_or_else(|| panic!("listener {name} must still be registered"));
+            assert_eq!(
+                listener_stats.events_processed as usize, BURST_SIZE,
+                "listener {name}: exact events_processed"
+            );
+            assert_eq!(
+                listener_stats.triggers_created as usize, BURST_SIZE,
+                "listener {name}: exact triggers_created"
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn dropping_the_orchestrator_during_active_processing_completes_without_panicking_or_leaking_a_lock()
+     {
+        // `ListenerOrchestrator` exposes no `shutdown()` method and defines no custom `Drop` --
+        // confirmed by direct inspection of the struct and its `impl` block above, per this
+        // task's own instruction to read the type before presuming an affordance exists. Every
+        // field (`listeners`, `triggers`, `trigger_queue`) is `Arc`-wrapped, so the type's actual
+        // "shutdown" behaviour is exactly ordinary `Arc` reference-counting: dropping one handle
+        // while another clone is still live only decrements a refcount, and the underlying state
+        // (and every lock inside it) is released only once the last strong reference is dropped.
+        // This test exercises and asserts that real behaviour rather than an invented
+        // `shutdown()` call, and records the absent affordance here for Task 2's justification
+        // block per the plan's explicit instruction not to add one to production code.
+        let primary = Arc::new(ListenerOrchestrator::new());
+        primary
+            .register_listener(Box::new(
+                MockEventListener::new("shutdown_probe", non_interfering_config())
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+
+        let weak = Arc::downgrade(&primary);
+
+        let worker_handle = Arc::clone(&primary);
+        const IN_FLIGHT_EVENTS: usize = 200;
+        let events = build_event_batch("test_shutdown_burst", IN_FLIGHT_EVENTS);
+        let worker = tokio::spawn(async move {
+            let mut total = 0usize;
+            for event in events {
+                total += worker_handle.process_event(event).await.unwrap().len();
+            }
+            total
+        });
+
+        // Drop this test's own handle immediately -- the spawned worker task holds its own
+        // clone, so the orchestrator's state stays alive and reachable through it. This is the
+        // "graceful shutdown during active processing" scenario as the type actually supports
+        // it: dropping handles while a task is mid-flight, since no explicit shutdown affordance
+        // exists.
+        drop(primary);
+
+        let total = tokio::time::timeout(Duration::from_secs(15), worker)
+            .await
+            .expect(
+                "the worker task must complete inside the timeout -- a lock held across the \
+                 drop above would hang this instead of failing",
+            )
+            .expect("worker task must not panic despite the handle being dropped mid-flight");
+        assert_eq!(
+            total, IN_FLIGHT_EVENTS,
+            "every in-flight event must still have produced exactly one trigger despite the drop"
+        );
+
+        // The worker's own `Arc` clone is dropped when its spawned task completes and its stack
+        // frame unwinds. With every strong reference now gone, the `Weak` upgrade must fail --
+        // proof the orchestrator's state, and every lock inside it, was fully released rather
+        // than left held by a dangling guard.
+        assert!(
+            weak.upgrade().is_none(),
+            "all strong references must be gone once the worker task has completed, proving no \
+             lock guard or clone was leaked across the drop"
+        );
     }
 }
