@@ -466,6 +466,87 @@ impl UserServiceTrait for UserService {
 
 #[cfg(test)]
 mod tests {
+    //! # DEFER-02 test-scope justification record (Phase 15, plans 15-06 and 15-07)
+    //!
+    //! ## Measured figure
+    //!
+    //! | Field | Value |
+    //! |---|---|
+    //! | Line coverage | **94.21%** (927 / 984 lines) for `src/core/platform/manager/user_service.rs` |
+    //! | Command | `cargo llvm-cov --workspace --lib --json --output-path /tmp/cov.json`, figure extracted for this file's `summary.lines.percent` |
+    //! | Feature scope | **default features, `--lib`** (no `--features integration-tests`) |
+    //! | Commit | `432d514873ebe4196f0ef550374cc25c5654cfa5` (15-07 Task 1; this Task 2 commit adds tests only -- the production half above `#[cfg(test)]` is byte-identical to that commit, so the figure holds for this commit's tree as well) |
+    //! | Date | 2026-08-13 |
+    //!
+    //! **This figure is not comparable to ADR-0006's 84% workspace CI gate**, which is measured
+    //! under `--features integration-tests` against live Redis/MinIO (ADR-0006 §"The relationship
+    //! to `cargo llvm-cov`": the two commands' denominators agree only when the ignore regex, the
+    //! doctest decision and the feature set all match, and they do not here). Docker is absent from
+    //! every authoring environment verified in this phase, so the gate's own scope cannot be
+    //! reproduced locally; this module figure is a one-time plan-acceptance measurement (D-12), not
+    //! a standing CI gate, and it is not wired into any pipeline by this plan.
+    //!
+    //! ## Untested paths, with reasons
+    //!
+    //! Every path DEFER-02's own scope text names is covered by a passing test above, **except**:
+    //!
+    //! - **Login-attempt tracking.** DEFER-02 names it in the authentication scope. `login_user`
+    //!   has no attempt counter, no lockout threshold and no related state anywhere in this file or
+    //!   in `UserData` -- `grep -n "attempt" src/core/platform/manager/user_service.rs` matches only
+    //!   two log messages, not a counter. The register names a path the module does not implement;
+    //!   there is nothing to test.
+    //! - **Repository error (edge case).** DEFER-02 names a generic "repository error" edge case.
+    //!   Every method in this file propagates `UserRepositoryPort` failures with a bare `?`, so the
+    //!   propagation itself is a language guarantee, not service logic to characterize. Forcing a
+    //!   live failure would require a `UserRepositoryPort` test double built for this plan alone;
+    //!   `SqliteUserRepository`'s own error-mapping (`RepositoryError(format!(...))` wrapping the
+    //!   underlying `sqlx::Error`) already has direct unit tests in `sqlite_user_repository.rs`.
+    //!   Left untested here as a deliberate scope boundary, not an oversight.
+    //!
+    //! A further nine lines of `user_service.rs` remain uncovered without being individually named
+    //! by DEFER-02's scope text; recorded so no gap is silently absent:
+    //!
+    //! - `hash_password`'s `argon2::hash_password(..)` internal failure (`UserError::HashError`,
+    //!   the map_err arm) -- argon2 only fails this call on malformed salt/params, neither of which
+    //!   this file's fixed, valid construction can produce; not reachable through the public API.
+    //! - `send_welcome_notification`'s `create_notification(..)` failure arm and its own success
+    //!   return (`Ok(())`) -- see the observed-behaviour note below.
+    //! - `log_action`'s `user_id: None` branch and its `LogPort::write_entry` failure branch -- no
+    //!   call site in this file passes `None`, and every log-port double used in this module's
+    //!   tests (`SystemLogAdapter`, `RecordingLogPort`) always succeeds; a failing `LogPort` double
+    //!   is disproportionate scope for a `log::error!` fallback line.
+    //! - `login_user`'s token-issuance failure arm (`auth_port.issue_token(..)` returning `Err`) --
+    //!   `InMemoryTokenAuthAdapter::issue_token` only fails via a poisoned `RwLock`, not achievable
+    //!   from a test without deliberately panicking while the lock is held.
+    //!
+    //! ## Observed behaviour that differs from what the register or requirement text assumes
+    //!
+    //! - **Concurrent same-username registration has a real, database-enforced outcome, not an
+    //!   application-level one.** `register_user`'s own duplicate check
+    //!   (`register_user_accepts_a_case_variant_username_because_the_duplicate_check_is_on_email`,
+    //!   15-06) is scoped to email only, so two concurrent calls with the same username and
+    //!   different emails both clear it. The collision is caught by
+    //!   `sqlite_user_repository.rs`'s migration-declared `username TEXT UNIQUE NOT NULL`
+    //!   constraint instead. Directly observed (`concurrent_registration_with_the_same_username_leaves_exactly_one_user_persisted`,
+    //!   run five times with no flake before this assertion was written): exactly one call
+    //!   succeeds, the loser returns `UserError::RepositoryError` wrapping a SQLite
+    //!   `UNIQUE constraint failed: users.username` error, and `count_users` reports exactly one
+    //!   row afterward. **No race exists for this file's own logic** -- the constraint is doing the
+    //!   work, not `register_user`'s check-then-save sequence, so there is no finding to hand off
+    //!   for a production fix.
+    //! - **The "send a welcome notification" success path is effectively unreachable in this test
+    //!   suite, by design.** `build_service()` (the fixture nearly every test in this module uses)
+    //!   never caches a `"user_welcome"` template or registers a template processor, so
+    //!   `NotificationService::send_notification` always fails at template resolution --
+    //!   `send_welcome_notification`'s `Ok(())` return (line 163) is never executed by any test in
+    //!   this file, including the ones that specifically prove "notification failure does not block
+    //!   registration" (15-06 Task 2). This is consistent with the guarantee DEFER-02 actually asks
+    //!   for and does not weaken it, but it means the module's coverage above comes entirely through
+    //!   the failure branch of that one call, never the success branch. Recorded here rather than
+    //!   built around: reaching the success branch would need a third notification fixture (cached
+    //!   template + processor + a channel handler that *succeeds*), which is scope this plan's two
+    //!   tasks did not ask for.
+
     use super::*;
     use crate::application::services::notification_orchestrator::NotificationTemplateProcessor;
     use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
@@ -1033,6 +1114,515 @@ mod tests {
             result.is_ok(),
             "registration should also succeed with no failing handler registered, so the \
              failure-path test above is shown to discriminate; got: {result:?}"
+        );
+    }
+
+    // -----------------------------------------------------------------
+    // Authentication coverage (DEFER-02, 15-07 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn login_with_incorrect_password_issues_no_token_and_does_not_succeed() {
+        let service = build_service(true).await;
+        service
+            .register_user(registration("penny", "penny@example.com"))
+            .await
+            .unwrap();
+
+        let err = service
+            .login_user(UserLoginRequest {
+                email: "penny@example.com".to_string(),
+                password: "wrong-password".to_string(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(
+            matches!(err, UserError::AuthenticationFailed),
+            "a wrong password should be rejected with AuthenticationFailed; got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn login_for_a_never_registered_email_returns_authentication_failed() {
+        let service = build_service(true).await;
+
+        let err = service
+            .login_user(UserLoginRequest {
+                email: "nobody-registered@example.com".to_string(),
+                password: "password123".to_string(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(
+            matches!(err, UserError::AuthenticationFailed),
+            "a login for an identity that was never registered should return the \
+             not-found-shaped AuthenticationFailed variant, without panicking; got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn login_against_a_deactivated_account_is_rejected_as_a_distinct_variant() {
+        let service = build_service(true).await;
+        let user = service
+            .register_user(registration("quinn", "quinn@example.com"))
+            .await
+            .unwrap();
+        service.deactivate_user(user.uuid).await.unwrap();
+
+        let err = service
+            .login_user(UserLoginRequest {
+                email: "quinn@example.com".to_string(),
+                password: "password123".to_string(),
+            })
+            .await
+            .unwrap_err();
+
+        // Asserted as UserNotActive specifically -- distinct from the wrong-password case's
+        // AuthenticationFailed above -- so a single catch-all rejection could not satisfy both
+        // assertions (T-15-20).
+        assert!(
+            matches!(err, UserError::UserNotActive),
+            "a login against a deactivated account should be rejected with UserNotActive, \
+             distinct from the wrong-password AuthenticationFailed case; got: {err:?}"
+        );
+    }
+
+    // -----------------------------------------------------------------
+    // Profile lifecycle coverage (DEFER-02, 15-07 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn update_user_profile_on_existing_user_changes_the_stored_profile() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("rachel", "rachel@example.com"))
+            .await
+            .unwrap();
+
+        let new_profile = crate::core::platform::container::user::UserProfile {
+            first_name: Some("Rachel".to_string()),
+            last_name: Some("Green".to_string()),
+            bio: Some("Updated via test".to_string()),
+            avatar_url: None,
+            timezone: Some("UTC".to_string()),
+            locale: Some("en-US".to_string()),
+        };
+
+        let updated = service
+            .update_user_profile(UserProfileUpdateRequest {
+                user_id: user.uuid,
+                username: None,
+                email: None,
+                profile: Some(new_profile.clone()),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(updated.profile().first_name, Some("Rachel".to_string()));
+        assert_eq!(updated.profile().bio, Some("Updated via test".to_string()));
+
+        let read_back = service
+            .get_user_by_id(user.uuid)
+            .await
+            .unwrap()
+            .expect("user should still exist");
+        assert_eq!(read_back.profile().first_name, Some("Rachel".to_string()));
+    }
+
+    #[tokio::test]
+    async fn update_user_profile_on_an_unknown_user_returns_user_not_found() {
+        let service = build_service(false).await;
+
+        let err = service
+            .update_user_profile(UserProfileUpdateRequest {
+                user_id: Uuid::new_v4(),
+                username: None,
+                email: None,
+                profile: None,
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn update_user_profile_email_change_resets_the_verification_state() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("sam", "sam@example.com"))
+            .await
+            .unwrap();
+        service.verify_user(user.uuid).await.unwrap();
+
+        let verified_before = service
+            .get_user_by_id(user.uuid)
+            .await
+            .unwrap()
+            .unwrap()
+            .is_verified();
+        assert!(
+            verified_before,
+            "sanity check: user should be verified before the email change"
+        );
+
+        let updated = service
+            .update_user_profile(UserProfileUpdateRequest {
+                user_id: user.uuid,
+                username: None,
+                email: Some("sam-new@example.com".to_string()),
+                profile: None,
+            })
+            .await
+            .unwrap();
+
+        // Observed behaviour, not an assumption: `User::update_email` unconditionally resets
+        // `is_verified` to `false` on any email change, verified/unverified alike.
+        assert!(
+            !updated.is_verified(),
+            "changing a verified user's email should reset verification state to unverified; \
+             observed is_verified: {}",
+            updated.is_verified()
+        );
+    }
+
+    #[tokio::test]
+    async fn activate_user_on_existing_user_is_reflected_when_read_back() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("tara", "tara@example.com"))
+            .await
+            .unwrap();
+        service.deactivate_user(user.uuid).await.unwrap();
+
+        service.activate_user(user.uuid).await.unwrap();
+
+        let read_back = service.get_user_by_id(user.uuid).await.unwrap().unwrap();
+        assert!(
+            read_back.is_active(),
+            "user should be active after activate_user"
+        );
+    }
+
+    #[tokio::test]
+    async fn activate_user_on_an_unknown_id_returns_user_not_found() {
+        let service = build_service(false).await;
+        let err = service.activate_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn deactivate_user_on_existing_user_is_reflected_when_read_back() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("uma", "uma@example.com"))
+            .await
+            .unwrap();
+
+        service.deactivate_user(user.uuid).await.unwrap();
+
+        let read_back = service.get_user_by_id(user.uuid).await.unwrap().unwrap();
+        assert!(
+            !read_back.is_active(),
+            "user should be inactive after deactivate_user"
+        );
+    }
+
+    #[tokio::test]
+    async fn deactivate_user_on_an_unknown_id_returns_user_not_found() {
+        let service = build_service(false).await;
+        let err = service.deactivate_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn verify_user_on_existing_user_is_reflected_when_read_back() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("victor", "victor@example.com"))
+            .await
+            .unwrap();
+        assert!(
+            !service
+                .get_user_by_id(user.uuid)
+                .await
+                .unwrap()
+                .unwrap()
+                .is_verified(),
+            "sanity check: a freshly registered user should start unverified"
+        );
+
+        service.verify_user(user.uuid).await.unwrap();
+
+        let read_back = service.get_user_by_id(user.uuid).await.unwrap().unwrap();
+        assert!(
+            read_back.is_verified(),
+            "user should be verified after verify_user"
+        );
+    }
+
+    #[tokio::test]
+    async fn verify_user_on_an_unknown_id_returns_user_not_found() {
+        let service = build_service(false).await;
+        let err = service.verify_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    // -----------------------------------------------------------------
+    // Query coverage (DEFER-02, 15-07 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn get_user_by_id_hit_returns_the_user() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("wendy", "wendy@example.com"))
+            .await
+            .unwrap();
+
+        let found = service.get_user_by_id(user.uuid).await.unwrap();
+        assert_eq!(found.map(|u| u.uuid), Some(user.uuid));
+    }
+
+    #[tokio::test]
+    async fn get_user_by_id_miss_returns_none() {
+        let service = build_service(false).await;
+        let found = service.get_user_by_id(Uuid::new_v4()).await.unwrap();
+        assert!(found.is_none(), "a miss should return None, not an error");
+    }
+
+    #[tokio::test]
+    async fn get_user_by_email_hit_returns_the_user() {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("xavier", "xavier@example.com"))
+            .await
+            .unwrap();
+
+        let found = service
+            .get_user_by_email("xavier@example.com")
+            .await
+            .unwrap();
+        assert_eq!(
+            found.map(|u| u.username().to_string()),
+            Some("xavier".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn get_user_by_email_miss_returns_none() {
+        let service = build_service(false).await;
+        let found = service
+            .get_user_by_email("nobody-here@example.com")
+            .await
+            .unwrap();
+        assert!(found.is_none(), "a miss should return None, not an error");
+    }
+
+    #[tokio::test]
+    async fn count_users_is_zero_on_an_empty_repository() {
+        let service = build_service(false).await;
+        assert_eq!(service.count_users().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn count_users_reflects_the_count_after_n_registrations() {
+        let service = build_service(false).await;
+        for (username, email) in [
+            ("yara", "yara@example.com"),
+            ("zack", "zack@example.com"),
+            ("amelia2", "amelia2@example.com"),
+        ] {
+            service
+                .register_user(registration(username, email))
+                .await
+                .unwrap();
+        }
+
+        assert_eq!(service.count_users().await.unwrap(), 3);
+    }
+
+    #[tokio::test]
+    async fn find_by_active_status_asserts_membership_in_both_polarities() {
+        let service = build_service(false).await;
+        let active_user = service
+            .register_user(registration("brianna", "brianna@example.com"))
+            .await
+            .unwrap();
+        let inactive_user = service
+            .register_user(registration("carlos", "carlos@example.com"))
+            .await
+            .unwrap();
+        service.deactivate_user(inactive_user.uuid).await.unwrap();
+
+        let active = service.find_by_active_status(true).await.unwrap();
+        let active_ids: Vec<_> = active.iter().map(|u| u.uuid).collect();
+        assert!(active_ids.contains(&active_user.uuid));
+        assert!(!active_ids.contains(&inactive_user.uuid));
+
+        let inactive = service.find_by_active_status(false).await.unwrap();
+        let inactive_ids: Vec<_> = inactive.iter().map(|u| u.uuid).collect();
+        assert!(inactive_ids.contains(&inactive_user.uuid));
+        assert!(!inactive_ids.contains(&active_user.uuid));
+    }
+
+    #[tokio::test]
+    async fn find_by_verification_status_asserts_membership_in_both_polarities() {
+        let service = build_service(false).await;
+        let verified_user = service
+            .register_user(registration("dalia", "dalia@example.com"))
+            .await
+            .unwrap();
+        service.verify_user(verified_user.uuid).await.unwrap();
+        let unverified_user = service
+            .register_user(registration("ewan", "ewan@example.com"))
+            .await
+            .unwrap();
+
+        let verified = service.find_by_verification_status(true).await.unwrap();
+        let verified_ids: Vec<_> = verified.iter().map(|u| u.uuid).collect();
+        assert!(verified_ids.contains(&verified_user.uuid));
+        assert!(!verified_ids.contains(&unverified_user.uuid));
+
+        let unverified = service.find_by_verification_status(false).await.unwrap();
+        let unverified_ids: Vec<_> = unverified.iter().map(|u| u.uuid).collect();
+        assert!(unverified_ids.contains(&unverified_user.uuid));
+        assert!(!unverified_ids.contains(&verified_user.uuid));
+    }
+
+    // -----------------------------------------------------------------
+    // Additional validation and credential-path coverage (DEFER-02, 15-07 Task 2)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn register_user_rejects_a_too_short_non_whitespace_username() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("ab", "too-short-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_password_over_one_hundred_twenty_eight_characters() {
+        let service = build_service(false).await;
+        let password = "a".repeat(129);
+        assert_eq!(password.len(), 129);
+        let request = UserRegistrationRequest {
+            username: "long-password-user".to_string(),
+            email: "long-password@example.com".to_string(),
+            password,
+            profile: None,
+        };
+        let err = service.register_user(request).await.unwrap_err();
+        assert!(matches!(err, UserError::InvalidPassword(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_username_over_fifty_characters() {
+        let service = build_service(false).await;
+        let username = "a".repeat(51);
+        assert_eq!(username.len(), 51);
+        let err = service
+            .register_user(registration(&username, "too-long-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_username_with_invalid_characters() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration(
+                "bad user!",
+                "invalid-chars-username@example.com",
+            ))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn verify_password_against_a_malformed_hash_returns_a_hash_error() {
+        let service = build_service(false).await;
+
+        // Routed through the service's own `verify_password`, not a hand-rolled comparison
+        // (T-15-04): a hash string that is not valid PHC format should surface as a
+        // `HashError` from `argon2::PasswordHash::new`, rather than panicking or silently
+        // returning `false`.
+        let err = service
+            .verify_password("any-password", "not-a-valid-phc-hash")
+            .unwrap_err();
+        assert!(matches!(err, UserError::HashError(_)));
+    }
+
+    // -----------------------------------------------------------------
+    // Concurrent registration coverage (DEFER-02, 15-07 Task 2)
+    // -----------------------------------------------------------------
+
+    /// Two `register_user` calls for the same username, driven concurrently against one
+    /// shared `UserService`, with distinct emails so the request clears `register_user`'s
+    /// own application-level duplicate check (which is email-scoped only -- see
+    /// `register_user_accepts_a_case_variant_username_because_the_duplicate_check_is_on_email`
+    /// above). The collision is caught downstream, by the database: the migration in
+    /// `sqlite_user_repository.rs` declares `username TEXT UNIQUE NOT NULL`, so the loser's
+    /// `INSERT` fails on that constraint.
+    ///
+    /// Observed (not assumed) outcome, confirmed by a direct run before this assertion was
+    /// written: exactly one call succeeds, the other returns `UserError::RepositoryError`
+    /// wrapping a SQLite `UNIQUE constraint failed: users.username` error, and exactly one
+    /// row is persisted. No production change was made to obtain this result -- `register_user`
+    /// already relies on the repository's own unique constraint to catch what its
+    /// email-scoped pre-check does not.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_registration_with_the_same_username_leaves_exactly_one_user_persisted() {
+        let service = Arc::new(build_service(false).await);
+        let svc_a = service.clone();
+        let svc_b = service.clone();
+
+        let (first, second) = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+            tokio::join!(
+                svc_a.register_user(registration("paul", "paul-a@example.com")),
+                svc_b.register_user(registration("paul", "paul-b@example.com")),
+            )
+        })
+        .await
+        .expect("concurrent same-username registration should not hang");
+
+        let results = [first, second];
+        let ok_count = results.iter().filter(|r| r.is_ok()).count();
+        let err_count = results.iter().filter(|r| r.is_err()).count();
+
+        assert_eq!(
+            ok_count, 1,
+            "exactly one of the two concurrent same-username registrations should succeed; \
+             got: {results:?}"
+        );
+        assert_eq!(
+            err_count, 1,
+            "the losing registration should return an error rather than silently persisting a \
+             second row; got: {results:?}"
+        );
+
+        for result in &results {
+            if let Err(err) = result {
+                assert!(
+                    matches!(err, UserError::RepositoryError(_)),
+                    "the losing registration's error should surface as a RepositoryError from \
+                     the database's unique-constraint violation (register_user's own duplicate \
+                     check is email-scoped and would not catch this); got: {err:?}"
+                );
+            }
+        }
+
+        assert_eq!(
+            service.count_users().await.unwrap(),
+            1,
+            "exactly one user should be persisted after the race"
         );
     }
 }
