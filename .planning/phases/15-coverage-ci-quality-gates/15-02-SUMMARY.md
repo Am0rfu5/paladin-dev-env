@@ -164,6 +164,15 @@ _No plan-metadata commit — orchestrator policy for this worktree defers STATE.
 - **The `coverage` job's Codecov upload (D3) and the `actionlint` job (D4) have not executed in real GitHub Actions CI yet** — both are `human_judgment: true` in the coverage block above (D3 for the same reason plan 15-01 flagged its own coverage job: no live runner in this authoring environment; D4's local verification used a scratch-downloaded binary, not the actual CI runner environment, though the command is identical). The first real CI run on this branch should confirm both, particularly that `CODECOV_TOKEN` is configured and that the pinned actionlint download step succeeds in the GitHub-hosted runner.
 - Plan 15-10 (requirement text amendments) can use this SUMMARY's before-state accounting verbatim: eight references existed, seven upgraded (four `actions-rs/toolchain@v1`, three `actions/cache@v3`), one deleted (`codecov/codecov-action@v3`, D-03); PIPE-04's stale line-number citations (`ci.yml:147`, `:317`, `:507`, `integration-tests.yml:71`, `:78`, `:84`, `:90`, `:123`) should be corrected against this plan's commits rather than re-derived.
 
+## Self-Check: PASSED
+
+- FOUND: `.codecov.yml`
+- FOUND: `.github/actionlint.yaml`
+- FOUND: `.planning/phases/15-coverage-ci-quality-gates/15-02-SUMMARY.md`
+- FOUND commit `f9b5ad2` (Task 1)
+- FOUND commit `7d74caa` (Task 2)
+- FOUND commit `801a300` (Task 3)
+
 ---
 *Phase: 15-coverage-ci-quality-gates*
 *Completed: 2026-08-13*
