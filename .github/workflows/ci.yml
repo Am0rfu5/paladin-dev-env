@@ -477,6 +477,173 @@ jobs:
             target/debug/
             *.log
 
+  # Coverage measurement (PIPE-02) — MEASURE-ONLY as of this commit: no minimum-
+  # threshold flag. D-04 requires the figure to be measured before the floor
+  # derived from it can be set; plan 15-03 adds the threshold once this job has
+  # produced the reference measurement. Scoped to `--features integration-tests`
+  # per D-01, not `--all-features` — `qdrant` and the vision/embedding suites need
+  # live services/API keys CI cannot provide, which would depress the number for
+  # no signal.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      minio:
+        image: minio/minio:latest
+        ports:
+          - 9010:9000
+          - 9011:9001
+        env:
+          MINIO_ROOT_USER: testuser
+          MINIO_ROOT_PASSWORD: testpass123
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 30s
+          --health-timeout 20s
+          --health-retries 3
+        command: server /data --console-address ":9001"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.8.7
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install MinIO Client
+        run: |
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          chmod +x mc
+          sudo mv mc /usr/local/bin/
+
+      - name: Setup MinIO buckets
+        run: |
+          mc alias set testminio http://localhost:9010 testuser testpass123
+          mc mb testminio/test-bucket --ignore-existing
+          mc mb testminio/integration-tests --ignore-existing
+          echo "MinIO buckets created successfully"
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for Redis..."
+          for i in {1..30}; do
+            if redis-cli -h localhost -p 6380 ping; then
+              echo "Redis is ready"
+              break
+            fi
+            sleep 1
+          done
+
+          echo "Waiting for MinIO..."
+          for i in {1..30}; do
+            if curl -f http://localhost:9010/minio/health/live; then
+              echo "MinIO is ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Measure coverage
+        env:
+          USE_EXTERNAL_TEST_SERVICES: "true"
+          TEST_REDIS_HOST: localhost
+          TEST_REDIS_PORT: 6380
+          TEST_MINIO_ENDPOINT: localhost:9010
+          TEST_MINIO_ACCESS_KEY: testuser
+          TEST_MINIO_SECRET_KEY: testpass123
+        run: cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
+
+  # CLI snapshot tests (PIPE-01) — a dedicated job, not a step inside
+  # `crate-isolation`, per D-07: a distinctly named job makes a broken CLI
+  # snapshot legible in the PR checks list instead of surfacing as a red
+  # `crate-isolation (paladin-ai)` leg a reviewer has to open to understand.
+  # `--features cli` is the entire point of this job — the `cli` test target
+  # declares `required-features = ["cli"]`, and Cargo silently skips a target
+  # whose required features are inactive (no error, no output, zero tests run).
+  cli-tests:
+    name: CLI Snapshot Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-cli-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run CLI snapshot tests
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test -p paladin-ai --features cli --test cli 2>&1 | tee cli-test-output.log
+          executed=$(grep -oE '[0-9]+ passed' cli-test-output.log | tail -1 | grep -oE '[0-9]+')
+          if [ -z "$executed" ] || [ "$executed" -eq 0 ]; then
+            echo "::error::cli-tests reported zero executed tests. This usually means --features cli was dropped, causing Cargo to silently skip the required-features-gated cli test target."
+            exit 1
+          fi
+          echo "cli-tests executed $executed test(s)"
+
+  # Benchmark compile-check (PIPE-01) — compiles every [[bench]] target without
+  # executing it: no Criterion runtime, no performance numbers, no timing
+  # output. This is the missing compile-check prerequisite for the existing
+  # scheduled `benchmark` job and the `benchmark-regression-signal` job, not a
+  # replacement for either — both are left untouched.
+  bench-check:
+    name: Benchmark Compile Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bench-check-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Compile-check benchmarks
+        run: cargo bench --workspace --no-run
+
   # Build and test Docker images
   #
   # AUTHORED AND STATICALLY VALIDATED ONLY — docker is absent from the
