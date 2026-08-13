@@ -8,9 +8,21 @@ on:
   # CI coverage on every push, per REL-05/SC5.
   push:
     branches: [ main, develop, 'feature/**', 'release/**' ]
+  # `release/**` added: a PR targeting a release branch must run CI. Without it
+  # a PR into release/** showed almost no checks, because every workflow filtered
+  # pull_request to [main, develop] only.
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'release/**' ]
   workflow_dispatch:
+
+concurrency:
+  # Collapses the duplicate push+pull_request runs the trigger comment above
+  # describes. `head_ref` is set only on pull_request; on push it is empty and
+  # this falls back to `ref`, so both runs for one branch share a group.
+  # Not cancel-in-progress on main: a completed run on the default branch is a
+  # release-history record, not just a PR signal.
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -599,6 +611,34 @@ jobs:
           TEST_MINIO_ACCESS_KEY: testuser
           TEST_MINIO_SECRET_KEY: testpass123
         run: cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
+
+      # `--lcov --output-path` writes a file and prints NOTHING, so the measured
+      # percentage never reaches the run log. Plan 15-03 has to read that figure
+      # out of CI (docker is absent from every authoring environment, so it
+      # cannot be produced locally) and its recorded method is to grep the log --
+      # which found nothing to grep. `report` reuses the profdata the step above
+      # already produced, so this re-measures nothing and re-runs no tests.
+      # Also emitted to the job summary so the number is readable without
+      # downloading logs.
+      - name: Coverage summary
+        run: |
+          cargo llvm-cov report --summary-only | tee coverage-summary.txt
+          {
+            echo "### Coverage (workspace, --features integration-tests)"
+            echo ""
+            echo '```'
+            cat coverage-summary.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary
+          path: |
+            coverage-summary.txt
+            lcov.info
+          retention-days: 14
 
       # Report-only: .codecov.yml sets informational: true on both status
       # blocks, so this upload never gates a build. Without CODECOV_TOKEN

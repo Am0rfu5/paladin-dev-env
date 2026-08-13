@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -250,12 +250,28 @@ jobs:
 
       # Cross-compilation targets are installed per-toolchain. Installing the
       # target against `stable` while rust-toolchain.toml pins cargo to an exact
-      # version would leave the build without a std for the target, so let the
-      # action read the pinned version (no `toolchain:` input) and attach the
-      # target to that same toolchain.
+      # version would leave the build without a std for the target, so the
+      # target must attach to the pinned toolchain.
+      #
+      # dtolnay/rust-toolchain does NOT read rust-toolchain.toml -- a bare
+      # `@master` with no `toolchain:` input fails with "'toolchain' is a
+      # required input" before doing any work. Read the pinned channel out of
+      # rust-toolchain.toml instead, so there is exactly one source of truth and
+      # no fourth place to keep in lockstep.
+      - name: Read pinned Rust channel
+        id: rust_pin
+        run: |
+          channel=$(grep -m1 '^channel' rust-toolchain.toml | cut -d'"' -f2)
+          if [ -z "$channel" ]; then
+            echo "::error::could not read [toolchain].channel from rust-toolchain.toml"
+            exit 1
+          fi
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ steps.rust_pin.outputs.channel }}
           targets: ${{ matrix.target }}
 
       - name: Install cross (for Linux ARM64)
@@ -325,7 +341,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-cyclonedx
         run: cargo install cargo-cyclonedx --locked
@@ -365,7 +381,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Determine publish mode
         id: mode
