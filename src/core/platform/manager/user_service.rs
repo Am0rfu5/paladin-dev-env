@@ -1035,4 +1035,379 @@ mod tests {
              failure-path test above is shown to discriminate; got: {result:?}"
         );
     }
+
+    // -----------------------------------------------------------------
+    // Authentication coverage (DEFER-02, 15-07 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn login_with_incorrect_password_issues_no_token_and_does_not_succeed() {
+        let service = build_service(true).await;
+        service
+            .register_user(registration("penny", "penny@example.com"))
+            .await
+            .unwrap();
+
+        let err = service
+            .login_user(UserLoginRequest {
+                email: "penny@example.com".to_string(),
+                password: "wrong-password".to_string(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(
+            matches!(err, UserError::AuthenticationFailed),
+            "a wrong password should be rejected with AuthenticationFailed; got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn login_for_a_never_registered_email_returns_authentication_failed() {
+        let service = build_service(true).await;
+
+        let err = service
+            .login_user(UserLoginRequest {
+                email: "nobody-registered@example.com".to_string(),
+                password: "password123".to_string(),
+            })
+            .await
+            .unwrap_err();
+
+        assert!(
+            matches!(err, UserError::AuthenticationFailed),
+            "a login for an identity that was never registered should return the \
+             not-found-shaped AuthenticationFailed variant, without panicking; got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn login_against_a_deactivated_account_is_rejected_as_a_distinct_variant() {
+        let service = build_service(true).await;
+        let user = service
+            .register_user(registration("quinn", "quinn@example.com"))
+            .await
+            .unwrap();
+        service.deactivate_user(user.uuid).await.unwrap();
+
+        let err = service
+            .login_user(UserLoginRequest {
+                email: "quinn@example.com".to_string(),
+                password: "password123".to_string(),
+            })
+            .await
+            .unwrap_err();
+
+        // Asserted as UserNotActive specifically -- distinct from the wrong-password case's
+        // AuthenticationFailed above -- so a single catch-all rejection could not satisfy both
+        // assertions (T-15-20).
+        assert!(
+            matches!(err, UserError::UserNotActive),
+            "a login against a deactivated account should be rejected with UserNotActive, \
+             distinct from the wrong-password AuthenticationFailed case; got: {err:?}"
+        );
+    }
+
+    // -----------------------------------------------------------------
+    // Profile lifecycle coverage (DEFER-02, 15-07 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn update_user_profile_on_existing_user_changes_the_stored_profile() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("rachel", "rachel@example.com"))
+            .await
+            .unwrap();
+
+        let new_profile = crate::core::platform::container::user::UserProfile {
+            first_name: Some("Rachel".to_string()),
+            last_name: Some("Green".to_string()),
+            bio: Some("Updated via test".to_string()),
+            avatar_url: None,
+            timezone: Some("UTC".to_string()),
+            locale: Some("en-US".to_string()),
+        };
+
+        let updated = service
+            .update_user_profile(UserProfileUpdateRequest {
+                user_id: user.uuid,
+                username: None,
+                email: None,
+                profile: Some(new_profile.clone()),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(updated.profile().first_name, Some("Rachel".to_string()));
+        assert_eq!(updated.profile().bio, Some("Updated via test".to_string()));
+
+        let read_back = service
+            .get_user_by_id(user.uuid)
+            .await
+            .unwrap()
+            .expect("user should still exist");
+        assert_eq!(read_back.profile().first_name, Some("Rachel".to_string()));
+    }
+
+    #[tokio::test]
+    async fn update_user_profile_on_an_unknown_user_returns_user_not_found() {
+        let service = build_service(false).await;
+
+        let err = service
+            .update_user_profile(UserProfileUpdateRequest {
+                user_id: Uuid::new_v4(),
+                username: None,
+                email: None,
+                profile: None,
+            })
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn update_user_profile_email_change_resets_the_verification_state() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("sam", "sam@example.com"))
+            .await
+            .unwrap();
+        service.verify_user(user.uuid).await.unwrap();
+
+        let verified_before = service
+            .get_user_by_id(user.uuid)
+            .await
+            .unwrap()
+            .unwrap()
+            .is_verified();
+        assert!(
+            verified_before,
+            "sanity check: user should be verified before the email change"
+        );
+
+        let updated = service
+            .update_user_profile(UserProfileUpdateRequest {
+                user_id: user.uuid,
+                username: None,
+                email: Some("sam-new@example.com".to_string()),
+                profile: None,
+            })
+            .await
+            .unwrap();
+
+        // Observed behaviour, not an assumption: `User::update_email` unconditionally resets
+        // `is_verified` to `false` on any email change, verified/unverified alike.
+        assert!(
+            !updated.is_verified(),
+            "changing a verified user's email should reset verification state to unverified; \
+             observed is_verified: {}",
+            updated.is_verified()
+        );
+    }
+
+    #[tokio::test]
+    async fn activate_user_on_existing_user_is_reflected_when_read_back() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("tara", "tara@example.com"))
+            .await
+            .unwrap();
+        service.deactivate_user(user.uuid).await.unwrap();
+
+        service.activate_user(user.uuid).await.unwrap();
+
+        let read_back = service.get_user_by_id(user.uuid).await.unwrap().unwrap();
+        assert!(
+            read_back.is_active(),
+            "user should be active after activate_user"
+        );
+    }
+
+    #[tokio::test]
+    async fn activate_user_on_an_unknown_id_returns_user_not_found() {
+        let service = build_service(false).await;
+        let err = service.activate_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn deactivate_user_on_existing_user_is_reflected_when_read_back() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("uma", "uma@example.com"))
+            .await
+            .unwrap();
+
+        service.deactivate_user(user.uuid).await.unwrap();
+
+        let read_back = service.get_user_by_id(user.uuid).await.unwrap().unwrap();
+        assert!(
+            !read_back.is_active(),
+            "user should be inactive after deactivate_user"
+        );
+    }
+
+    #[tokio::test]
+    async fn deactivate_user_on_an_unknown_id_returns_user_not_found() {
+        let service = build_service(false).await;
+        let err = service.deactivate_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    #[tokio::test]
+    async fn verify_user_on_existing_user_is_reflected_when_read_back() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("victor", "victor@example.com"))
+            .await
+            .unwrap();
+        assert!(
+            !service
+                .get_user_by_id(user.uuid)
+                .await
+                .unwrap()
+                .unwrap()
+                .is_verified(),
+            "sanity check: a freshly registered user should start unverified"
+        );
+
+        service.verify_user(user.uuid).await.unwrap();
+
+        let read_back = service.get_user_by_id(user.uuid).await.unwrap().unwrap();
+        assert!(
+            read_back.is_verified(),
+            "user should be verified after verify_user"
+        );
+    }
+
+    #[tokio::test]
+    async fn verify_user_on_an_unknown_id_returns_user_not_found() {
+        let service = build_service(false).await;
+        let err = service.verify_user(Uuid::new_v4()).await.unwrap_err();
+        assert!(matches!(err, UserError::UserNotFound(_)));
+    }
+
+    // -----------------------------------------------------------------
+    // Query coverage (DEFER-02, 15-07 Task 1)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn get_user_by_id_hit_returns_the_user() {
+        let service = build_service(false).await;
+        let user = service
+            .register_user(registration("wendy", "wendy@example.com"))
+            .await
+            .unwrap();
+
+        let found = service.get_user_by_id(user.uuid).await.unwrap();
+        assert_eq!(found.map(|u| u.uuid), Some(user.uuid));
+    }
+
+    #[tokio::test]
+    async fn get_user_by_id_miss_returns_none() {
+        let service = build_service(false).await;
+        let found = service.get_user_by_id(Uuid::new_v4()).await.unwrap();
+        assert!(found.is_none(), "a miss should return None, not an error");
+    }
+
+    #[tokio::test]
+    async fn get_user_by_email_hit_returns_the_user() {
+        let service = build_service(false).await;
+        service
+            .register_user(registration("xavier", "xavier@example.com"))
+            .await
+            .unwrap();
+
+        let found = service
+            .get_user_by_email("xavier@example.com")
+            .await
+            .unwrap();
+        assert_eq!(
+            found.map(|u| u.username().to_string()),
+            Some("xavier".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn get_user_by_email_miss_returns_none() {
+        let service = build_service(false).await;
+        let found = service
+            .get_user_by_email("nobody-here@example.com")
+            .await
+            .unwrap();
+        assert!(found.is_none(), "a miss should return None, not an error");
+    }
+
+    #[tokio::test]
+    async fn count_users_is_zero_on_an_empty_repository() {
+        let service = build_service(false).await;
+        assert_eq!(service.count_users().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn count_users_reflects_the_count_after_n_registrations() {
+        let service = build_service(false).await;
+        for (username, email) in [
+            ("yara", "yara@example.com"),
+            ("zack", "zack@example.com"),
+            ("amelia2", "amelia2@example.com"),
+        ] {
+            service
+                .register_user(registration(username, email))
+                .await
+                .unwrap();
+        }
+
+        assert_eq!(service.count_users().await.unwrap(), 3);
+    }
+
+    #[tokio::test]
+    async fn find_by_active_status_asserts_membership_in_both_polarities() {
+        let service = build_service(false).await;
+        let active_user = service
+            .register_user(registration("brianna", "brianna@example.com"))
+            .await
+            .unwrap();
+        let inactive_user = service
+            .register_user(registration("carlos", "carlos@example.com"))
+            .await
+            .unwrap();
+        service.deactivate_user(inactive_user.uuid).await.unwrap();
+
+        let active = service.find_by_active_status(true).await.unwrap();
+        let active_ids: Vec<_> = active.iter().map(|u| u.uuid).collect();
+        assert!(active_ids.contains(&active_user.uuid));
+        assert!(!active_ids.contains(&inactive_user.uuid));
+
+        let inactive = service.find_by_active_status(false).await.unwrap();
+        let inactive_ids: Vec<_> = inactive.iter().map(|u| u.uuid).collect();
+        assert!(inactive_ids.contains(&inactive_user.uuid));
+        assert!(!inactive_ids.contains(&active_user.uuid));
+    }
+
+    #[tokio::test]
+    async fn find_by_verification_status_asserts_membership_in_both_polarities() {
+        let service = build_service(false).await;
+        let verified_user = service
+            .register_user(registration("dalia", "dalia@example.com"))
+            .await
+            .unwrap();
+        service.verify_user(verified_user.uuid).await.unwrap();
+        let unverified_user = service
+            .register_user(registration("ewan", "ewan@example.com"))
+            .await
+            .unwrap();
+
+        let verified = service.find_by_verification_status(true).await.unwrap();
+        let verified_ids: Vec<_> = verified.iter().map(|u| u.uuid).collect();
+        assert!(verified_ids.contains(&verified_user.uuid));
+        assert!(!verified_ids.contains(&unverified_user.uuid));
+
+        let unverified = service.find_by_verification_status(false).await.unwrap();
+        let unverified_ids: Vec<_> = unverified.iter().map(|u| u.uuid).collect();
+        assert!(unverified_ids.contains(&unverified_user.uuid));
+        assert!(!unverified_ids.contains(&verified_user.uuid));
+    }
 }
