@@ -466,6 +466,87 @@ impl UserServiceTrait for UserService {
 
 #[cfg(test)]
 mod tests {
+    //! # DEFER-02 test-scope justification record (Phase 15, plans 15-06 and 15-07)
+    //!
+    //! ## Measured figure
+    //!
+    //! | Field | Value |
+    //! |---|---|
+    //! | Line coverage | **94.21%** (927 / 984 lines) for `src/core/platform/manager/user_service.rs` |
+    //! | Command | `cargo llvm-cov --workspace --lib --json --output-path /tmp/cov.json`, figure extracted for this file's `summary.lines.percent` |
+    //! | Feature scope | **default features, `--lib`** (no `--features integration-tests`) |
+    //! | Commit | `432d514873ebe4196f0ef550374cc25c5654cfa5` (15-07 Task 1; this Task 2 commit adds tests only -- the production half above `#[cfg(test)]` is byte-identical to that commit, so the figure holds for this commit's tree as well) |
+    //! | Date | 2026-08-13 |
+    //!
+    //! **This figure is not comparable to ADR-0006's 84% workspace CI gate**, which is measured
+    //! under `--features integration-tests` against live Redis/MinIO (ADR-0006 §"The relationship
+    //! to `cargo llvm-cov`": the two commands' denominators agree only when the ignore regex, the
+    //! doctest decision and the feature set all match, and they do not here). Docker is absent from
+    //! every authoring environment verified in this phase, so the gate's own scope cannot be
+    //! reproduced locally; this module figure is a one-time plan-acceptance measurement (D-12), not
+    //! a standing CI gate, and it is not wired into any pipeline by this plan.
+    //!
+    //! ## Untested paths, with reasons
+    //!
+    //! Every path DEFER-02's own scope text names is covered by a passing test above, **except**:
+    //!
+    //! - **Login-attempt tracking.** DEFER-02 names it in the authentication scope. `login_user`
+    //!   has no attempt counter, no lockout threshold and no related state anywhere in this file or
+    //!   in `UserData` -- `grep -n "attempt" src/core/platform/manager/user_service.rs` matches only
+    //!   two log messages, not a counter. The register names a path the module does not implement;
+    //!   there is nothing to test.
+    //! - **Repository error (edge case).** DEFER-02 names a generic "repository error" edge case.
+    //!   Every method in this file propagates `UserRepositoryPort` failures with a bare `?`, so the
+    //!   propagation itself is a language guarantee, not service logic to characterize. Forcing a
+    //!   live failure would require a `UserRepositoryPort` test double built for this plan alone;
+    //!   `SqliteUserRepository`'s own error-mapping (`RepositoryError(format!(...))` wrapping the
+    //!   underlying `sqlx::Error`) already has direct unit tests in `sqlite_user_repository.rs`.
+    //!   Left untested here as a deliberate scope boundary, not an oversight.
+    //!
+    //! A further nine lines of `user_service.rs` remain uncovered without being individually named
+    //! by DEFER-02's scope text; recorded so no gap is silently absent:
+    //!
+    //! - `hash_password`'s `argon2::hash_password(..)` internal failure (`UserError::HashError`,
+    //!   the map_err arm) -- argon2 only fails this call on malformed salt/params, neither of which
+    //!   this file's fixed, valid construction can produce; not reachable through the public API.
+    //! - `send_welcome_notification`'s `create_notification(..)` failure arm and its own success
+    //!   return (`Ok(())`) -- see the observed-behaviour note below.
+    //! - `log_action`'s `user_id: None` branch and its `LogPort::write_entry` failure branch -- no
+    //!   call site in this file passes `None`, and every log-port double used in this module's
+    //!   tests (`SystemLogAdapter`, `RecordingLogPort`) always succeeds; a failing `LogPort` double
+    //!   is disproportionate scope for a `log::error!` fallback line.
+    //! - `login_user`'s token-issuance failure arm (`auth_port.issue_token(..)` returning `Err`) --
+    //!   `InMemoryTokenAuthAdapter::issue_token` only fails via a poisoned `RwLock`, not achievable
+    //!   from a test without deliberately panicking while the lock is held.
+    //!
+    //! ## Observed behaviour that differs from what the register or requirement text assumes
+    //!
+    //! - **Concurrent same-username registration has a real, database-enforced outcome, not an
+    //!   application-level one.** `register_user`'s own duplicate check
+    //!   (`register_user_accepts_a_case_variant_username_because_the_duplicate_check_is_on_email`,
+    //!   15-06) is scoped to email only, so two concurrent calls with the same username and
+    //!   different emails both clear it. The collision is caught by
+    //!   `sqlite_user_repository.rs`'s migration-declared `username TEXT UNIQUE NOT NULL`
+    //!   constraint instead. Directly observed (`concurrent_registration_with_the_same_username_leaves_exactly_one_user_persisted`,
+    //!   run five times with no flake before this assertion was written): exactly one call
+    //!   succeeds, the loser returns `UserError::RepositoryError` wrapping a SQLite
+    //!   `UNIQUE constraint failed: users.username` error, and `count_users` reports exactly one
+    //!   row afterward. **No race exists for this file's own logic** -- the constraint is doing the
+    //!   work, not `register_user`'s check-then-save sequence, so there is no finding to hand off
+    //!   for a production fix.
+    //! - **The "send a welcome notification" success path is effectively unreachable in this test
+    //!   suite, by design.** `build_service()` (the fixture nearly every test in this module uses)
+    //!   never caches a `"user_welcome"` template or registers a template processor, so
+    //!   `NotificationService::send_notification` always fails at template resolution --
+    //!   `send_welcome_notification`'s `Ok(())` return (line 163) is never executed by any test in
+    //!   this file, including the ones that specifically prove "notification failure does not block
+    //!   registration" (15-06 Task 2). This is consistent with the guarantee DEFER-02 actually asks
+    //!   for and does not weaken it, but it means the module's coverage above comes entirely through
+    //!   the failure branch of that one call, never the success branch. Recorded here rather than
+    //!   built around: reaching the success branch would need a third notification fixture (cached
+    //!   template + processor + a channel handler that *succeeds*), which is scope this plan's two
+    //!   tasks did not ask for.
+
     use super::*;
     use crate::application::services::notification_orchestrator::NotificationTemplateProcessor;
     use crate::core::base::service::message_service::{MessageService, MessageServiceConfig};
@@ -1409,5 +1490,139 @@ mod tests {
         let unverified_ids: Vec<_> = unverified.iter().map(|u| u.uuid).collect();
         assert!(unverified_ids.contains(&unverified_user.uuid));
         assert!(!unverified_ids.contains(&verified_user.uuid));
+    }
+
+    // -----------------------------------------------------------------
+    // Additional validation and credential-path coverage (DEFER-02, 15-07 Task 2)
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn register_user_rejects_a_too_short_non_whitespace_username() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration("ab", "too-short-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_password_over_one_hundred_twenty_eight_characters() {
+        let service = build_service(false).await;
+        let password = "a".repeat(129);
+        assert_eq!(password.len(), 129);
+        let request = UserRegistrationRequest {
+            username: "long-password-user".to_string(),
+            email: "long-password@example.com".to_string(),
+            password,
+            profile: None,
+        };
+        let err = service.register_user(request).await.unwrap_err();
+        assert!(matches!(err, UserError::InvalidPassword(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_username_over_fifty_characters() {
+        let service = build_service(false).await;
+        let username = "a".repeat(51);
+        assert_eq!(username.len(), 51);
+        let err = service
+            .register_user(registration(&username, "too-long-username@example.com"))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn register_user_rejects_a_username_with_invalid_characters() {
+        let service = build_service(false).await;
+        let err = service
+            .register_user(registration(
+                "bad user!",
+                "invalid-chars-username@example.com",
+            ))
+            .await
+            .unwrap_err();
+        assert!(matches!(err, UserError::InvalidUsername(_)));
+    }
+
+    #[tokio::test]
+    async fn verify_password_against_a_malformed_hash_returns_a_hash_error() {
+        let service = build_service(false).await;
+
+        // Routed through the service's own `verify_password`, not a hand-rolled comparison
+        // (T-15-04): a hash string that is not valid PHC format should surface as a
+        // `HashError` from `argon2::PasswordHash::new`, rather than panicking or silently
+        // returning `false`.
+        let err = service
+            .verify_password("any-password", "not-a-valid-phc-hash")
+            .unwrap_err();
+        assert!(matches!(err, UserError::HashError(_)));
+    }
+
+    // -----------------------------------------------------------------
+    // Concurrent registration coverage (DEFER-02, 15-07 Task 2)
+    // -----------------------------------------------------------------
+
+    /// Two `register_user` calls for the same username, driven concurrently against one
+    /// shared `UserService`, with distinct emails so the request clears `register_user`'s
+    /// own application-level duplicate check (which is email-scoped only -- see
+    /// `register_user_accepts_a_case_variant_username_because_the_duplicate_check_is_on_email`
+    /// above). The collision is caught downstream, by the database: the migration in
+    /// `sqlite_user_repository.rs` declares `username TEXT UNIQUE NOT NULL`, so the loser's
+    /// `INSERT` fails on that constraint.
+    ///
+    /// Observed (not assumed) outcome, confirmed by a direct run before this assertion was
+    /// written: exactly one call succeeds, the other returns `UserError::RepositoryError`
+    /// wrapping a SQLite `UNIQUE constraint failed: users.username` error, and exactly one
+    /// row is persisted. No production change was made to obtain this result -- `register_user`
+    /// already relies on the repository's own unique constraint to catch what its
+    /// email-scoped pre-check does not.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_registration_with_the_same_username_leaves_exactly_one_user_persisted() {
+        let service = Arc::new(build_service(false).await);
+        let svc_a = service.clone();
+        let svc_b = service.clone();
+
+        let (first, second) = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+            tokio::join!(
+                svc_a.register_user(registration("paul", "paul-a@example.com")),
+                svc_b.register_user(registration("paul", "paul-b@example.com")),
+            )
+        })
+        .await
+        .expect("concurrent same-username registration should not hang");
+
+        let results = [first, second];
+        let ok_count = results.iter().filter(|r| r.is_ok()).count();
+        let err_count = results.iter().filter(|r| r.is_err()).count();
+
+        assert_eq!(
+            ok_count, 1,
+            "exactly one of the two concurrent same-username registrations should succeed; \
+             got: {results:?}"
+        );
+        assert_eq!(
+            err_count, 1,
+            "the losing registration should return an error rather than silently persisting a \
+             second row; got: {results:?}"
+        );
+
+        for result in &results {
+            if let Err(err) = result {
+                assert!(
+                    matches!(err, UserError::RepositoryError(_)),
+                    "the losing registration's error should surface as a RepositoryError from \
+                     the database's unique-constraint violation (register_user's own duplicate \
+                     check is email-scoped and would not catch this); got: {err:?}"
+                );
+            }
+        }
+
+        assert_eq!(
+            service.count_users().await.unwrap(),
+            1,
+            "exactly one user should be persisted after the race"
+        );
     }
 }
