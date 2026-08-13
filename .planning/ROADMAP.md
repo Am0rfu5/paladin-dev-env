@@ -932,7 +932,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 15-05-PLAN.md — `src/test_support/`: the shared `Send + Sync` doubles both coverage epics consume
+- [x] 15-05-PLAN.md — `src/test_support/`: the shared `Send + Sync` doubles both coverage epics consume
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
