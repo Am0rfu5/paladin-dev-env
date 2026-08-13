@@ -20,9 +20,16 @@
 //! - [`failing_channel_handler`] — a `NotificationChannelHandler` implementation whose
 //!   `handle_notification` always errors, for exercising notification-failure paths without
 //!   changing any production signature.
+//! - [`event_factory`] — deterministic `Event` construction for listener trigger-condition
+//!   tests: a single-event constructor, a deliberately-non-matching-event constructor, and a
+//!   1000-plus-event bulk constructor.
 //!
 //! No new dependency is added to any manifest to build these doubles; `mockall` is not adopted.
 
+pub mod event_factory;
 pub mod failing_channel_handler;
 
+pub use event_factory::{
+    EventFactoryError, build_event, build_event_batch, build_non_matching_event,
+};
 pub use failing_channel_handler::{FailingChannelHandler, FailingChannelInvocation};
