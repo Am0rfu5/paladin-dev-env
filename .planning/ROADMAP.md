@@ -928,7 +928,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 15-04-PLAN.md — the contributor coverage documentation and the three corrected instruction files
+- [x] 15-04-PLAN.md — the contributor coverage documentation and the three corrected instruction files
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
