@@ -487,9 +487,12 @@ mod tests {
     use super::*;
     use crate::core::base::component::action::Action;
     use crate::core::base::component::event::Event;
-    use crate::test_support::event_factory::{build_event, build_non_matching_event};
+    use crate::test_support::event_factory::{
+        build_event, build_event_batch, build_non_matching_event,
+    };
     use serde_json::json;
     use std::collections::HashSet;
+    use std::time::Duration;
 
     /// Configurable `should_process` behaviour for [`MockEventListener`] — added by plan 15-08 to
     /// serve cases the three pre-existing tests never needed (fixed match/no-match verdicts
@@ -1410,5 +1413,321 @@ mod tests {
             .unwrap();
         let health = service.health_check().await.unwrap();
         assert_eq!(health.get("erroring_one"), Some(&false));
+    }
+
+    // ========================================================================
+    // Concurrency and stress (DEFER-03 area 5, plan 15-09)
+    // ========================================================================
+    //
+    // Every test below runs under `#[tokio::test(flavor = "multi_thread")]` -- a single-threaded
+    // runtime cannot surface a real lock-ordering problem between `listeners` (`RwLock`),
+    // `triggers` (`RwLock`) and `trigger_queue` (`Mutex`) -- and every concurrent section is
+    // wrapped in an explicit `tokio::time::timeout` with a generous but finite bound, asserted
+    // not to have elapsed. A lock-ordering deadlock therefore fails the test with a named
+    // panic/timeout rather than hanging the runner until a workflow-level timeout kills the
+    // whole CI job with no useful signal (T-15-22).
+    //
+    // Every listener registered below is given a `max_triggers_per_window` comfortably above
+    // the number of events it will actually see and a `time_window_seconds` large enough not to
+    // roll over during the test, so the rate limiter documented and exercised above cannot
+    // silently absorb part of the exact totals these tests assert (T-15-25's exactness
+    // requirement would otherwise be defeated by an unrelated boundary this suite already
+    // covers elsewhere).
+
+    /// A rate-limit configuration wide enough that it never interferes with the exact-count
+    /// assertions the concurrency tests below make -- `max_triggers_per_window` comfortably
+    /// exceeds any event count used here, and `time_window_seconds` is large enough that the
+    /// window cannot naturally roll over during a test's execution.
+    fn non_interfering_config() -> ListenerConfig {
+        ListenerConfig {
+            max_triggers_per_window: 100_000,
+            time_window_seconds: 3600,
+            ..ListenerConfig::default()
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_emission_from_multiple_producers_yields_the_exact_expected_trigger_total() {
+        const PRODUCERS: usize = 8;
+        const EVENTS_PER_PRODUCER: usize = 50;
+        const LISTENERS: usize = 3;
+
+        let service = Arc::new(ListenerOrchestrator::new());
+        for i in 0..LISTENERS {
+            service
+                .register_listener(Box::new(
+                    MockEventListener::new(
+                        &format!("multi_producer_listener_{i}"),
+                        non_interfering_config(),
+                    )
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+                ))
+                .await
+                .unwrap();
+        }
+
+        let mut handles = Vec::with_capacity(PRODUCERS);
+        for producer_id in 0..PRODUCERS {
+            let service_clone = Arc::clone(&service);
+            handles.push(tokio::spawn(async move {
+                let mut produced = 0usize;
+                for event_index in 0..EVENTS_PER_PRODUCER {
+                    let event = build_event(
+                        "test_concurrent_multi_producer",
+                        json!({"producer": producer_id, "event": event_index}),
+                    );
+                    produced += service_clone.process_event(event).await.unwrap().len();
+                }
+                produced
+            }));
+        }
+
+        let total = tokio::time::timeout(Duration::from_secs(30), async move {
+            let mut sum = 0usize;
+            for handle in handles {
+                sum += handle.await.expect("producer task must not panic");
+            }
+            sum
+        })
+        .await
+        .expect(
+            "multi-producer emission must complete inside the timeout -- a lock-ordering \
+             deadlock between `listeners` and `trigger_queue` would hang here instead of failing",
+        );
+
+        // Exact equality, not a lower bound: a lost update under `RwLock`/`Mutex` contention
+        // would show up as a count below this product, which a `>=` assertion would silently
+        // tolerate.
+        assert_eq!(
+            total,
+            PRODUCERS * EVENTS_PER_PRODUCER * LISTENERS,
+            "trigger total must equal the exact arithmetic product of producers, events and \
+             matching listeners"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn concurrent_registration_and_unregistration_during_active_processing_stays_consistent()
+    {
+        let service = Arc::new(ListenerOrchestrator::new());
+
+        // Two listeners the churn task never touches, so the processing task always has
+        // something stable to hit regardless of how the churn task interleaves.
+        for name in ["steady_a", "steady_b"] {
+            service
+                .register_listener(Box::new(
+                    MockEventListener::new(name, non_interfering_config())
+                        .with_should_process(ShouldProcessBehavior::Fixed(true)),
+                ))
+                .await
+                .unwrap();
+        }
+
+        let processor_handle = Arc::clone(&service);
+        let processor = tokio::spawn(async move {
+            for i in 0..300 {
+                processor_handle
+                    .process_event(build_event("test_registration_churn", json!({"i": i})))
+                    .await
+                    .unwrap();
+                tokio::task::yield_now().await;
+            }
+        });
+
+        const CHURN_LISTENERS: usize = 50;
+        let churn_handle = Arc::clone(&service);
+        let churner = tokio::spawn(async move {
+            for i in 0..CHURN_LISTENERS {
+                let name = format!("churn_{i}");
+                churn_handle
+                    .register_listener(Box::new(MockEventListener::new(
+                        &name,
+                        non_interfering_config(),
+                    )))
+                    .await
+                    .unwrap();
+                tokio::task::yield_now().await;
+                // Unregister every even-indexed churn listener, deliberately leaving the
+                // odd-indexed half registered -- this exercises both register and unregister
+                // concurrently with active processing rather than only one direction.
+                if i % 2 == 0 {
+                    churn_handle.unregister_listener(&name).await.unwrap();
+                }
+                tokio::task::yield_now().await;
+            }
+        });
+
+        tokio::time::timeout(Duration::from_secs(30), async {
+            let (processor_result, churner_result) = tokio::join!(processor, churner);
+            processor_result.expect("processing task must not panic");
+            churner_result.expect("registration/unregistration churn task must not panic");
+        })
+        .await
+        .expect(
+            "registration/unregistration churn concurrent with active processing must complete \
+             inside the timeout -- a lock-ordering problem between the listener map and the \
+             trigger queue would hang here instead of failing",
+        );
+
+        // Consistency check: `list_listeners` and `get_all_stats` must agree exactly on the
+        // surviving set -- no listener present in one and absent from the other, and no call
+        // above returned a poisoned-state error (every `.unwrap()`/`.expect()` above already
+        // asserts that).
+        let listed: HashSet<String> = service.list_listeners().await.into_iter().collect();
+        let stat_keys: HashSet<String> = service.get_all_stats().await.into_keys().collect();
+        assert_eq!(
+            listed, stat_keys,
+            "list_listeners and get_all_stats must agree on the surviving listener set"
+        );
+
+        assert!(listed.contains("steady_a"));
+        assert!(listed.contains("steady_b"));
+        let surviving_churn = listed.iter().filter(|n| n.starts_with("churn_")).count();
+        assert_eq!(
+            surviving_churn,
+            CHURN_LISTENERS / 2,
+            "exactly the odd-indexed (never-unregistered) half of the churn listeners should \
+             remain"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_1000_plus_event_burst_across_several_producers_yields_exact_aggregate_counts() {
+        const BURST_SIZE: usize = 1200;
+        const LISTENERS: usize = 2;
+        const PRODUCER_TASKS: usize = 4;
+
+        let service = Arc::new(ListenerOrchestrator::new());
+        for i in 0..LISTENERS {
+            service
+                .register_listener(Box::new(
+                    MockEventListener::new(
+                        &format!("burst_listener_{i}"),
+                        non_interfering_config(),
+                    )
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+                ))
+                .await
+                .unwrap();
+        }
+
+        // Built in one call via the shared bulk constructor -- what makes a 1000-plus-event
+        // burst expressible without a hand-copied loop.
+        let events = build_event_batch("test_burst", BURST_SIZE);
+        let chunk_size = BURST_SIZE.div_ceil(PRODUCER_TASKS);
+
+        let mut handles = Vec::with_capacity(PRODUCER_TASKS);
+        for chunk in events.chunks(chunk_size) {
+            let chunk_owned: Vec<Event> = chunk.to_vec();
+            let service_clone = Arc::clone(&service);
+            handles.push(tokio::spawn(async move {
+                for event in chunk_owned {
+                    service_clone.process_event(event).await.unwrap();
+                }
+            }));
+        }
+
+        tokio::time::timeout(Duration::from_secs(60), async move {
+            for handle in handles {
+                handle.await.expect("burst producer task must not panic");
+            }
+        })
+        .await
+        .expect(
+            "1000-plus-event burst across several concurrent producers must complete inside \
+             the timeout -- a lock-ordering deadlock would hang here instead of failing",
+        );
+
+        // Exact equality on both the shared queue and every per-listener counter, so a
+        // discrepancy between the two would surface rather than cancel out -- a lost increment
+        // under `Mutex`/`RwLock` contention shows up as a count low by a small amount, which
+        // only an exact assertion (not a range or a lower bound) would ever notice.
+        let queue_length = service.trigger_queue_length().await;
+        assert_eq!(
+            queue_length,
+            BURST_SIZE * LISTENERS,
+            "trigger_queue_length must equal the exact arithmetic total across all listeners"
+        );
+
+        let stats = service.get_all_stats().await;
+        for i in 0..LISTENERS {
+            let name = format!("burst_listener_{i}");
+            let listener_stats = stats
+                .get(&name)
+                .unwrap_or_else(|| panic!("listener {name} must still be registered"));
+            assert_eq!(
+                listener_stats.events_processed as usize, BURST_SIZE,
+                "listener {name}: exact events_processed"
+            );
+            assert_eq!(
+                listener_stats.triggers_created as usize, BURST_SIZE,
+                "listener {name}: exact triggers_created"
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn dropping_the_orchestrator_during_active_processing_completes_without_panicking_or_leaking_a_lock()
+     {
+        // `ListenerOrchestrator` exposes no `shutdown()` method and defines no custom `Drop` --
+        // confirmed by direct inspection of the struct and its `impl` block above, per this
+        // task's own instruction to read the type before presuming an affordance exists. Every
+        // field (`listeners`, `triggers`, `trigger_queue`) is `Arc`-wrapped, so the type's actual
+        // "shutdown" behaviour is exactly ordinary `Arc` reference-counting: dropping one handle
+        // while another clone is still live only decrements a refcount, and the underlying state
+        // (and every lock inside it) is released only once the last strong reference is dropped.
+        // This test exercises and asserts that real behaviour rather than an invented
+        // `shutdown()` call, and records the absent affordance here for Task 2's justification
+        // block per the plan's explicit instruction not to add one to production code.
+        let primary = Arc::new(ListenerOrchestrator::new());
+        primary
+            .register_listener(Box::new(
+                MockEventListener::new("shutdown_probe", non_interfering_config())
+                    .with_should_process(ShouldProcessBehavior::Fixed(true)),
+            ))
+            .await
+            .unwrap();
+
+        let weak = Arc::downgrade(&primary);
+
+        let worker_handle = Arc::clone(&primary);
+        const IN_FLIGHT_EVENTS: usize = 200;
+        let events = build_event_batch("test_shutdown_burst", IN_FLIGHT_EVENTS);
+        let worker = tokio::spawn(async move {
+            let mut total = 0usize;
+            for event in events {
+                total += worker_handle.process_event(event).await.unwrap().len();
+            }
+            total
+        });
+
+        // Drop this test's own handle immediately -- the spawned worker task holds its own
+        // clone, so the orchestrator's state stays alive and reachable through it. This is the
+        // "graceful shutdown during active processing" scenario as the type actually supports
+        // it: dropping handles while a task is mid-flight, since no explicit shutdown affordance
+        // exists.
+        drop(primary);
+
+        let total = tokio::time::timeout(Duration::from_secs(15), worker)
+            .await
+            .expect(
+                "the worker task must complete inside the timeout -- a lock held across the \
+                 drop above would hang this instead of failing",
+            )
+            .expect("worker task must not panic despite the handle being dropped mid-flight");
+        assert_eq!(
+            total, IN_FLIGHT_EVENTS,
+            "every in-flight event must still have produced exactly one trigger despite the drop"
+        );
+
+        // The worker's own `Arc` clone is dropped when its spawned task completes and its stack
+        // frame unwinds. With every strong reference now gone, the `Weak` upgrade must fail --
+        // proof the orchestrator's state, and every lock inside it, was fully released rather
+        // than left held by a dangling guard.
+        assert!(
+            weak.upgrade().is_none(),
+            "all strong references must be gone once the worker task has completed, proving no \
+             lock guard or clone was leaked across the drop"
+        );
     }
 }
