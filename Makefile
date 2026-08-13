@@ -236,6 +236,21 @@ test-facade: ## Run tests for paladin facade crate
 	@echo "$(CYAN)Running tests for paladin (facade)...$(NC)"
 	@$(CARGO) test -p paladin
 
+##@ Coverage
+
+.PHONY: coverage
+coverage: ## Measure workspace coverage (mirrors CI's `coverage` job — requires make services-up)
+	@echo "$(CYAN)Measuring coverage...$(NC)"
+	@nc -z localhost 6380 || { echo "$(RED)Redis not reachable on port 6380 — start services first with 'make services-up'.$(NC)"; exit 1; }
+	@nc -z localhost 9010 || { echo "$(RED)MinIO not reachable on port 9010 — start services first with 'make services-up'.$(NC)"; exit 1; }
+	@$(CARGO) llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
+
+.PHONY: coverage-html
+coverage-html: ## Generate an HTML coverage report at target/coverage
+	@echo "$(CYAN)Generating HTML coverage report...$(NC)"
+	@$(CARGO) llvm-cov --workspace --features integration-tests --html --output-dir target/coverage
+	@echo "Report at target/coverage/html/index.html"
+
 ##@ Code Quality
 
 .PHONY: fmt
