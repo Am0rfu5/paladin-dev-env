@@ -936,8 +936,8 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 15-06-PLAN.md — `user_service.rs`: registration, validation, hashing and the notification-failure path
-- [ ] 15-08-PLAN.md — `listener.rs`: re-measure the stale baseline, then lifecycle, delivery, filtering and health
+- [x] 15-06-PLAN.md — `user_service.rs`: registration, validation, hashing and the notification-failure path
+- [x] 15-08-PLAN.md — `listener.rs`: re-measure the stale baseline, then lifecycle, delivery, filtering and health
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
