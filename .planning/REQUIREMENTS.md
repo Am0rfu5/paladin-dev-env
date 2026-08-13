@@ -2839,7 +2839,7 @@ threshold configuration and the local targets. Scope accordingly.
       alternatives; this note is the reverse pointer so a Phase 15 planner does not have to
       rediscover the link.
 
-- [ ] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
+- [x] **PIPE-02**: Unit and integration coverage is measured together in CI and gated at **one
       recorded threshold**. A `coverage` job installs `cargo-llvm-cov` via
       `taiki-e/install-action@v2` with `tool: cargo-llvm-cov@0.7.1` (pre-built binaries, ~30 s
       versus 3-5 min for `cargo install`), runs
@@ -2893,7 +2893,7 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-makefile-coverage-targets (FR-25.7); `intel/code-verification.md` run-5
       verified-open finding 3.*
 
-- [ ] **PIPE-04**: No deprecated GitHub Action remains in any workflow. **Eight references,
+- [x] **PIPE-04**: No deprecated GitHub Action remains in any workflow. **Eight references,
       verified by line:** `actions-rs/toolchain@v1` (deprecated and unmaintained) at `ci.yml:147`,
       `ci.yml:317`, `ci.yml:507` and `integration-tests.yml:71`; `actions/cache@v3` at
       `integration-tests.yml:78`, `:84` and `:90`; `codecov/codecov-action@v3` at
@@ -4133,9 +4133,9 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | WEB-03 | Phase 14 | Complete |
 | WEB-04 | Phase 14 | Complete |
 | PIPE-01 | Phase 15 | Pending |
-| PIPE-02 | Phase 15 | Pending |
+| PIPE-02 | Phase 15 | Complete |
 | PIPE-03 | Phase 15 | Pending |
-| PIPE-04 | Phase 15 | Pending |
+| PIPE-04 | Phase 15 | Complete |
 | PIPE-05 | Phase 15 | Pending |
 | DEFER-01 | Phase 15 | Pending |
 | DEFER-02 | Phase 15 | Pending |
