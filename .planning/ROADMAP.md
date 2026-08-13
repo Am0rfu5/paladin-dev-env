@@ -911,7 +911,19 @@ Plans:
   5. A developer writing an async service test reaches for shared, `Send + Sync` mocks that already exist rather than writing another one-off — closing the prerequisite that three registers name and none has built, and that roughly a quarter of the deferred coverage estimate consists of.
   6. `user_service.rs` and the listener orchestrator are covered to the gate, with the `user_service.rs` split-versus-test collision resolved by sequence rather than by whoever schedules first, and with the listener's stale 57.83% baseline re-measured against a module that Milestone 9 has since added tests to.
 
-**Plans**: TBD
+**Plans**: 10 plans in 8 waves. The two halves are wave-separated as the register requires: PIPE-01 … PIPE-05 occupy waves 1-4, DEFER-01 … DEFER-03 waves 5-7, and the record closes in wave 8. Waves 6 and 7 each run two plans in parallel (`user_service.rs` and `listener.rs` share no files). Plan 15-03 carries a blocking checkpoint because D-04's two-step landing needs a CI-produced figure that no local environment can generate — Docker is absent.
+
+Plans:
+- [ ] 15-01-PLAN.md — tracer: the `coverage` job (measure-only) and `make coverage`, plus the `cli-tests` and `bench-check` gates and the Makefile targets
+- [ ] 15-02-PLAN.md — retire every deprecated action, delete the duplicate coverage path, land `.codecov.yml` and an `actionlint` job
+- [ ] 15-03-PLAN.md — capture the CI-produced figure, amend ADR-0006 in place, arm the gate
+- [ ] 15-04-PLAN.md — the contributor coverage documentation and the three corrected instruction files
+- [ ] 15-05-PLAN.md — `src/test_support/`: the shared `Send + Sync` doubles both coverage epics consume
+- [ ] 15-06-PLAN.md — `user_service.rs`: registration, validation, hashing and the notification-failure path
+- [ ] 15-07-PLAN.md — `user_service.rs`: authentication, profile, queries, concurrency, and the module measurement
+- [ ] 15-08-PLAN.md — `listener.rs`: re-measure the stale baseline, then lifecycle, delivery, filtering and health
+- [ ] 15-09-PLAN.md — `listener.rs`: the concurrency and stress suite, and the exit measurement
+- [ ] 15-10-PLAN.md — amend the eight requirements, ten ledger rows, ROADMAP criteria and three source documents at source
 
 ### Phase 16: Documentation Currency & the Architecture Gap
 
