@@ -579,6 +579,71 @@ jobs:
           TEST_MINIO_SECRET_KEY: testpass123
         run: cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info -- --test-threads=1
 
+  # CLI snapshot tests (PIPE-01) — a dedicated job, not a step inside
+  # `crate-isolation`, per D-07: a distinctly named job makes a broken CLI
+  # snapshot legible in the PR checks list instead of surfacing as a red
+  # `crate-isolation (paladin-ai)` leg a reviewer has to open to understand.
+  # `--features cli` is the entire point of this job — the `cli` test target
+  # declares `required-features = ["cli"]`, and Cargo silently skips a target
+  # whose required features are inactive (no error, no output, zero tests run).
+  cli-tests:
+    name: CLI Snapshot Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-cli-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run CLI snapshot tests
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test -p paladin-ai --features cli --test cli 2>&1 | tee cli-test-output.log
+          executed=$(grep -oE '[0-9]+ passed' cli-test-output.log | tail -1 | grep -oE '[0-9]+')
+          if [ -z "$executed" ] || [ "$executed" -eq 0 ]; then
+            echo "::error::cli-tests reported zero executed tests. This usually means --features cli was dropped, causing Cargo to silently skip the required-features-gated cli test target."
+            exit 1
+          fi
+          echo "cli-tests executed $executed test(s)"
+
+  # Benchmark compile-check (PIPE-01) — compiles every [[bench]] target without
+  # executing it: no Criterion runtime, no performance numbers, no timing
+  # output. This is the missing compile-check prerequisite for the existing
+  # scheduled `benchmark` job and the `benchmark-regression-signal` job, not a
+  # replacement for either — both are left untouched.
+  bench-check:
+    name: Benchmark Compile Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bench-check-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Compile-check benchmarks
+        run: cargo bench --workspace --no-run
+
   # Build and test Docker images
   #
   # AUTHORED AND STATICALLY VALIDATED ONLY — docker is absent from the
