@@ -186,3 +186,10 @@ None - no external service configuration required.
 ---
 *Phase: 15-coverage-ci-quality-gates*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: `src/core/platform/manager/user_service.rs`
+- FOUND: commit `432d514` (Task 1)
+- FOUND: commit `42ae77f` (Task 2)
+- FOUND: commit `2434afc` (plan summary)
