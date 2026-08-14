@@ -1,13 +1,17 @@
-name: CI/CD Pipeline
-
+# CI runs on a push to ANY branch (D-03). The origin incident: this filter
+# named four prefixes (main/develop/feature/release) while real branch
+# traffic used eight, so pushes to fix/, feat/, docs/, chore/, copilot/ and
+# agent/ branches got no CI at all — and the very branch that repaired CI,
+# fix/ci-workflow-health, was itself inside that blind spot for two weeks.
+# Enumerating a wider prefix list was rejected: the next unsanctioned
+# prefix someone invents would be dark again, so the filter matches every
+# branch instead of a maintained allowlist. A push to a branch that also
+# has an open PR against main will therefore run CI twice (once per
+# trigger); the `concurrency` group below with `cancel-in-progress`
+# absorbs that duplication, so no trigger is being dropped to avoid it.
 on:
-  # CI runs on pushes to main/develop/feature/release branches, and on pull
-  # requests targeting main/develop. A push to a branch that also has an open
-  # PR against main/develop will therefore run CI twice (once per trigger) —
-  # accepted so that `release/**` branches (which never open a PR) still get
-  # CI coverage on every push, per REL-05/SC5.
   push:
-    branches: [ main, develop, 'feature/**', 'release/**' ]
+    branches: [ '**' ]
   # `release/**` added: a PR targeting a release branch must run CI. Without it
   # a PR into release/** showed almost no checks, because every workflow filtered
   # pull_request to [main, develop] only.
@@ -279,23 +283,29 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
+      # Replaces the three hand-rolled actions/cache@v4 steps (registry, git
+      # index, target dir) that previously lived here (D-10). This is the one
+      # job in the repository that hard-fails on a cache miss: a cold cache
+      # left `~/.cargo/registry` empty while the four build steps below assert
+      # a hermetic, network-free build, so any lockfile change failed the job
+      # outright rather than degrading to a slower build. `cache-on-failure:
+      # true` keeps the cache warm for the next run even when this job fails
+      # partway through.
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          cache-on-failure: true
 
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-examples-${{ hashFiles('**/Cargo.lock') }}
+      # Load-bearing, not redundant with the cache action above: the cache's
+      # own restore-keys fallback (if it misses) would restore a cache keyed
+      # on an OLDER Cargo.lock generation, which by construction lacks any
+      # crate that generation didn't contain -- the same limitation a bare
+      # restore-keys fallback would have had. Only `cargo fetch --locked`
+      # guarantees every crate Cargo.lock names is present locally before the
+      # four hermetic build steps below run. Uses the network exactly once
+      # per job and never rewrites the lockfile.
+      - name: Fetch dependencies
+        run: cargo fetch --locked
 
       # examples/ holds 47 .rs files. Exactly 4 are declared [[example]] targets
       # in Cargo.toml, and every one of those 4 gates on a feature outside the

@@ -1,13 +1,15 @@
-name: Feature Flags Matrix
-
+# Runs on a push to ANY branch (D-03). This filter previously named four
+# prefixes (main/develop/release/feature) while real branch traffic used
+# eight, so pushes to fix/, feat/, docs/, chore/, copilot/ and agent/
+# branches never exercised this 14-job matrix at all. Enumerating a wider
+# prefix list was rejected: the next unsanctioned prefix someone invents
+# would be dark again, so the filter matches every branch instead of a
+# maintained allowlist. Duplicate runs (one for `push`, one for
+# `pull_request`) are collapsed by the `concurrency` group below rather
+# than by dropping a trigger.
 on:
-  # Also runs on pushes to the long-lived branches. Duplicate runs (one for
-  # `push`, one for `pull_request`) are collapsed by the `concurrency` group
-  # below rather than by dropping a trigger -- a PR-only trigger left this
-  # 14-job matrix completely dark on `release/**`, where the work actually
-  # happens, until a PR was finally opened against `main`.
   push:
-    branches: [ main, develop, 'release/**', 'feature/**' ]
+    branches: [ '**' ]
   # `release/**` added: a PR targeting a release branch must exercise the
   # feature matrix too, not only PRs targeting main/develop.
   pull_request:
