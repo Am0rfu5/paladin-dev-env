@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 6
+open_count: 7
 waived_count: 0
 fixed_count: 1
-total_count: 7
-last_updated: 2026-08-12T18:05:57.086Z
+total_count: 8
+last_updated: 2026-08-14T00:49:21.261Z
 ---
 
 # Broken Windows Ledger
@@ -22,6 +22,7 @@ last_updated: 2026-08-12T18:05:57.086Z
 | 5 | 14 | unrun-verify | Cargo.toml |  | cargo test --workspace not run to completion for 14-01: system-wide disk exhaustion (830G/875G used, 0 avail on /workspace mount) blocked full workspace compile; targeted plan <verify> commands (paladin-ai lib config::agents, paladin-web full suite, paladin-server binary build, openapi drift guard, check-api-surface.sh) all passed | open |  | 2026-08-12T16:51:08.832Z |  |
 | 6 | 14 | unrun-verify | N/A (workspace-wide) |  | 14-04: full 'cargo test --workspace' not run — shared /workspace mount at 99%25 (13G free), matching 14-01's documented disk-exhaustion condition; the plan's own targeted verify (cargo test --bin paladin-server --features web-server, cargo fmt --check, cargo clippy --all-targets --features web-server -- -D warnings) all ran to completion and passed | open |  | 2026-08-12T17:13:58.989Z |  |
 | 7 | 14 | deviation | CHANGELOG.md |  | 14-08's acceptance criterion expected >=2 'BREAKING' lines under the dated 0.8.0 section in root CHANGELOG.md; only 1 is present. 14-01 split the phase's two consumer-break BREAKING entries across root CHANGELOG.md (config-key rename) and crates/paladin-web/CHANGELOG.md (AgentAuthConfig field + OpenAPI scheme rename), one per file, per 14-01-SUMMARY.md's own D4 verification and this plan's own instruction to leave per-crate changelogs untouched. Both breaks are documented with a BREAKING entry and cite ADR-0040; only the single-file grep count in the plan's acceptance criteria was miscalibrated. | open |  | 2026-08-12T18:05:57.086Z |  |
+| 8 | 15.1 | unrun-verify | SECURITY-EXCEPTIONS.md |  | Plan 15.1-01 Task 2's inline verify python one-liner (block-split regex over the machine-readable register) fails with a pre-existing TOML parse error on the LAST exception block, because its lookahead doesn't stop before the trailing markdown code fence -- reproduced against the pre-edit file too, unrelated to this task's new row. Substituted an isolated per-block parse of just the new RUSTSEC-2026-0249 row (11/11 fields present) plus the real repo guard scripts/check-advisory-register.sh (exit 0) as equivalent proof. | open |  | 2026-08-14T00:49:21.261Z |  |
 
 ````json
 [
@@ -107,6 +108,18 @@ last_updated: 2026-08-12T18:05:57.086Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-12T18:05:57.086Z",
+    "resolved_at": null
+  },
+  {
+    "id": 8,
+    "kind": "unrun-verify",
+    "phase": "15.1",
+    "file": "SECURITY-EXCEPTIONS.md",
+    "line": null,
+    "description": "Plan 15.1-01 Task 2's inline verify python one-liner (block-split regex over the machine-readable register) fails with a pre-existing TOML parse error on the LAST exception block, because its lookahead doesn't stop before the trailing markdown code fence -- reproduced against the pre-edit file too, unrelated to this task's new row. Substituted an isolated per-block parse of just the new RUSTSEC-2026-0249 row (11/11 fields present) plus the real repo guard scripts/check-advisory-register.sh (exit 0) as equivalent proof.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-14T00:49:21.261Z",
     "resolved_at": null
   }
 ]
