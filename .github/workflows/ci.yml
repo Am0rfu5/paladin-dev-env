@@ -464,6 +464,27 @@ jobs:
           echo "Running file storage integration tests..."
           cargo test file_storage_integration_tests --release -- --ignored --nocapture
 
+      # Absorbed from the now-deleted integration-tests.yml (D-09). This is the
+      # broad `--workspace --features integration-tests` suite, distinct from
+      # the two narrow `--ignored` targets above -- not a duplicate of them,
+      # additional coverage that previously only ran on `pull_request` and a
+      # nightly cron and now runs on every push to every branch (D-03). Uses
+      # this job's TEST_REDIS_*/TEST_MINIO_* environment variable names and
+      # 6380/9010 ports rather than integration-tests.yml's REDIS_URL/
+      # MINIO_ENDPOINT names and default 6379/9000 ports, so it addresses the
+      # same service containers this job's services: block above already
+      # started -- see 15.1-PATTERNS.md's port-mapping table.
+      - name: Run broad workspace integration suite
+        env:
+          USE_EXTERNAL_TEST_SERVICES: "true"
+          TEST_REDIS_HOST: localhost
+          TEST_REDIS_PORT: 6380
+          TEST_MINIO_ENDPOINT: localhost:9010
+          TEST_MINIO_ACCESS_KEY: testuser
+          TEST_MINIO_SECRET_KEY: testpass123
+          RUST_LOG: debug
+        run: cargo test --workspace --features integration-tests --verbose -- --test-threads=1
+
       - name: Upload test artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -472,6 +493,56 @@ jobs:
           path: |
             target/debug/
             *.log
+
+  # Absorbed from the now-deleted integration-tests.yml (D-09). Distinct
+  # purpose from the `integration-tests` job above: this one exercises the
+  # Docker Compose test stack itself (image build + container orchestration),
+  # not the workspace's Rust test suite, so it keeps its own display name
+  # rather than folding into that job. No job of this name existed in this
+  # file before this plan, and the source job carried no Rust build cache of
+  # its own (its build happens entirely inside `docker compose build`), so
+  # there is no hand-rolled `actions/cache@v4` pattern to replace here.
+  docker-integration:
+    name: Docker Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          df -h
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build integration test image
+        run: docker compose -f docker/docker-compose.test.yml build integration-tests
+
+      - name: Start infrastructure services
+        run: |
+          docker compose -f docker/docker-compose.test.yml up -d redis-test minio-test minio-test-init
+          # Wait for MinIO init container to finish creating buckets
+          timeout 120 sh -c 'until docker inspect paladin-minio-test-init --format="{{.State.Status}}" 2>/dev/null | grep -q exited; do sleep 2; done'
+          echo "Infrastructure services ready"
+
+      - name: Run integration tests in Docker
+        run: |
+          docker compose -f docker/docker-compose.test.yml run --no-deps --rm integration-tests
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.test.yml logs
+
+      - name: Stop services
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.test.yml down -v
 
   # Coverage measurement (PIPE-02) — MEASURE-ONLY as of this commit: no minimum-
   # threshold flag. D-04 requires the figure to be measured before the floor
