@@ -14,9 +14,13 @@ on:
     branches: [ '**' ]
   # `release/**` added: a PR targeting a release branch must run CI. Without it
   # a PR into release/** showed almost no checks, because every workflow filtered
-  # pull_request to [main, develop] only.
+  # pull_request to [main] only. `develop` was pruned here (plan 15.1-09): the
+  # branch was retired in plan 15.1-07's trunk cutover, and a trigger list
+  # naming a ref that no longer exists is exactly the stale surface the
+  # trigger-policy register in docs/src/contributing/branching-model.md
+  # exists to catch.
   pull_request:
-    branches: [ main, develop, 'release/**' ]
+    branches: [ main, 'release/**' ]
   workflow_dispatch:
 
 concurrency:
@@ -120,6 +124,18 @@ jobs:
 
       - name: Check workflow files for inline advisory suppressions
         run: ./scripts/check-workflow-suppressions.sh
+
+      - name: Check workflow trigger policy
+        run: ./scripts/check-workflow-triggers.sh
+
+      # Closes a pre-existing gap (D-09b, plan 15.1-09): the sibling
+      # check-workflow-suppressions_test.sh regression harness has existed
+      # since Phase 12 but was wired only into `make test-shell-guards`,
+      # which no workflow invoked -- so it never ran in CI. This one step
+      # now runs both that harness and the new check-workflow-triggers_test.sh
+      # harness added alongside it.
+      - name: Run shell-guard regression tests
+        run: make test-shell-guards
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2

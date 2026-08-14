@@ -11,9 +11,13 @@ on:
   push:
     branches: [ '**' ]
   # `release/**` added: a PR targeting a release branch must exercise the
-  # feature matrix too, not only PRs targeting main/develop.
+  # feature matrix too, not only PRs targeting main. `develop` was pruned
+  # here (plan 15.1-09): the branch was retired in plan 15.1-07's trunk
+  # cutover, and a trigger list naming a ref that no longer exists is
+  # exactly the stale surface the trigger-policy register in
+  # docs/src/contributing/branching-model.md exists to catch.
   pull_request:
-    branches: [ main, develop, 'release/**' ]
+    branches: [ main, 'release/**' ]
   workflow_dispatch:
 
 concurrency:
