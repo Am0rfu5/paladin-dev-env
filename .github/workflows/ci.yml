@@ -1075,30 +1075,6 @@ jobs:
         if: always()
         run: docker compose -f docker/docker-compose.yml down -v
 
-  # Benchmark tests (optional, on schedule)
-  benchmark:
-    name: Performance Benchmarks
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run benchmarks
-        run: cargo bench
-
-      - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-results
-          path: target/criterion/
-
   # Optional non-blocking regression signal for PRs and manual runs.
   benchmark-regression-signal:
     name: Benchmark Regression Signal (Non-Blocking)
