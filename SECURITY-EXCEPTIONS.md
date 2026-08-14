@@ -116,6 +116,19 @@ compensating_control = "The namespace-allocation path only processes XML returne
 revisit_condition = "rust-s3 (or aws-creds) bumps its quick-xml dependency to >= 0.41"
 
 [[exception]]
+id = "RUSTSEC-2026-0249"
+class = "unmaintained"
+crate = "smartstring"
+path = "smartstring -> rxml -> minidom -> rust-s3 (optional s3 feature)"
+why_present = "Transitive dependency pulled in only when the optional s3 feature enables rust-s3 for MinIO/S3-compatible storage, reached via the rxml/minidom XML stack rust-s3 depends on -- one hop further than RUSTSEC-2026-0194/-0195's quick-xml edge."
+why_not_fixable = "rust-s3 is this project's S3/MinIO storage adapter and is not removable; no release of the rxml/minidom chain has dropped its smartstring dependency."
+owner = "DF3NDR"
+review_date = "2026-12-31"
+scope = "optional s3 feature path only, via rust-s3 in paladin-storage; absent from a default-feature build"
+compensating_control = "smartstring is rxml's internal string-interning dependency, not itself a parser of third-party input, and this advisory is an unmaintained notice rather than a known vulnerability, so there is no exploitable condition to compensate for today."
+revisit_condition = "rxml (or minidom, or rust-s3) drops its smartstring dependency, or the advisory is upgraded from unmaintained to a vulnerability class, whichever comes first"
+
+[[exception]]
 id = "RUSTSEC-2021-0141"
 class = "unmaintained"
 crate = "dotenv"
