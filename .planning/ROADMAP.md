@@ -985,15 +985,76 @@ Plans:
 
 **Goal**: The branching model, the branch protection rules and the CI trigger surface agree with each other and are written down — so a broken workflow cannot survive undetected, a release tag cannot be cut from unmerged work, and a new feature branch is a normal thing to create rather than something CI fails on.
 **Requirements**: TBD — minted during `/gsd-discuss-phase 15.1`
+
+  **Amended 2026-08-14 (plan 15.1-10), per D-00f, original text above retained and marked
+  superseded:** this phase mints no requirement identifier. The requirements document
+  (`.planning/REQUIREMENTS.md`) is corpus-wide, not phase-local; retroactively inventing `REQ-*` or
+  similar identifiers for an inserted phase would create entries with no upstream requirement text
+  and no consumer to point at them, and the seven success criteria below already carry the
+  traceability an identifier would add. This is a recorded answer to the open question the original
+  line left pending, not an omission — see `.planning/decisions/0043-github-flow-trunk-and-trigger-surface.md`
+  and `.planning/decisions/0044-branch-protection-posture.md`, whose `Downstream Consumers` sections
+  are what a later reader traces instead.
+
 **Depends on**: Phase 15 (its `actionlint` job and workflow edits land first). Also consumes the outcome of branch `fix/ci-workflow-health`, which already repaired the eight broken `dtolnay/rust-toolchain@master` references and restored `push:` coverage — **this phase does not redo that work**; it addresses why it went unnoticed for two weeks.
 **Success Criteria** (what must be TRUE):
 
   1. A broken workflow cannot sit undetected for two weeks again — every workflow's trigger surface is deliberate and recorded, closing the state where three of six workflows were `pull_request`-only and *every* workflow filtered `pull_request` to `[main, develop]`, so a branch taking direct pushes and a PR into a release branch both exercised only a fraction of CI.
+
+     **Amended 2026-08-14 (plan 15.1-10), original claim superseded:** the trigger-edit half of
+     this criterion was already true when this phase began — `fix/ci-workflow-health` had already
+     merged, giving every workflow a deliberate branch list with a comment naming the failure it
+     closed (`15.1-CONTEXT.md` finding 1). What this phase actually delivered is the recorded
+     policy and the mechanical guard: the six-row trigger-policy register in
+     `docs/src/contributing/branching-model.md` and `scripts/check-workflow-triggers.sh`, wired
+     into `ci.yml`'s `cargo-deny` job (plan `15.1-09`), and ratified as the decided model by
+     ADR-0043 (`.planning/decisions/0043-github-flow-trunk-and-trigger-surface.md`).
+
   2. `main` and the integration branch are protected with required status checks, replacing today's state where **neither `main` nor `release/v0.7.0` has any protection** and therefore no check can block anything.
   3. `docs/BRANCH_PROTECTION.md` exists and matches reality — `release.yml`'s `verify-tag-source` job already enforces the "main is the source of truth" invariant and points contributors at that document, which **does not exist**.
+
+     **Amended 2026-08-14 (plan 15.1-10), original premise superseded:** the file does not exist,
+     and per D-04/D-12 it is not reintroduced. Its *content* already existed — relocated by
+     Milestone 11 to `docs/src/appendix/branch-protection.md` (149 lines) before this phase began
+     (`15.1-CONTEXT.md` finding 2). This criterion is satisfied by redirecting the three surviving
+     stale pointers (`release.yml`'s `verify-tag-source` failure message, two in the `Makefile`'s
+     release-branch guard) to the page that actually exists, and bringing that page current with
+     the applied protection state (plan `15.1-10`, Task 2).
+
   4. The branching model is decided and documented, resolving that `release/v0.7.0` is being used as `develop` (a branch that already exists, unused) while `main` sits **909 commits behind with nothing ahead**, and that the branch name says `v0.7.0` while every manifest says **0.8.0**. Covers the long-lived-vs-short-lived release branch question and the version/naming policy.
+
+     **Amended 2026-08-14 (plan 15.1-10), original framing superseded:** the reconciliation was not
+     a hard problem — `git merge-base --is-ancestor origin/main origin/release/v0.7.0` returned
+     true, a clean, zero-conflict fast-forward with nothing on the trunk the integration branch
+     lacked. The commit count above also differs from the one this phase measured: **921** commits
+     behind at discovery (`15.1-CONTEXT.md` finding 5), not 909, and the fast-forward actually
+     executed moved **994** commits — the 921 from `release/v0.7.0` plus 73 more accumulated by
+     this phase's own waves 1-5 before the move (`15.1-07-SUMMARY.md`). It was one command
+     (`git push origin HEAD:main`) run behind a blocking checkpoint because it was irreversible, not
+     because it was difficult (ADR-0043).
+
   5. Creating a new feature branch does not break CI — `ci.yml`'s `examples` job runs `cargo build --examples --offline` with **no `restore-keys` cache fallback**, so a fresh branch gets a cache miss and fails with `failed to download <crate> ... --offline was specified`. This currently fails on the first run of every new branch and directly blocks adopting feature-branch flow.
+
+     **Noted 2026-08-14 (plan 15.1-10) — framing understated the defect; not counted as one of the
+     four premise corrections above:** the failure was not confined to "the first run of every new
+     branch" — it recurred on every run after any `Cargo.lock` change, on any branch, because 25 of
+     26 cache blocks carried no `restore-keys` fallback at all (`15.1-CONTEXT.md` finding 9). Fixed
+     at the class, not only in the one job that failed loudest: `Swatinem/rust-cache@v2` repo-wide
+     plus an explicit `cargo fetch --locked` step ahead of the four `--offline` builds (plans
+     `15.1-01`/`15.1-03`).
+
   6. No CI job is dark — jobs reachable only by `schedule`/`workflow_dispatch` are either exercised on a known cadence or removed, closing the state where `Performance Benchmarks` was `skipped` in every observed run and failed the first time it was actually dispatched.
+
+     **Amended 2026-08-14 (plan 15.1-10), original premise superseded — one dark job named, four
+     actually found:** re-verified against the tree, four jobs were non-continuous, not one.
+     `End-to-End Tests` and `Publish Dry Run` gated on `push && ref == 'refs/heads/main'` — dark for
+     921 commits, revived by the trunk fast-forward with no edit to their conditions (plan
+     `15.1-07`). `benchmark-regression-signal` is `pull_request || workflow_dispatch` with
+     `continue-on-error` — correctly conditional, not dark. `benchmark` (rendering as `Performance
+     Benchmarks`) was the one genuinely dark job this criterion names — `schedule || workflow_dispatch`
+     with `ci.yml` never carrying a `schedule:` key — fixed and moved to a dedicated weekly
+     `benchmarks.yml` (plan `15.1-06`; `15.1-CONTEXT.md` finding 7).
+
   7. The `smartstring` unmaintained advisory (`cargo-deny`, `License & Dependency Policy`) has a recorded disposition in `SECURITY-EXCEPTIONS.md` per the existing governance mechanism, rather than a permanently red required check.
 
 **Plans:** 0 plans
