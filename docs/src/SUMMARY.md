@@ -69,6 +69,7 @@
 - [Testing Guide](contributing/testing-guide.md)
 - [Architecture Decisions](contributing/architecture-decisions.md)
 - [Contributing Providers](contributing/contributing-providers.md)
+- [Branching Model](contributing/branching-model.md)
 
 # Appendix
 

@@ -172,12 +172,17 @@ check-advisory-register: ## Verify SECURITY-EXCEPTIONS.md agrees with deny.toml/
 check-workflow-suppressions: ## Verify no workflow file passes an advisory-ignore flag to cargo audit or cargo deny
 	@./scripts/check-workflow-suppressions.sh
 
+.PHONY: check-workflow-triggers
+check-workflow-triggers: ## Verify every workflow's trigger surface matches the recorded policy table
+	@./scripts/check-workflow-triggers.sh
+
 .PHONY: check-gates
-check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions ## Run all offline release-gate guards
+check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions check-workflow-triggers ## Run all offline release-gate guards
 
 .PHONY: test-shell-guards
 test-shell-guards: ## Run regression tests for the offline gate guard scripts (not part of check-gates)
 	@./tests/scripts/check-workflow-suppressions_test.sh
+	@./tests/scripts/check-workflow-triggers_test.sh
 
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
