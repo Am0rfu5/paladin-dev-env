@@ -960,3 +960,51 @@ this phase made move exactly three rows across class boundaries
 
 This phase's own writer scope is exactly the six rows and two forward-scope-table rows amended above,
 plus this summary section — nothing else in the file is touched.
+
+## Phase 15.1 close-out amendments (2026-08-14)
+
+Appended per D-00d — nothing above this heading is rewritten, absorbed, or re-sorted. Phase 15.1 is
+an inserted phase between Phase 15 and Phase 16 (`.planning/ROADMAP.md`, "Phase 15.1: Git & CI
+Governance (INSERTED)"); it touches no `REQ-*` row in this ledger's 120-row body, so this section
+records what it shipped and its cross-references, not a row amendment.
+
+**What shipped.** The branching model moved from an undecided, drifting state — default branch 921
+commits stale, a versioned branch (`release/v0.7.0`) doing integration duty, a stale midpoint branch
+(`develop`), a four-prefix push filter against eight prefixes actually in use, two workflows
+colliding on the same status-check context names (`Integration Tests`, `Kubernetes Smoke Test`) — to
+a decided, applied, and guarded one: `main` fast-forwarded to the tip of the former integration
+branch (994 commits, plan `15.1-07`), `integration-tests.yml` deleted and consolidated into `ci.yml`
+(plan `15.1-05`), a match-all push trigger with two named exceptions on every workflow (plan
+`15.1-01`), and a trigger-policy register plus mechanical guard (`scripts/check-workflow-triggers.sh`,
+plan `15.1-09`) — recorded as **ADR-0043** (`.planning/decisions/0043-github-flow-trunk-and-trigger-surface.md`).
+Branch protection moved from two rulesets committed and unapplied for months, self-defeating as
+written (a review requirement satisfiable only through a bypass that also skipped required status
+checks), to three rulesets applied and server-verified (`gh api /repos/DF3NDR/paladin-dev-env/rulesets`):
+44 required-status contexts with two measured exclusions, zero required approving reviews with a
+pull request still mandatory, the administrative bypass removed on both branch rulesets and
+deliberately retained on the tag ruleset — recorded as **ADR-0044**
+(`.planning/decisions/0044-branch-protection-posture.md`). Both records cite `15.1-CI-EVIDENCE.md`
+(the pre-cutover green-pipeline evidence, SC1/SC5) and `15.1-RULESET-EVIDENCE.md` (the
+applied-ruleset read-back, SC2) rather than restating either.
+
+**Reopening condition sharpened for the previously-declined native-arm64 CI rework.** The "Phase 15
+declines" entry above (dated 2026-08-13) recorded the native-arm64 rework as declined for that
+phase, with the reopening condition "a future infrastructure phase adopts native arm64 runners for
+the `docker` job's multi-arch build." This phase sharpens what that reopening condition now buys:
+with the 44-context required-check set applied (ADR-0044), `Docker Build` is now **the only
+correctness-relevant job excluded from the merge gate** — `Kubernetes Smoke Test`, the required
+set's other exclusion, is a cluster smoke test rather than a correctness check on the code itself.
+Closing the native-arm64 gap closes one excluded job, not a change to the gate's shape.
+
+**Recorded separately, as a code-settled observation rather than a contested position — no decision
+record, per D-00g.** The two remaining unpinned `dtolnay/rust-toolchain@master` references
+(`ci.yml:250`, `release.yml:272`) are correct, not residue: both pass an explicit `toolchain:` input,
+which the `@stable` tag cannot accept (`15.1-CONTEXT.md` finding 12). A future action-modernisation
+sweep should not "fix" them into breakage by pinning `@stable` across the board without checking for
+this input first.
+
+**Cross-references, not restated:** `.planning/phases/15.1-git-ci-governance/15.1-CI-EVIDENCE.md`
+(plan `15.1-02`), `.planning/phases/15.1-git-ci-governance/15.1-RULESET-EVIDENCE.md` (plan `15.1-08`),
+`15.1-07-SUMMARY.md` (the fast-forward transcript), `15.1-09-SUMMARY.md` (the trigger register and
+guard), `.planning/decisions/0043-github-flow-trunk-and-trigger-surface.md`,
+`.planning/decisions/0044-branch-protection-posture.md`.
