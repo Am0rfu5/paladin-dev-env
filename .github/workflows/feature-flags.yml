@@ -103,23 +103,17 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
+      # matrix.name differentiates 14 legs by feature-set string, not by
+      # toolchain or lockfile -- the one input Swatinem/rust-cache@v2's
+      # automatic job-based key cannot see (same `dtolnay/rust-toolchain@stable`
+      # for every leg, so its default rustc-version-in-key component is
+      # identical across all 14). Fed as the action's additional `key` input so
+      # each feature-set leg keeps its own cache entry, matching what the
+      # ${{ matrix.name }} key suffix on the block above already achieved.
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-${{ matrix.name }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.name }}
 
       - name: Check (${{ matrix.description }})
         run: cargo check ${{ matrix.flags }}
@@ -141,11 +135,8 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Check library (no-default-features, no cli)
         run: cargo check --lib --no-default-features
