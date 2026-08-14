@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 7
+open_count: 10
 waived_count: 0
 fixed_count: 1
-total_count: 8
-last_updated: 2026-08-14T00:49:21.261Z
+total_count: 11
+last_updated: 2026-08-14T14:23:03.057Z
 ---
 
 # Broken Windows Ledger
@@ -23,6 +23,9 @@ last_updated: 2026-08-14T00:49:21.261Z
 | 6 | 14 | unrun-verify | N/A (workspace-wide) |  | 14-04: full 'cargo test --workspace' not run — shared /workspace mount at 99%25 (13G free), matching 14-01's documented disk-exhaustion condition; the plan's own targeted verify (cargo test --bin paladin-server --features web-server, cargo fmt --check, cargo clippy --all-targets --features web-server -- -D warnings) all ran to completion and passed | open |  | 2026-08-12T17:13:58.989Z |  |
 | 7 | 14 | deviation | CHANGELOG.md |  | 14-08's acceptance criterion expected >=2 'BREAKING' lines under the dated 0.8.0 section in root CHANGELOG.md; only 1 is present. 14-01 split the phase's two consumer-break BREAKING entries across root CHANGELOG.md (config-key rename) and crates/paladin-web/CHANGELOG.md (AgentAuthConfig field + OpenAPI scheme rename), one per file, per 14-01-SUMMARY.md's own D4 verification and this plan's own instruction to leave per-crate changelogs untouched. Both breaks are documented with a BREAKING entry and cite ADR-0040; only the single-file grep count in the plan's acceptance criteria was miscalibrated. | open |  | 2026-08-12T18:05:57.086Z |  |
 | 8 | 15.1 | unrun-verify | SECURITY-EXCEPTIONS.md |  | Plan 15.1-01 Task 2's inline verify python one-liner (block-split regex over the machine-readable register) fails with a pre-existing TOML parse error on the LAST exception block, because its lookahead doesn't stop before the trailing markdown code fence -- reproduced against the pre-edit file too, unrelated to this task's new row. Substituted an isolated per-block parse of just the new RUSTSEC-2026-0249 row (11/11 fields present) plus the real repo guard scripts/check-advisory-register.sh (exit 0) as equivalent proof. | open |  | 2026-08-14T00:49:21.261Z |  |
+| 9 | 15.1 | unrun-verify | .github/workflows/ci.yml |  | Task 1 acceptance criterion 'git diff \| grep -c "^[+-].*cargo "' returns 4 not 0 -- matches step *name* text ('Cache cargo registry' etc.) removed by the migration, not actual cargo invocations. Verified via 'run: cargo' scoped grep returning 0 changed invocations. | open |  | 2026-08-14T14:22:48.884Z |  |
+| 10 | 15.1 | unrun-verify | .github/workflows/integration-tests.yml |  | Task 2's first automated verify literally asserts survivors=={pre-commit.yml} after migration, but integration-tests.yml (3 hand-rolled cache blocks) is still present -- deletion is plan 15.1-05's job, not yet executed in this wave, exactly per this plan's own Recorded discretion resolutions section. Substituted an assertion expecting survivors=={pre-commit.yml, integration-tests.yml}, both counts matching (1 and 3 respectively). | open |  | 2026-08-14T14:22:56.039Z |  |
+| 11 | 15.1 | unrun-verify | .github/workflows/ci.yml |  | Task 2 acceptance criterion 'grep -rc restore-keys ci.yml feature-flags.yml release.yml' returns 0 for ci.yml -- returns 2, both from pre-existing prose comments in the examples job (added by plan 15.1-01, lines ~268/271) explaining why a restore-keys fallback alone is insufficient, not an actual YAML restore-keys: key. Verified via structural YAML walk: no step's with block contains a restore-keys key in any of the three files. | open |  | 2026-08-14T14:23:03.057Z |  |
 
 ````json
 [
@@ -120,6 +123,42 @@ last_updated: 2026-08-14T00:49:21.261Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-14T00:49:21.261Z",
+    "resolved_at": null
+  },
+  {
+    "id": 9,
+    "kind": "unrun-verify",
+    "phase": "15.1",
+    "file": ".github/workflows/ci.yml",
+    "line": null,
+    "description": "Task 1 acceptance criterion 'git diff | grep -c \"^[+-].*cargo \"' returns 4 not 0 -- matches step *name* text ('Cache cargo registry' etc.) removed by the migration, not actual cargo invocations. Verified via 'run: cargo' scoped grep returning 0 changed invocations.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-14T14:22:48.884Z",
+    "resolved_at": null
+  },
+  {
+    "id": 10,
+    "kind": "unrun-verify",
+    "phase": "15.1",
+    "file": ".github/workflows/integration-tests.yml",
+    "line": null,
+    "description": "Task 2's first automated verify literally asserts survivors=={pre-commit.yml} after migration, but integration-tests.yml (3 hand-rolled cache blocks) is still present -- deletion is plan 15.1-05's job, not yet executed in this wave, exactly per this plan's own Recorded discretion resolutions section. Substituted an assertion expecting survivors=={pre-commit.yml, integration-tests.yml}, both counts matching (1 and 3 respectively).",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-14T14:22:56.039Z",
+    "resolved_at": null
+  },
+  {
+    "id": 11,
+    "kind": "unrun-verify",
+    "phase": "15.1",
+    "file": ".github/workflows/ci.yml",
+    "line": null,
+    "description": "Task 2 acceptance criterion 'grep -rc restore-keys ci.yml feature-flags.yml release.yml' returns 0 for ci.yml -- returns 2, both from pre-existing prose comments in the examples job (added by plan 15.1-01, lines ~268/271) explaining why a restore-keys fallback alone is insufficient, not an actual YAML restore-keys: key. Verified via structural YAML walk: no step's with block contains a restore-keys key in any of the three files.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-14T14:23:03.057Z",
     "resolved_at": null
   }
 ]
