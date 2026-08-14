@@ -4,17 +4,18 @@ name: pre-commit
 # same checks developers run locally are enforced for every contributor.
 on:
   pull_request:
-  # Also runs on pushes to the long-lived branches. Duplicate runs (one for
-  # `push`, one for `pull_request`) are collapsed by the `concurrency` group
-  # below rather than by dropping a trigger: a PR-only trigger means this gate
-  # never runs at all on a branch that receives direct pushes and only opens a
-  # PR at the very end, which is exactly how eight broken action references
-  # survived two weeks unnoticed.
+  # Runs on a push to ANY branch (D-03). A PR-only trigger means this gate
+  # never runs at all on a branch that receives direct pushes and only opens
+  # a PR at the very end, which is exactly how eight broken action
+  # references survived two weeks unnoticed on fix/ci-workflow-health — a
+  # branch that a four-prefix allowlist (main/develop/release) would not
+  # have covered either. Enumerating a wider prefix list was rejected: the
+  # next unsanctioned prefix someone invents would be dark again. Duplicate
+  # runs (one for `push`, one for `pull_request`) are collapsed by the
+  # `concurrency` group below rather than by dropping a trigger.
   push:
     branches:
-      - main
-      - develop
-      - 'release/**'
+      - '**'
 
 permissions:
   contents: read
