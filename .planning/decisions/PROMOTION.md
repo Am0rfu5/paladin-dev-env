@@ -63,7 +63,7 @@ the plans that follow in this same phase):
 | 0041 | `in-process-token-store-single-replica-scope` | The shared-store requirement scoped to the `AuthPort` credential path, not the replica count; WEB-02's own two literal exits declined and the deviation stated explicitly; the shared store deferred with a named trigger (Phase 14, plan 14-05) |
 | 0042 | `llm-native-tool-calling-deferred` | LLM-native tool calling (Deferred-QA Epic 27) recorded as a future capability improvement, not built, with a named reintroduction trigger and owner (Phase 14, plan 14-06) |
 
-**Next free ADR number: 0043**
+**Next free ADR number: 0045**
 
 *Dated note, 2026-08-12 (plan 14-07):* the line advances by **three**, from 0040 to 0043, because
 Phase 14 authored all three of ADR-0040 through ADR-0042 across its own plans — plan 14-05 authored
