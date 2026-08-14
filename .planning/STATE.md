@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
 current_phase: 15.1
-current_phase_name: Git & CI Governance
+current_phase_name: Git & CI Governance (INSERTED
 status: executing
 stopped_at: Phase 15.1 context gathered
-last_updated: "2026-08-14T00:30:35.672Z"
-last_activity: 2026-08-13
-last_activity_desc: Phase 15 complete, transitioned to Phase 15.1
+last_updated: "2026-08-14T00:40:52.132Z"
+last_activity: 2026-08-14
+last_activity_desc: Phase 15.1 execution started
 progress:
   total_phases: 12
   completed_phases: 11
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 15 — Coverage & CI Quality Gates
+**Current focus:** Phase 15.1 — Git & CI Governance (INSERTED)
 
 **Progress:** [██████████] 69/72 plans ([██████████] 100%)
 
@@ -39,10 +39,10 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 15.1 — Git & CI Governance
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-13 — Phase 15 complete, transitioned to Phase 15.1
+Phase: 15.1 (Git & CI Governance (INSERTED)) — EXECUTING
+Plan: 1 of 10
+Status: Executing Phase 15.1
+Last activity: 2026-08-14 — Phase 15.1 execution started
 
 ## Performance Metrics
 
