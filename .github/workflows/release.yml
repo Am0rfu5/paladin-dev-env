@@ -62,7 +62,7 @@ jobs:
           else
             echo "::error::Release tag points at commit $SHA, which is NOT contained in main. \
           Release tags must be cut from the main branch (merge via PR first). See \
-          docs/BRANCH_PROTECTION.md."
+          docs/src/appendix/branch-protection.md."
             exit 1
           fi
 

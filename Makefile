@@ -172,12 +172,17 @@ check-advisory-register: ## Verify SECURITY-EXCEPTIONS.md agrees with deny.toml/
 check-workflow-suppressions: ## Verify no workflow file passes an advisory-ignore flag to cargo audit or cargo deny
 	@./scripts/check-workflow-suppressions.sh
 
+.PHONY: check-workflow-triggers
+check-workflow-triggers: ## Verify every workflow's trigger surface matches the recorded policy table
+	@./scripts/check-workflow-triggers.sh
+
 .PHONY: check-gates
-check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions ## Run all offline release-gate guards
+check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions check-workflow-triggers ## Run all offline release-gate guards
 
 .PHONY: test-shell-guards
 test-shell-guards: ## Run regression tests for the offline gate guard scripts (not part of check-gates)
 	@./tests/scripts/check-workflow-suppressions_test.sh
+	@./tests/scripts/check-workflow-triggers_test.sh
 
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
@@ -503,7 +508,7 @@ release: ## Cut a release: bump version (lockstep), finalize changelog, commit, 
 	@# Release-branch protection (Milestone 10 Epic 5): tags may only be cut from
 	@# an up-to-date `main`. The CI guard in release.yml is authoritative; this is
 	@# fast local feedback. RELEASE_ALLOW_ANY_BRANCH=1 bypasses only the branch-name
-	@# check (for rare hotfix branches) — see docs/BRANCH_PROTECTION.md.
+	@# check (for rare hotfix branches) — see docs/src/appendix/branch-protection.md.
 	@if [ "$(RELEASE_ALLOW_ANY_BRANCH)" = "1" ]; then \
 		echo "$(YELLOW)⚠  RELEASE_ALLOW_ANY_BRANCH=1 — skipping main-branch check (CI still enforces main-only).$(NC)"; \
 	else \
@@ -511,7 +516,7 @@ release: ## Cut a release: bump version (lockstep), finalize changelog, commit, 
 		if [ "$$CURRENT_BRANCH" != "main" ]; then \
 			echo "$(RED)❌ Releases must be cut from 'main' (current branch: $$CURRENT_BRANCH).$(NC)"; \
 			echo "$(RED)   Merge your changes via PR, then 'git checkout main && git pull --ff-only'.$(NC)"; \
-			echo "$(RED)   Override (hotfix only): RELEASE_ALLOW_ANY_BRANCH=1. See docs/BRANCH_PROTECTION.md.$(NC)"; \
+			echo "$(RED)   Override (hotfix only): RELEASE_ALLOW_ANY_BRANCH=1. See docs/src/appendix/branch-protection.md.$(NC)"; \
 			exit 1; \
 		fi; \
 	fi

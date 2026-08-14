@@ -1,8 +1,10 @@
 # Branch & Release-Tag Protection
 
-This document describes the **main-only release policy** for the Paladin Framework and the three
-layers that enforce it. It also gives administrators step-by-step instructions for applying the
-committed GitHub ruleset definitions.
+This document describes the **main-only release policy** for the Paladin Framework, the three
+layers that enforce it, and the applied state of the GitHub rulesets that back Layer 3. For how to
+branch, what CI runs on a push, and how a change reaches `main` day to day, see
+[Branching Model](../contributing/branching-model.md) — that page is written for contributors; this
+one is the administrator-facing enforcement detail behind the checks it describes.
 
 > **Policy in one sentence:** release tags (`v*.*.*`) may only be created from commits that are
 > contained in the `main` branch. `main` is the single source of truth for released code.
@@ -15,9 +17,9 @@ Milestone 10 Epic 3 made releases fully tag-driven: pushing a `v*.*.*` tag trigg
 [`.github/workflows/release.yml`](https://github.com/DF3NDR/paladin-dev-env/tree/main/.github/workflows), which runs the test suite,
 publishes crates to crates.io, builds Docker images and binaries, and generates an SBOM.
 
-When the first release (`v0.4.0`, Epic 4) was cut, the tag was pushed from a **feature branch** that
+When the first release (Epic 4) was cut, the tag was pushed from a **feature branch** that
 had not yet been merged into `main`. The pipeline only keyed off the tag, not the branch, so it would
-have published code that never passed through the reviewed `main` branch. Epic 5 closes that gap.
+have published code that never passed through the reviewed `main` branch. Epic 5 closed that gap.
 
 ---
 
@@ -27,7 +29,7 @@ have published code that never passed through the reviewed `main` branch. Epic 5
 |-------|-------|------------------|----------------|
 | 1. CI guard | `verify-tag-source` job in `release.yml` | The tagged commit is an ancestor of `origin/main`; otherwise the whole pipeline fails before publishing. | **Yes** |
 | 2. Local guard | `make release` target in `Makefile` | Refuses to bump/tag unless on an up-to-date `main`. Fast feedback before any push. | No (advisory) |
-| 3. Platform rulesets | `.github/rulesets/*.json` (applied by an admin) | PR + passing checks required to land on `main`; only authorized actors may create `v*` tags. | Defense in depth |
+| 3. Platform rulesets | `.github/rulesets/*.json`, applied | PR + passing checks required to land on `main`; only authorized actors may create `v*` tags; `release/*` branches are pre-emptively protected. | Defense in depth |
 
 ### Layer 1 — CI guard (`verify-tag-source`)
 
@@ -64,40 +66,87 @@ remains authoritative — an override here does not let an unmerged commit publi
 
 ### Layer 3 — GitHub rulesets
 
-Two importable ruleset definitions live in [`.github/rulesets/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/.github/rulesets):
+Three rulesets are applied on the live repository, imported from the definitions in
+[`.github/rulesets/`](https://github.com/DF3NDR/paladin-dev-env/tree/main/.github/rulesets):
 
-- `protect-main-branch.json` — requires a pull request and passing status checks (`Code Quality`,
-  `Security Audit`, `License & Dependency Policy`) to merge into `main`, and blocks force-pushes and
-  branch deletion.
-- `protect-release-tags.json` — restricts **creation** and deletion of `refs/tags/v*` to bypass
-  actors (repository admins), so arbitrary contributors cannot cut releases.
+| Ruleset | Applied ruleset ID | Target | Status |
+|---------|---------------------|--------|--------|
+| `protect-main-branch.json` | `20868126` | `refs/heads/main` | Active |
+| `protect-release-branches.json` | `20868128` | `refs/heads/release/*` | Active |
+| `protect-release-tags.json` | `20868099` | `refs/tags/v*` | Active |
 
-> GitHub tag rulesets govern *who* may create a tag matching a pattern — they cannot express
-> "the tag must come from main". The branch-source rule is therefore enforced by Layer 1; the tag
-> ruleset is complementary who-can-tag protection.
+**Applied 2026-08-14**, verified by reading the live rulesets back from the GitHub API
+(`gh api /repos/DF3NDR/paladin-dev-env/rulesets`) rather than trusting the committed JSON files
+alone — the committed payloads had previously sat unapplied for months, so a page describing intent
+rather than server-confirmed state would provide no real assurance.
+
+#### The required-check set
+
+`protect-main-branch.json` requires all 44 of the following status-check contexts to pass before a
+pull request into `main` can merge:
+
+`API Surface Tracking`, `Benchmark Compile Check`, `Build & Test (all-features)`, `Build & Test
+(cli)`, `Build & Test (content-processing)`, `Build & Test (default)`, `Build & Test (full)`, `Build
+& Test (llm-all)`, `Build & Test (llm-anthropic)`, `Build & Test (llm-deepseek)`, `Build & Test
+(llm-openai)`, `Build & Test (no-default-features)`, `Build & Test (notifications)`, `Build & Test
+(redis-queue)`, `Build & Test (s3-storage)`, `Build & Test (vision)`, `Build & Test (web-server)`,
+`Build MDBook`, `CLI Isolation (library without cli feature)`, `CLI Snapshot Tests`, `Code Quality`,
+`Coverage`, `Crate Isolation (paladin-ai)`, `Crate Isolation (paladin-ai-core)`, `Crate Isolation
+(paladin-battalion)`, `Crate Isolation (paladin-content)`, `Crate Isolation (paladin-llm)`, `Crate
+Isolation (paladin-memory)`, `Crate Isolation (paladin-notifications)`, `Crate Isolation
+(paladin-ports)`, `Crate Isolation (paladin-storage)`, `Crate Isolation (paladin-web)`, `Docker
+Integration Tests`, `End-to-End Tests`, `Example Muster (Feature Matrix)`, `Feature Matrix Summary`,
+`Integration Tests`, `License & Dependency Policy`, `OSV Scanner`, `Security Audit`, `Unit Tests
+(beta)`, `Unit Tests (stable)`, `Workflow Lint`, `pre-commit run --all-files`.
+
+**Two jobs are deliberately excluded from the required set: `Docker Build` and `Kubernetes Smoke
+Test`.** Both still run on every push and pull request — they simply do not block the merge button.
+`Docker Build` measured **3762 seconds (62.7 minutes)** — the entire pipeline's critical path,
+building `linux/amd64,linux/arm64` with `arm64` under QEMU emulation — against a required-set
+critical path of roughly seven minutes (`Integration Tests`, the slowest required job, at 398
+seconds). Requiring it would serialize every merge behind an hour-plus emulation run. See ADR-0044
+(`.planning/decisions/0044-branch-protection-posture.md`) for the full reasoning and the
+alternative that was considered and declined (a native-arm64 runner rework).
+
+#### The bypass asymmetry
+
+The trunk ruleset and the tag ruleset deliberately carry different bypass postures — read this
+plainly, not as an inconsistency to "fix":
+
+- **`protect-main-branch.json` carries no administrative bypass.** It gates the only path into
+  `main`: a pull request with all 44 required checks green. A merge gate any account — including an
+  administrator — can bypass at will is not a gate, only a suggestion.
+- **`protect-release-tags.json` retains a bypass actor** (`actor_id: 5`, `RepositoryRole` = Admin,
+  `bypass_mode: always`), because it restricts **creation** of a `refs/tags/v*` ref, not a merge.
+  Without a bypass actor, tag creation itself would be restricted to nobody, and no release could
+  ever be cut. The retained bypass is what makes the tag ruleset usable at all, not an oversight.
+
+`protect-release-branches.json` follows the trunk ruleset's posture — no bypass — since it also
+gates a merge (into a future backport branch), not a ref creation.
+
+`required_approving_review_count` is `0` on both branch rulesets: the repository has exactly one
+active collaborator and GitHub does not allow self-approval, so a nonzero review count would be
+satisfiable only through a bypass — which is the exact self-defeating configuration the committed
+payload shipped with before this policy was applied. The pull request itself, and every required
+check passing against it, stay mandatory regardless. If the project gains a second active
+committer, the review count is the thing to revisit.
 
 ---
 
-## Applying the rulesets (administrators)
+## Applying or auditing the rulesets (administrators)
 
-Rulesets require repository-admin scope and are applied manually (they are intentionally **not**
-self-applied from CI).
-
-### Option A — GitHub UI
-
-1. Go to **Settings → Rules → Rulesets → New ruleset → Import a ruleset**.
-2. Upload `.github/rulesets/protect-main-branch.json`. Review the targets and status-check contexts,
-   then **Create**.
-3. Repeat for `.github/rulesets/protect-release-tags.json`.
-
-### Option B — `gh` CLI
+Rulesets require repository-admin scope. They were applied via the `gh` CLI:
 
 ```bash
-# Requires admin scope on the repository.
 gh api --method POST \
   -H "Accept: application/vnd.github+json" \
   /repos/DF3NDR/paladin-dev-env/rulesets \
   --input .github/rulesets/protect-main-branch.json
+
+gh api --method POST \
+  -H "Accept: application/vnd.github+json" \
+  /repos/DF3NDR/paladin-dev-env/rulesets \
+  --input .github/rulesets/protect-release-branches.json
 
 gh api --method POST \
   -H "Accept: application/vnd.github+json" \
@@ -111,39 +160,52 @@ Verify the active rulesets:
 gh api /repos/DF3NDR/paladin-dev-env/rulesets
 ```
 
-> The `bypass_actors` entry uses `actor_id: 5` (`RepositoryRole` = Admin). Adjust the role id or add
-> team/app actors to match your organization before importing.
+Roll one back (reversible while the token retains `Administration: write`):
+
+```bash
+gh api -X DELETE /repos/DF3NDR/paladin-dev-env/rulesets/<id>
+```
+
+The GitHub UI equivalent is **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, one
+upload per JSON file.
+
+> The `bypass_actors` entry on `protect-release-tags.json` uses `actor_id: 5` (`RepositoryRole` =
+> Admin). Adjust the role id or add team/app actors to match your organization before importing.
 
 ---
 
 ## The correct release flow under this policy
 
 ```bash
-# 1. Open a PR for your changes and get it merged into main (checks must pass).
+# 1. Open a PR for your changes and get it merged into main (all 44 required checks must pass).
 # 2. Update your local main.
 git checkout main
 git pull --ff-only origin main
 
 # 3. Cut the release from main.
-make release VERSION=0.4.1
+make release VERSION=0.8.0
 ```
 
-Pushing the resulting `v0.4.1` tag triggers `release.yml`; `verify-tag-source` confirms the tagged
-commit is in `main`, and the pipeline proceeds to publish.
+Pushing the resulting tag triggers `release.yml`; `verify-tag-source` confirms the tagged commit is
+in `main`, and the pipeline proceeds to publish.
 
 ---
 
-## Reconciling the existing `v0.4.0` tag
+## The trunk fast-forward
 
-`v0.4.0` was cut from `feature/milestone_10-epic_4-finalization` before this policy existed. To make
-`main` reflect the released code, a maintainer should merge that branch (and the subsequent Epic 5
-work) into `main` via PR. This is a one-time reconciliation and is not performed automatically by the
-Epic 5 changes.
+`main` now carries the code every release publishes. It was fast-forwarded from a default branch
+hundreds of commits stale to the tip of the branch that had been doing integration duty — a clean,
+zero-conflict fast-forward with nothing on the trunk the integration branch lacked. The retired
+branches are deleted, both proven ancestors of the new trunk, so no history was lost and no archival
+tag was needed. Full command-level evidence lives in ADR-0043
+(`.planning/decisions/0043-github-flow-trunk-and-trigger-surface.md`).
 
 ---
 
 ## Related documents
 
-- [docs/RELEASE_AUTOMATION.md](release-automation.md) — release tooling decision and operator guide.
-- [docs/RELEASE_CHECKLIST.md](release-checklist.md) — manual release checklist.
-- [CONTRIBUTING.md](../contributing/development-setup.md) — `## Releasing` section.
+- [Release Automation](release-automation.md) — release tooling decision and operator guide.
+- [Release Checklist](release-checklist.md) — manual release checklist.
+- [Contributing to Paladin](../contributing/development-setup.md) — `## Releasing` section.
+- [Branching Model](../contributing/branching-model.md) — the contributor-facing branching and
+  trigger-surface page this document backs with enforcement detail.
