@@ -20,7 +20,7 @@
     {
       "type": "pull_request",
       "parameters": {
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
         "require_last_push_approval": false,
@@ -33,23 +33,136 @@
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
           {
+            "context": "API Surface Tracking"
+          },
+          {
+            "context": "Benchmark Compile Check"
+          },
+          {
+            "context": "Build & Test (all-features)"
+          },
+          {
+            "context": "Build & Test (cli)"
+          },
+          {
+            "context": "Build & Test (content-processing)"
+          },
+          {
+            "context": "Build & Test (default)"
+          },
+          {
+            "context": "Build & Test (full)"
+          },
+          {
+            "context": "Build & Test (llm-all)"
+          },
+          {
+            "context": "Build & Test (llm-anthropic)"
+          },
+          {
+            "context": "Build & Test (llm-deepseek)"
+          },
+          {
+            "context": "Build & Test (llm-openai)"
+          },
+          {
+            "context": "Build & Test (no-default-features)"
+          },
+          {
+            "context": "Build & Test (notifications)"
+          },
+          {
+            "context": "Build & Test (redis-queue)"
+          },
+          {
+            "context": "Build & Test (s3-storage)"
+          },
+          {
+            "context": "Build & Test (vision)"
+          },
+          {
+            "context": "Build & Test (web-server)"
+          },
+          {
+            "context": "Build MDBook"
+          },
+          {
+            "context": "CLI Isolation (library without cli feature)"
+          },
+          {
+            "context": "CLI Snapshot Tests"
+          },
+          {
             "context": "Code Quality"
+          },
+          {
+            "context": "Coverage"
+          },
+          {
+            "context": "Crate Isolation (paladin-ai)"
+          },
+          {
+            "context": "Crate Isolation (paladin-ai-core)"
+          },
+          {
+            "context": "Crate Isolation (paladin-battalion)"
+          },
+          {
+            "context": "Crate Isolation (paladin-content)"
+          },
+          {
+            "context": "Crate Isolation (paladin-llm)"
+          },
+          {
+            "context": "Crate Isolation (paladin-memory)"
+          },
+          {
+            "context": "Crate Isolation (paladin-notifications)"
+          },
+          {
+            "context": "Crate Isolation (paladin-ports)"
+          },
+          {
+            "context": "Crate Isolation (paladin-storage)"
+          },
+          {
+            "context": "Crate Isolation (paladin-web)"
+          },
+          {
+            "context": "Docker Integration Tests"
+          },
+          {
+            "context": "End-to-End Tests"
+          },
+          {
+            "context": "Example Muster (Feature Matrix)"
+          },
+          {
+            "context": "Feature Matrix Summary"
+          },
+          {
+            "context": "License & Dependency Policy"
+          },
+          {
+            "context": "OSV Scanner"
           },
           {
             "context": "Security Audit"
           },
           {
-            "context": "License & Dependency Policy"
+            "context": "Unit Tests (beta)"
+          },
+          {
+            "context": "Unit Tests (stable)"
+          },
+          {
+            "context": "Workflow Lint"
+          },
+          {
+            "context": "pre-commit run --all-files"
           }
         ]
       }
-    }
-  ],
-  "bypass_actors": [
-    {
-      "actor_id": 5,
-      "actor_type": "RepositoryRole",
-      "bypass_mode": "always"
     }
   ]
 }
