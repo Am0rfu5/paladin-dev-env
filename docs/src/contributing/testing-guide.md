@@ -64,7 +64,7 @@ Paladin follows **Test-Driven Development (TDD)** with the Red-Green-Refactor cy
 
 ### Coverage Requirements
 
-There is a single binding coverage floor, recorded in [ADR-0006](../../../.planning/decisions/0006-coverage-gate.md):
+There is a single binding coverage floor, recorded in ADR-0006 (`.planning/decisions/0006-coverage-gate.md`):
 **82% workspace line coverage**, gated by `cargo llvm-cov --fail-under-lines` in CI's `coverage`
 job and mirrored locally by `make coverage`. There is no separate unit-test target and no separate
 integration-test target — see [Test Coverage](#test-coverage) below for the full procedure,
@@ -405,7 +405,7 @@ not an approximation of it.
 
 Coverage uses [`cargo-llvm-cov`](https://github.com/taiki-e/cargo-llvm-cov), the LLVM
 source-based instrumentation tool and the tool of record per
-[ADR-0006](../../../.planning/decisions/0006-coverage-gate.md). Install it:
+ADR-0006 (`.planning/decisions/0006-coverage-gate.md`). Install it:
 
 ```bash
 # Required: the LLVM tools component cargo-llvm-cov instruments with.
@@ -470,7 +470,7 @@ does not pass `--include-ignored`, which is `cargo test`'s default behavior, per
 
 ### The threshold policy
 
-**The floor: 82%**, from [ADR-0006](../../../.planning/decisions/0006-coverage-gate.md)'s Phase
+**The floor: 82%**, from ADR-0006 (`.planning/decisions/0006-coverage-gate.md`)'s Phase
 15 amendment. This is the single binding number — there is no separate unit-test target and no
 separate integration-test target.
 

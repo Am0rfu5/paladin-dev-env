@@ -332,7 +332,7 @@ paladin arsenal test --mcp-streamable-http "https://api.example.com/mcp" \
 ```
 
 The equivalent programmatic flow — `MCPStreamableHttpAdapter` is a thin builder over
-[`MCPClient::connect_streamable_http`], mirroring `MCPStdioAdapter`'s shape for the
+`MCPClient::connect_streamable_http`, mirroring `MCPStdioAdapter`'s shape for the
 remote transport:
 
 ```rust,ignore
