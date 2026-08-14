@@ -1,0 +1,76 @@
+# Weekly scheduled benchmark run (D-08). Deliberately its own workflow file,
+# not a `schedule:` key on ci.yml: only a handful of ci.yml's jobs carry
+# conditional gates, so a cron placed there would trigger the entire
+# pipeline weekly, including the multi-arch Docker build measured at over
+# an hour. Scheduled runs execute in UTC and may be delayed by several
+# minutes under GitHub Actions scheduler load — a late run is not a defect
+# worth filing.
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # weekly, Monday 06:00 UTC
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # The dark `benchmark` job (`name: Performance Benchmarks`) previously lived
+  # in ci.yml gated on `github.event_name == 'schedule' || 'workflow_dispatch'`,
+  # but ci.yml declares no `schedule:` trigger at all, so that half of its
+  # condition was unreachable and it was dispatch-only. The one time it was
+  # dispatched it panicked at settings load, because it ran bare `cargo bench`
+  # with no seeded base configuration file. This job replaces it: relocated to
+  # a workflow that actually declares the schedule trigger it needs, and its
+  # run step is copied verbatim from the sibling `benchmark-regression-signal`
+  # job in ci.yml, which already seeds the base configuration and succeeds —
+  # widened from that dark job's single bench target to the same four targets
+  # the working sibling covers.
+  benchmark-weekly:
+    name: Performance Benchmarks (Weekly)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run benchmarks
+        run: |
+          set -euo pipefail
+          mkdir -p benchmark-results
+          LOG=benchmark-results/criterion-output.log
+
+          # The config benchmarks call `Settings::new()`, which requires a base
+          # `config.yml` file. `config.yml` is gitignored (it can hold secrets),
+          # so it is absent on a bare runner — seed it from the committed
+          # `config.test.yml` so the settings loader has a base file to overlay.
+          # Selecting the test environment alone is not sufficient: it only
+          # makes the loader apply config.test.yml as an overlay, and the
+          # loader still needs a base config.yml file present to overlay onto.
+          # Omitting this copy and setting only the environment selector would
+          # very likely still panic on a bare runner, which is the failure
+          # this job exists to fix.
+          if [ ! -f config.yml ]; then
+            cp config.test.yml config.yml
+          fi
+
+          {
+            echo "# Weekly benchmark run"
+            echo "# commit: ${GITHUB_SHA}"
+            echo "# timestamp: $(date -Iseconds)"
+            env APP_ENV=test cargo bench --bench config_benchmarks -- --noplot
+            env APP_ENV=test cargo bench -p paladin-battalion --bench battalion_benchmarks -- --noplot
+            env APP_ENV=test cargo bench -p paladin-memory --bench garrison_benchmarks -- --noplot
+            env APP_ENV=test cargo bench -p paladin-llm --bench llm_serialization_benchmarks -- --noplot
+          } | tee "$LOG"
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: target/criterion/
