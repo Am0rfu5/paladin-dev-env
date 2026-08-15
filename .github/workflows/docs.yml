@@ -12,11 +12,17 @@ on:
       - "docs/**"
       - "crates/doc-examples/**"
       - ".github/workflows/docs.yml"
+  # NO `paths:` filter here, deliberately. `Build MDBook` is a REQUIRED status
+  # check on `main` (see .github/rulesets/protect-main-branch.json). GitHub
+  # blocks a pull request until every required context reports, and a
+  # path-filtered workflow simply never reports on a PR that touches no matching
+  # path — so a docs path filter here made every non-docs PR permanently
+  # unmergeable. Observed on PR #31, which changed only `.planning/` files:
+  # 97 checks complete, 0 pending, still BLOCKED. The build is ~1 minute, so
+  # running it on every PR is far cheaper than the deadlock it removes.
+  # `scripts/check-workflow-triggers.sh`'s reachability clause now fails CI if a
+  # path filter is reintroduced on any workflow owning a pinned context.
   pull_request:
-    paths:
-      - "docs/**"
-      - "crates/doc-examples/**"
-      - ".github/workflows/docs.yml"
 
 permissions:
   contents: read
