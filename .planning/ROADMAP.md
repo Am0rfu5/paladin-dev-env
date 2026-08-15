@@ -1057,11 +1057,49 @@ Plans:
 
   7. The `smartstring` unmaintained advisory (`cargo-deny`, `License & Dependency Policy`) has a recorded disposition in `SECURITY-EXCEPTIONS.md` per the existing governance mechanism, rather than a permanently red required check.
 
-**Plans:** 0 plans
+**Plans:** 10/10 plans complete
+
+**Status:** Complete — verified 2026-08-14, verification amended 2026-08-15
+(`15.1-VERIFICATION.md`, status `passed`). All seven success criteria independently
+verified `achieved` against the live tree and the live GitHub API. Two future human
+actions remain open and are recorded there: a Snyk scan of the two new shell scripts
+once the tool is available, and confirmation of `benchmarks.yml`'s first scheduled tick.
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 15.1 to break down)
+**Wave 1**
+- [x] `15.1-01` — Tracer: match-all push triggers (D-03), `examples` cache fix (D-10), `RUSTSEC-2026-0249` disposition (D-11)
+
+**Wave 2**
+- [x] `15.1-02` — Live CI evidence gate for SC1/SC5; D-05 context inventory (`15.1-CI-EVIDENCE.md`)
+
+**Wave 3**
+- [x] `15.1-03` — Cache fix widened to its class: 19 remaining blocks → `Swatinem/rust-cache@v2`
+- [x] `15.1-04` — Three protection payloads: empirical required-check set (D-05), no bypass (D-07), release-branch ruleset (D-08b)
+
+**Wave 4**
+- [x] `15.1-05` — `integration-tests.yml` absorbed into `ci.yml` and deleted; context-name collision resolved (D-09)
+
+**Wave 5**
+- [x] `15.1-06` — `benchmarks.yml` weekly; dark job removed; four non-continuous dispositions recorded (D-08)
+
+**Wave 6**
+- [x] `15.1-07` — Trunk fast-forward (+994 commits), `develop` and `release/v0.7.0` retired (D-01, D-02)
+
+**Wave 7**
+- [x] `15.1-08` — Rulesets applied and read back verbatim (D-06); `15.1-RULESET-EVIDENCE.md`
+
+**Wave 8**
+- [x] `15.1-09` — `branching-model.md` + trigger-policy register and drift guard, wired into CI (D-04, D-09b)
+
+**Wave 9**
+- [x] `15.1-10` — ADR-0043/0044, appendix currency, pointer redirects, ROADMAP amended at source (D-12)
+
+**Post-verification fix (2026-08-15):** a path-filtered required check (`Build MDBook`) was
+found to deadlock any PR touching no docs path. Fixed by dropping `docs.yml`'s `pull_request`
+paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
+`scripts/check-workflow-triggers.sh` with three covering test cases. Recorded in
+`15.1-VERIFICATION.md` § Post-Verification Amendment.
 
 ### Phase 16: Documentation Currency & the Architecture Gap
 
