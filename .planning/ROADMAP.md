@@ -100,6 +100,7 @@ frozen at 311 lines that two milestones made invisible.
 | **Milestone 4-6 close-out** | 7-8 | Not started | Ingest run 3 — `.project/Milestone_4-Refactor-Crates-Features` + `.project/Milestone_5-Workspace-Decomposition` + `.project/Milestone_6-Architectural-Refinements` (32 docs) |
 | **Milestone 7-8 close-out** | 9-11 | Not started | Ingest run 4 — `.project/Milestone_7-Production-Hardening` + `.project/Milestone_8-Facade-Cleanup-Shim-Resolution` (40 docs) |
 | **Milestone 9-12 + Deferred-QA close-out** | 12-16 | Not started | Ingest run 5 (FINAL) — `.project/Milestone_9-Classic-Orchestrator-Completion` + `.project/Milestone_10-CI-Hardening-Release-Automation` + `.project/Milestone_11-Documentation-Overhaul-Publish` + `.project/Milestone_12-Web-API` + `.project/Deferred-QA-CICD-Completion` + `.project/project-management` (46 docs) |
+| **Provider Expansion** | 17- | Not started | Forward work — not ingest-derived. Added 2026-08-15 per *Roadmap Extension Protocol* item 1. |
 
 **The ingest is complete.** All 263 documents in `.project/` are covered — 199 classified across
 five runs and 64 `tasks-*.md` measured deterministically by `intel/task-completion-state.md`. There
@@ -148,7 +149,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 
 **Milestone 7-8 close-out**
 
-- [ ] **Phase 9: Release & Security Gate Integrity** - Reconcile the four divergent RustSec exception sets before the 2026-09-30 expiry, settle the licence posture, and close the three small release-gate defects
+- [x] **Phase 9: Release & Security Gate Integrity** - Reconcile the four divergent RustSec exception sets before the 2026-09-30 expiry, settle the licence posture, and close the three small release-gate defects (completed 2026-08-08)
 - [x] **Phase 10: Milestone 7-8 Ground Truth & Recorded Account** - Record what production hardening and facade cleanup actually delivered, make the 2026-06-04 reconciliation authoritative, and answer the three architecture questions the documents left ambiguous (completed 2026-08-08)
 - [x] **Phase 11: Facade Residue & Deferred Register Disposition** - Give each of the five deferred items and both deliberately removed features a decision, and triage the Milestone 9 candidate list (completed 2026-08-09)
 
@@ -159,6 +160,10 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 - [x] **Phase 14: API Contract Truthfulness** - Make every capability the project advertises through an interface one it actually has — the token mechanism, the multi-replica store, and the LLM capability flag (completed 2026-08-12)
 - [x] **Phase 15: Coverage & CI Quality Gates** - Build the quality gates Deferred-QA Epic 25 specified and nobody started, then close the coverage register those gates measure (completed 2026-08-13)
 - [ ] **Phase 16: Documentation Currency & the Architecture Gap** - Settle Milestone 11's fourteen content-currency files by content, and decide whether the 311-line architecture document is archive or deliverable
+
+**Provider Expansion** — first forward work beyond the ingest (added 2026-08-15)
+
+- [ ] **Phase 17: Additional LLM Provider Adapters** - Decide which additional providers qualify against recorded criteria, then ship each survivor as a feature-gated adapter meeting the full `LlmPort` contract
 
 ## Phase Details
 
@@ -1068,31 +1073,40 @@ once the tool is available, and confirmation of `benchmarks.yml`'s first schedul
 Plans:
 
 **Wave 1**
+
 - [x] `15.1-01` — Tracer: match-all push triggers (D-03), `examples` cache fix (D-10), `RUSTSEC-2026-0249` disposition (D-11)
 
 **Wave 2**
+
 - [x] `15.1-02` — Live CI evidence gate for SC1/SC5; D-05 context inventory (`15.1-CI-EVIDENCE.md`)
 
 **Wave 3**
+
 - [x] `15.1-03` — Cache fix widened to its class: 19 remaining blocks → `Swatinem/rust-cache@v2`
 - [x] `15.1-04` — Three protection payloads: empirical required-check set (D-05), no bypass (D-07), release-branch ruleset (D-08b)
 
 **Wave 4**
+
 - [x] `15.1-05` — `integration-tests.yml` absorbed into `ci.yml` and deleted; context-name collision resolved (D-09)
 
 **Wave 5**
+
 - [x] `15.1-06` — `benchmarks.yml` weekly; dark job removed; four non-continuous dispositions recorded (D-08)
 
 **Wave 6**
+
 - [x] `15.1-07` — Trunk fast-forward (+994 commits), `develop` and `release/v0.7.0` retired (D-01, D-02)
 
 **Wave 7**
+
 - [x] `15.1-08` — Rulesets applied and read back verbatim (D-06); `15.1-RULESET-EVIDENCE.md`
 
 **Wave 8**
+
 - [x] `15.1-09` — `branching-model.md` + trigger-policy register and drift guard, wired into CI (D-04, D-09b)
 
 **Wave 9**
+
 - [x] `15.1-10` — ADR-0043/0044, appendix currency, pointer redirects, ROADMAP amended at source (D-12)
 
 **Post-verification fix (2026-08-15):** a path-filtered required check (`Build MDBook`) was
@@ -1115,10 +1129,28 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
 
 **Plans**: TBD
 
+**Provider Expansion**
+
+### Phase 17: Additional LLM Provider Adapters
+
+**Goal**: Paladin talks to the providers its users actually deploy — the candidate field (Gemini, Kimi, Qwen, Llama-family hosts, and whatever else the study surfaces) is narrowed to a shortlist against recorded criteria rather than brand recognition, and every provider that survives ships as a feature-gated adapter meeting the same `LlmPort` contract the existing three do.
+**Depends on**: Nothing hard. Phase 17 is the first phase beyond the ingest-derived roadmap and is independent of Phases 1-16. One soft coupling runs backwards: **Phase 14 made `ProviderCapabilities` truthful** (the LLM capability flag), so any new adapter inherits that standard rather than re-litigating it — a provider that cannot stream must report that it cannot stream. Phase 15's coverage floor applies to the new crate surface from the first commit.
+**Requirements**: PROV-01, PROV-02, PROV-03, PROV-04
+
+**Success Criteria** (what must be TRUE):
+
+  1. **The shortlist is a decision, not a wish list.** A recorded provider-selection study evaluates the candidate field against explicit, written criteria — API compatibility with the existing adapter shape (OpenAI-compatible vs. bespoke), streaming and tool/function-calling support, whether a usable Rust HTTP path exists without a new heavyweight dependency, auth model, self-host vs. hosted-only, and licence/ToS constraints — and each candidate is marked **build**, **defer** or **reject** with the reason attached. Candidates the user named (Kimi, Gemini, Qwen, Meta/Llama) are each explicitly dispositioned, including any that are rejected. **Note that "Llama" names a model family, not a provider** — the study must decide which *host* (Bedrock, Groq, Together, Ollama, …) the adapter would actually target, or reject the row for lacking one.
+  2. **Every provider marked *build* implements the full `LlmPort` contract**, not a subset: `generate`, `generate_stream`, `validate_model`, `get_available_models`, `get_provider_name`, and a `get_capabilities` that reports what the provider genuinely does. No adapter ships with a stubbed or optimistic capability response.
+  3. **Each new adapter is feature-gated and additive.** `paladin-llm` gains one feature per provider alongside `openai`/`anthropic`/`deepseek`, the default feature set is unchanged, `cargo build --no-default-features --features <provider>` succeeds for each, and `provider_factory.rs` resolves the new providers from configuration the same way it resolves the existing three. Adding a provider does not change the behaviour of any existing one.
+  4. **The adapters are tested to the standard already in force**, not exempted from it: mock-transport unit tests for request shaping, response parsing, streaming chunk assembly, and error mapping into `LlmError`; the workspace stays above the 82% line-coverage floor with the new code included; every public item carries rustdoc, and any live-API test is gated behind a credential-requiring feature so CI stays green without secrets.
+  5. **The advertised surface matches the shipped one.** `paladin-llm`'s `Cargo.toml` description/keywords, the crate README, and the configuration documentation name exactly the providers that exist — so this phase does not create the same documentation-currency debt Phase 16 is closing.
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17
 
 Real dependencies are much looser than the numbering, and several couplings run *backwards*
 through it. Recorded here so neither side gets planned twice:
@@ -1208,7 +1240,7 @@ through it. Recorded here so neither side gets planned twice:
 | 6. Verified Gap Closure | **v0.7.2** | 10/10 | Complete    | 2026-08-05 |
 | 7. Workspace Ground Truth & Recorded Answers | M4-6 | 13/13 | Complete    | 2026-08-06 |
 | 8. Verified Defect Closure | M4-6 | 9/9 | Complete    | 2026-08-07 |
-| 9. Release & Security Gate Integrity | M7-8 | 0/TBD | Not started | - |
+| 9. Release & Security Gate Integrity | M7-8 | 7/7 | Complete    | 2026-08-08 |
 | 10. Milestone 7-8 Ground Truth & Recorded Account | M7-8 | 11/11 | Complete    | 2026-08-08 |
 | 11. Facade Residue & Deferred Register Disposition | M7-8 | 5/5 | Complete    | 2026-08-09 |
 | 12. Supply-Chain Gate Integrity | M9-12 | 4/4 | Complete    | 2026-08-10 |
@@ -1482,3 +1514,11 @@ Milestone 9-12 form already used in this file, and protocol item 2 was corrected
 parser contract. **No phase, requirement, goal, success criterion or `### Phase N:` header was
 changed** — only the four `<details>`/`<summary>`/`</details>` wrapper lines were removed. All 16
 phases now resolve.*
+
+*Extended: 2026-08-15 — **first forward addition, not ingest-derived.** Phase 17 (Additional LLM
+Provider Adapters) added under a new **Provider Expansion** milestone label, per *Roadmap Extension
+Protocol* item 1 ("New phases start at Phase 17 and continue upward"). Phases 1-16 unchanged and
+unrenumbered; every `### Phase N:` header is verbatim. One new requirement prefix — **`PROV-*`**
+(PROV-01 … PROV-04) — the eighteenth, recycling none of the seventeen spent. The phase leads with a
+**provider-selection study** rather than a build list: which candidates qualify is itself the first
+deliverable, and PROV-02's size is set by PROV-01's verdicts.*

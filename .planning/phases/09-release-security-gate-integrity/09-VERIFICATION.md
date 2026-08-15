@@ -1,11 +1,12 @@
 ---
 phase: 09-release-security-gate-integrity
 verified: 2026-08-08T05:30:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified (all five ROADMAP success criteria substantively met; one documentation-consistency gap flagged as human-review item, not a functional failure)
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "Open .project/Milestone_7-Production-Hardening/Epic_4/rustsec-remediation-plan.md directly (not via REQUIREMENTS.md or SECURITY-EXCEPTIONS.md) and check whether a reader lands on the superseded owner/date without a pointer forward."
     expected: "A dated D-00c-style annotation banner at or near line 39-40 should say the owner ('Platform Security (Milestone 7)') and the 2026-09-30 date are superseded by ADR-0024 / SECURITY-EXCEPTIONS.md, with the original text retained below — matching the treatment plan 09-05 gave license-compatibility-decision-checklist.md and the two PRD documents for SEC-02."
     why_human: "This is a documentation-completeness judgment, not a mechanically checkable pass/fail: the register and guards are real and enforced regardless of this file's state, so the functional criterion (one authoritative answer, mechanically enforced) is met even though this one formal source document was left unannotated. A human should decide whether this asymmetry (SEC-02's source docs were annotated; SEC-01's principal source document was not) needs a follow-up doc-only fix or is acceptable as-is given ADR-0024 and REQUIREMENTS.md already carry the correction."
@@ -129,11 +130,14 @@ SEC-01 closure note and 09-07-SUMMARY's "CI-only claims" section:
 1. `cargo audit` / `cargo deny check` actually passing against the reconciled config — correctly
    recorded as not run (neither tool installable, `crates.io` HTTP 403 confirmed in this session too:
    `scripts/check-advisory-register.sh` and friends do not attempt installation).
+
 2. The `"Security Audit"` required status check resolving after the duplicate-job deletion — correctly
    recorded as CI-only (branch protection is GitHub-evaluated).
+
 3. `cargo chef cook` reporting `CACHED` on source-only rebuilds — correctly recorded as
    documentation-established (cargo-chef's own semantics), not measured (Docker absent from this
    environment, confirmed).
+
 4. crates.io accepting the `MIT OR Apache-2.0` expression at next publish — correctly recorded as a
    future release-cycle action, not exercised.
 

@@ -5,11 +5,11 @@ milestone_name: Milestone 2-3 close-out
 current_phase: 15.1
 status: completed
 stopped_at: Phase 15.1 context gathered
-last_updated: "2026-08-15T17:22:09.213Z"
+last_updated: "2026-08-15T18:06:52.169Z"
 last_activity: 2026-08-15
 last_activity_desc: Phase 15.1 marked complete
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 12
   total_plans: 113
   completed_plans: 113
@@ -27,7 +27,7 @@ LLM provider through stable port abstractions — without their own domain code 
 provider, transport, or storage implementation.
 **Current focus:** Phase 15.1 — Git & CI Governance (INSERTED)
 
-**Progress:** [██████████] 69/72 plans ([██████████] 100%)
+**Progress:** [████████████████████] 113/113 plans (100%)
 
 > ⚠ **Milestone-boundary discrepancy — needs a decision.** STATE tracks milestone v0.7.2 as
 > 7 phases (5-11), now 7/7 complete. The ROADMAP `## Milestones` table still scopes
@@ -665,6 +665,7 @@ requirement.
 ### Roadmap Evolution
 
 - Phase 15.1 inserted after Phase 15: Git & CI Governance — branch protection, trigger surface, gitflow model, docs/BRANCH_PROTECTION.md (URGENT)
+- Phase 17 added: Additional LLM Provider Adapters — provider-selection study (PROV-01) then feature-gated adapters for survivors (PROV-02..04); first forward phase beyond the ingest
 
 ## Deferred Items
 
