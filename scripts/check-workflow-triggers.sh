@@ -373,6 +373,61 @@ else:
             )
         failures.extend(context_failures)
 
+        # --- Clause 4: reachability. A pinned context must be able to REPORT on
+        # every pull request, not merely resolve to a job name. GitHub blocks a
+        # PR until each required context reports, so a pinned job living in a
+        # workflow that is path-filtered on `pull_request` (or has no
+        # `pull_request` trigger at all) never reports on a PR that touches no
+        # matching path -- and that PR is unmergeable forever, with no failing
+        # check to explain why. Clause 3 cannot catch this: the job name
+        # resolves perfectly, it just never runs. Observed on PR #31 (97 checks
+        # complete, 0 pending, still BLOCKED) after `Build MDBook` was pinned
+        # from an observation on a PR that happened to match docs.yml's filter.
+        for basename, data in workflow_data.items():
+            jobs = data.get('jobs')
+            if not isinstance(jobs, dict):
+                continue
+
+            owned = set()
+            for job_id, job in jobs.items():
+                if not isinstance(job, dict):
+                    continue
+                name = job.get('name', job_id)
+                has_matrix = (
+                    isinstance(job.get('strategy'), dict)
+                    and 'matrix' in job['strategy']
+                )
+                prefix = name.split('${{', 1)[0] if '${{' in name else name
+                for ctx in pinned_contexts:
+                    if ctx == name or ((has_matrix or '${{' in name)
+                                       and ctx.startswith(prefix)):
+                        owned.add(ctx)
+            if not owned:
+                continue
+
+            on_block = get_on_block(data)
+            pr = on_block.get('pull_request') if isinstance(on_block, dict) else None
+            listed = sorted(owned)
+
+            if 'pull_request' not in (on_block or {}):
+                failures.append(
+                    f'CLAUSE_REACHABILITY: {basename} owns pinned required-status-check '
+                    f'context(s) {listed} but declares NO pull_request trigger, so those '
+                    f'contexts can never report on a PR. Every PR into the trunk would be '
+                    f'blocked forever with no failing check to explain it. Either add a '
+                    f'pull_request trigger or unpin the context(s) in {ruleset_path}.'
+                )
+            elif isinstance(pr, dict) and ('paths' in pr or 'paths-ignore' in pr):
+                key = 'paths' if 'paths' in pr else 'paths-ignore'
+                failures.append(
+                    f'CLAUSE_REACHABILITY: {basename} owns pinned required-status-check '
+                    f'context(s) {listed} but filters its pull_request trigger by '
+                    f'{key}={pr[key]!r}. A PR touching none of those paths never runs this '
+                    f'workflow, so the required context never reports and the PR is '
+                    f'unmergeable forever. Either drop the {key} filter or unpin the '
+                    f'context(s) in {ruleset_path}.'
+                )
+
 if failures:
     print('FAIL')
     for f in failures:
@@ -381,7 +436,7 @@ if failures:
 
 print('OK')
 print(f'{len(workflow_data)} workflow file(s) scanned, {len(register)} policy-table row(s) '
-      f'read; coverage, drift and context clauses all pass.')
+      f'read; coverage, drift, context and reachability clauses all pass.')
 sys.exit(0)
 PY
 )

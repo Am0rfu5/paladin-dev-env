@@ -125,6 +125,7 @@ assert_silent() {
 CLAUSE_UNCOVERED='CLAUSE_UNCOVERED'
 CLAUSE_DRIFT='CLAUSE_DRIFT'
 CLAUSE_CONTEXT='CLAUSE_CONTEXT'
+CLAUSE_REACHABILITY='CLAUSE_REACHABILITY'
 ZERO_FILES='ZERO_FILES'
 
 ON_STANDARD='  push:
@@ -199,6 +200,57 @@ cat > "${context_ruleset}" <<'JSON'
 }
 JSON
 assert_fire "${d}" "${t}" "${context_ruleset}" "${CLAUSE_CONTEXT}" "a pinned required-status-check context resolving to no declared job name"
+
+# --- 5a. Reachability clause: a pinned context whose owning workflow filters
+#         its pull_request trigger by paths. The job name resolves fine, so
+#         clause 3 stays silent -- but the check never REPORTS on a PR that
+#         touches no matching path, and GitHub blocks that PR forever with no
+#         failing check to explain it. Regression test for the PR #31 deadlock.
+pinned_fixture_ruleset="${SCRATCH}/reach-ruleset.json"
+cat > "${pinned_fixture_ruleset}" <<'JSON'
+{
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "required_status_checks": [
+          {"context": "Fixture Job"}
+        ]
+      }
+    }
+  ]
+}
+JSON
+
+d="$(mkdir_fixture reach-01)"
+write_workflow "${d}" workflow.yml '  push:
+    branches: ["**"]
+  pull_request:
+    paths:
+      - "docs/**"
+  workflow_dispatch:' "${JOBS_STANDARD}"
+t="${SCRATCH}/reach-01-table.md"
+write_policy_table "${t}" "${ROW_STANDARD}"
+assert_fire "${d}" "${t}" "${pinned_fixture_ruleset}" "${CLAUSE_REACHABILITY}" "a pinned context whose workflow path-filters its pull_request trigger"
+
+# --- 5b. Reachability clause: a pinned context in a workflow with no
+#         pull_request trigger at all -- same deadlock, different cause. -----
+d="$(mkdir_fixture reach-02)"
+write_workflow "${d}" workflow.yml '  push:
+    branches: ["**"]
+  workflow_dispatch:' "${JOBS_STANDARD}"
+t="${SCRATCH}/reach-02-table.md"
+write_policy_table "${t}" '| `workflow.yml` | `push`, `workflow_dispatch` | `['"'"'**'"'"']` | fixture row |'
+assert_fire "${d}" "${t}" "${pinned_fixture_ruleset}" "${CLAUSE_REACHABILITY}" "a pinned context in a workflow with no pull_request trigger"
+
+# --- 5c. Reachability stays SILENT when the same pinned context lives in an
+#         unfiltered pull_request workflow -- proves the clause is not just
+#         firing on the presence of a pinned context. ----------------------
+d="$(mkdir_fixture reach-03)"
+write_workflow "${d}" workflow.yml "${ON_STANDARD}" "${JOBS_STANDARD}"
+t="${SCRATCH}/reach-03-table.md"
+write_policy_table "${t}" "${ROW_STANDARD}"
+assert_silent "${d}" "${t}" "${pinned_fixture_ruleset}" "a pinned context whose workflow has an unfiltered pull_request trigger"
 
 # --- 6. The real, unmodified tree passes clean. -----------------------------
 assert_silent "${REAL_WORKFLOWS_DIR}" "${REAL_POLICY_TABLE}" "${REAL_RULESET}" "real unmodified .github/workflows/ tree and branching-model.md register"
