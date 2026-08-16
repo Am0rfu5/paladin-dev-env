@@ -26,7 +26,7 @@ file separates several different things that are all called "requirements":
 
 | Section | What it holds |
 |---|---|
-| **v1 Requirements** | Forward scope. Milestone 1 close-out: 25 requirements (Phases 1-4). Milestone 2-3 close-out: 9 (Phases 5-6). Milestone 4-6 close-out: 12 (Phases 7-8). Milestone 7-8 close-out: 16 (Phases 9-11). Milestone 9-12 + Deferred-QA close-out: 25 (Phases 12-16). **87 total**, each mapped to exactly one phase. |
+| **v1 Requirements** | Forward scope. Milestone 1 close-out: 25 requirements (Phases 1-4). Milestone 2-3 close-out: 9 (Phases 5-6). Milestone 4-6 close-out: 12 (Phases 7-8). Milestone 7-8 close-out: 16 (Phases 9-11). Milestone 9-12 + Deferred-QA close-out: 25 (Phases 12-16). Provider Expansion: 4 (Phase 17). **91 total**, each mapped to exactly one phase. |
 | **Competing variants** | 30 variant groups / 60 entries preserved **unmerged** from conflicting PRDs across all five runs. No winner is picked here. |
 | **Milestone 1 as-shipped ledger** | All 115 run-1 requirement IDs, with status. Not forward scope. |
 | **Milestone 2-3 as-shipped ledger** | All 118 run-2 requirement IDs, with status. Not forward scope. |
@@ -51,8 +51,10 @@ unbuilt, or genuinely undecided — not because the milestones are unfinished.
 close-out IDs; `SEC-*`, `HARD-*` and `FACADE-*` are Milestone 7-8 close-out IDs; `SUPPLY-*`,
 `ORCH-*`, `WEB-*`, `PIPE-*`, `DEFER-*` and `DOCS-*` are Milestone 9-12 + Deferred-QA close-out IDs.
 Each cites the ingested `REQ-*` IDs it derives from. `REQ-*` IDs are preserved verbatim from
-`.planning/intel/requirements.md`. **Seventeen prefixes are now spent** — eleven before run 5 and
-six added by it. There is no run 6; the ingest is closed.
+`.planning/intel/requirements.md`. **Eighteen prefixes are now spent** — eleven before run 5, six
+added by it, and **`PROV-*` added 2026-08-15 outside the ingest entirely**. There is no run 6; the
+ingest is closed, but the *Roadmap Extension Protocol* still governs forward additions like `PROV-*`
+— which cite user direction rather than a `REQ-*` ancestor.
 
 **Ledger verdicts are component-level file evidence, not per-criterion audits.** A `Shipped`
 verdict means the named artefact exists in the tree at the cited path. Confirming each PRD
@@ -3386,6 +3388,87 @@ threshold configuration and the local targets. Scope accordingly.
       work in flight.
       *Derives: REQ-asciinema-demos (FR-26.4; G4), REQ-readme-landing-page (M11 Epic 5);
       `intel/code-verification.md` run-5 verified-open finding 4.*
+
+---
+
+## v1 Requirements — Provider Expansion (Phase 17)
+
+**Not ingest-derived.** These four are the first forward requirements in this file that come from
+user direction rather than from `.project/`. Added 2026-08-15. `PROV-*` is the **eighteenth**
+prefix and recycles none of the seventeen spent.
+
+**PROV-02's size is set by PROV-01's verdicts** — it may be one adapter or four. Do not plan the
+build before the study reports.
+
+### Additional LLM provider adapters (PROV)
+
+- [ ] **PROV-01**: The additional-provider field is **narrowed to a decision**, and the criteria are
+      written down before the candidates are scored.
+      `paladin-llm` ships three real providers today — `openai`, `anthropic`, `deepseek` — plus
+      `mock`, each behind its own Cargo feature, resolved through `provider_factory.rs`.
+      Candidates named in the request: **Kimi**, **Gemini**, **Qwen**, **Meta/Llama**. The list is
+      not closed; the study surfaces others (Mistral, Groq, Bedrock, Together, Ollama, xAI, …) and
+      dispositions them the same way.
+      **One correction the study must carry: "Llama" is a model family, not a provider.** There is
+      no Meta inference endpoint to write an adapter against in the way there is for OpenAI — a
+      Llama row must name the *host* it targets (Bedrock, Groq, Together, Ollama, self-hosted
+      vLLM/OpenAI-compatible shim) or be rejected for lacking one. The same test applies to Qwen
+      (Alibaba DashScope vs. an OpenAI-compatible gateway vs. local).
+      **Criteria, recorded before scoring**: wire compatibility with the existing adapter shape
+      (OpenAI-compatible `/chat/completions` vs. bespoke, as Anthropic already is); streaming
+      support and chunk format; tool/function-calling support; token-usage reporting (feeds
+      `TokenUsage`, consolidated by DEBT-05); auth model; whether `reqwest` suffices or a new
+      heavyweight dependency is implied — **a new dependency is a cost, and `make deny`/`make
+      audit` must still pass**; hosted-only vs. self-hostable; licence and ToS constraints on
+      programmatic access; and whether the provider is obtainable for testing without a paid
+      account.
+      **Done when** every candidate carries a **build / defer / reject** verdict with its reason
+      attached, the four named candidates are each explicitly dispositioned including any rejected,
+      and the shortlist is recorded as a decision rather than left as a preference.
+      *Not ingest-derived — user direction, 2026-08-15. Reads against `crates/paladin-llm/` as
+      shipped at v0.8.0.*
+
+- [ ] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
+      contract**, not a convenient subset.
+      The trait requires `generate`, `generate_stream`, `validate_model`,
+      `get_available_models`, `get_provider_name` and `get_capabilities`
+      (`crates/paladin-ports/src/output/llm_port.rs`).
+      **`get_capabilities` must be truthful.** Phase 14 (WEB-*) already made the LLM capability
+      flag honest once; a new adapter that reports streaming or tool support it does not have
+      re-opens exactly that defect. A provider that cannot stream reports that it cannot stream.
+      Errors map into the existing `LlmError` variants rather than into a new parallel error type,
+      and rate-limit and auth failures are distinguishable by the caller.
+      **Done when** each built adapter passes the same contract tests the existing three do, with
+      no stubbed method and no optimistic capability response.
+      *Not ingest-derived — user direction, 2026-08-15. Couples to DEBT-05 (canonical `TokenUsage`)
+      and to Phase 14's capability-truthfulness standard.*
+
+- [ ] **PROV-03**: Each new adapter is **feature-gated and additive** — adding a provider changes
+      no existing provider's behaviour.
+      `paladin-llm`'s feature set today is `default = ["openai", "mock"]` with `anthropic`,
+      `deepseek`, `vision` and `openai-embeddings` opt-in. Each new provider gains one feature in
+      the same shape.
+      **Done when** `cargo build -p paladin-llm --no-default-features --features <provider>`
+      succeeds for every new provider, the **default feature set is unchanged**, `provider_factory`
+      resolves the new providers from configuration exactly as it resolves the existing three, and
+      the config surface (`crates/paladin-llm/src/config/`) accepts them without a breaking change
+      to existing config files.
+      *Not ingest-derived — user direction, 2026-08-15.*
+
+- [ ] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
+      the advertised surface matches the shipped one.
+      **Tests**: mock-transport unit tests for request shaping, response parsing, streaming chunk
+      assembly and error mapping — the workspace stays above the **82% line-coverage floor**
+      (ADR-0006, enforced by `cargo llvm-cov --fail-under-lines`) with the new code counted, not
+      excluded. Any test requiring a live key is behind a credential-gated feature so CI stays
+      green without secrets.
+      **Docs**: every public item carries rustdoc; `paladin-llm`'s `Cargo.toml` `description` and
+      `keywords` (today: `["ai", "llm", "openai", "anthropic", "deepseek"]`), the crate README, and
+      the configuration documentation name **exactly** the providers that exist.
+      **Done when** all of the above hold — so this phase does not manufacture the same
+      documentation-currency debt DOCS-01 exists to close.
+      *Not ingest-derived — user direction, 2026-08-15. Inherits the PIPE-*/ADR-0006 coverage gate
+      and the DOCS-03 rustdoc bar.*
 
 ---
 

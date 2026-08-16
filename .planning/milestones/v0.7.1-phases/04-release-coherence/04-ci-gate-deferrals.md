@@ -170,7 +170,7 @@ endpoints (row 3), or the human-gated tag push (row 4, and by extension row 6's 
 ## First real CI execution — 2026-08-03
 
 **Added by the phase orchestrator after `release/v0.7.0` was pushed to origin.** The user
-supplied a `GH_TOKEN`, so run results became readable for the first time; the deferral rows
+supplied a ` `, so run results became readable for the first time; the deferral rows
 above were written when `gh` was unauthenticated and CI results were genuinely unknown.
 
 ### What the push proved
