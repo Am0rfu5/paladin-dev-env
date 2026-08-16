@@ -4,8 +4,8 @@ milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
 current_phase: 15.1
 status: completed
-stopped_at: Phase 15.1 context gathered
-last_updated: "2026-08-15T18:06:52.169Z"
+stopped_at: Phase 17 context gathered
+last_updated: "2026-08-16T22:14:45.591Z"
 last_activity: 2026-08-15
 last_activity_desc: Phase 15.1 marked complete
 progress:
@@ -725,14 +725,14 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 15.1 context gathered
+**Stopped at:** Phase 17 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-14T21:30:23.483Z
-Resume file: .planning/phases/15.1-git-ci-governance/15.1-CONTEXT.md
+Last session: 2026-08-16T22:14:45.500Z
+Resume file: .planning/phases/17-additional-llm-provider-adapters/17-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
