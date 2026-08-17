@@ -16,6 +16,7 @@
 //! | `kimi` | Kimi (Moonshot AI) | [`kimi::KimiAdapter`], [`kimi::KimiConfig`] |
 //! | `qwen` | Qwen (Alibaba DashScope) | [`qwen::QwenAdapter`], [`qwen::QwenConfig`] |
 //! | `grok` | Grok (xAI) | [`grok::GrokAdapter`], [`grok::GrokConfig`] |
+//! | `ollama` | Ollama (self-hosted, keyless) | [`ollama::OllamaAdapter`], [`ollama::OllamaConfig`] |
 //! | `mock` (default) | Testing | [`mock::MockLlmAdapter`], [`mock::MultiStepMockLlmPort`] |
 //! | `openai-embeddings` | OpenAI Embeddings | [`openai::OpenAIEmbeddingAdapter`] |
 //! | `vision` | Vision (multimodal) | Extends OpenAI and Anthropic adapters |
@@ -61,7 +62,12 @@ pub mod provider_factory;
 #[allow(missing_docs)]
 pub mod redaction;
 
-#[cfg(any(feature = "kimi", feature = "qwen", feature = "grok"))]
+#[cfg(any(
+    feature = "kimi",
+    feature = "qwen",
+    feature = "grok",
+    feature = "ollama"
+))]
 /// Shared OpenAI-compatible protocol engine (D-05) that thin provider
 /// presets sit on. Widen this `any(...)` list as later presets land.
 #[allow(missing_docs)]
@@ -101,6 +107,11 @@ pub mod qwen;
 /// Grok (xAI) provider adapter and related configuration.
 #[allow(missing_docs)]
 pub mod grok;
+
+#[cfg(feature = "ollama")]
+/// Ollama (self-hosted, keyless) provider adapter and related configuration.
+#[allow(missing_docs)]
+pub mod ollama;
 
 /// Cross-adapter capability invariants (WEB-03, ADR-0004).
 ///

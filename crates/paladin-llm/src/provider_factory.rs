@@ -149,6 +149,23 @@ fn construct_grok() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     Ok(Arc::new(adapter))
 }
 
+#[cfg(feature = "ollama")]
+fn construct_ollama() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::ollama::{OllamaAdapter, OllamaConfig};
+    // No credential env var to read — Ollama requires none (D-12). `from_env`
+    // only fails if `OLLAMA_TIMEOUT_SECONDS` is set to an unparseable value.
+    let config = OllamaConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!("Ollama configuration error: {}", e))
+    })?;
+    let adapter = OllamaAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create Ollama adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
 /// Build the `cfg`-gated provider registry table. Exactly one row per
 /// enabled provider feature; a provider whose feature is compiled out has
 /// no row at all, so it cannot be reported as available regardless of
@@ -202,6 +219,16 @@ fn build_provider_registry() -> Vec<ProviderRegistration> {
         name: "grok",
         env_var: Some("XAI_API_KEY"),
         construct: construct_grok,
+    });
+
+    // Placed after every credentialed row: a compiled-in, credential-free
+    // Ollama must never pre-empt an explicitly-configured hosted provider
+    // in `get_default_provider()`'s declared-table-order scan.
+    #[cfg(feature = "ollama")]
+    rows.push(ProviderRegistration {
+        name: "ollama",
+        env_var: None,
+        construct: construct_ollama,
     });
 
     rows
@@ -377,7 +404,8 @@ mod tests {
         not(feature = "anthropic"),
         not(feature = "deepseek"),
         not(feature = "qwen"),
-        not(feature = "grok")
+        not(feature = "grok"),
+        not(feature = "ollama")
     ))]
     mod kimi_only_build {
         use super::*;
@@ -435,6 +463,62 @@ mod tests {
             // criterion's build command, not by an in-crate test — there
             // is no way to compile this test module without at least one
             // provider feature enabled.
+        }
+    }
+
+    // ── D-12 regression coverage: Ollama resolves with no credential ──
+    //
+    // The first (and only) registry row whose `env_var` is `None`.
+    // `get_default_provider()`/`list_available_providers()` must treat a
+    // `None` credential as "available" without any environment variable
+    // being set.
+    #[cfg(feature = "ollama")]
+    mod ollama_requires_no_credential {
+        use super::*;
+
+        #[test]
+        fn create_resolves_with_no_credential_in_environment() {
+            let factory = LlmProviderFactory::new();
+            let result = factory.create("ollama");
+            assert!(
+                result.is_ok(),
+                "ollama must resolve with no credential env var set: {:?}",
+                result.err()
+            );
+        }
+
+        #[test]
+        fn list_available_providers_includes_ollama_whenever_compiled_in() {
+            assert!(
+                LlmProviderFactory::list_available_providers()
+                    .iter()
+                    .any(|name| name == "ollama"),
+                "a compiled-in, credential-free ollama row must always report as available"
+            );
+        }
+    }
+
+    // ── D-10 regression coverage: the four-new-preset build (17-03) ──
+    //
+    // Exercised under `cargo test -p paladin-llm --no-default-features
+    // --features kimi,qwen,grok,ollama`. Proves table declaration order is
+    // preserved end to end and that the credential-free `ollama` row lands
+    // last, never pre-empting a credentialed row.
+    #[cfg(all(
+        feature = "kimi",
+        feature = "qwen",
+        feature = "grok",
+        feature = "ollama",
+        not(feature = "openai"),
+        not(feature = "anthropic"),
+        not(feature = "deepseek")
+    ))]
+    mod four_new_preset_build {
+        use super::*;
+
+        #[test]
+        fn provider_names_returns_exactly_kimi_qwen_grok_ollama_in_table_order() {
+            assert_eq!(provider_names(), vec!["kimi", "qwen", "grok", "ollama"]);
         }
     }
 
