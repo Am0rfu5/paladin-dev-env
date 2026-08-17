@@ -1150,8 +1150,8 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
 Plans:
 **Wave 1**
 
-- [ ] 17-01-PLAN.md — Tracer: shared OpenAI-compatible core (`compat/`), the Kimi preset on it, and the `cfg`-gated provider registry table, proven end-to-end against a mock transport
-- [ ] 17-02-PLAN.md — PROV-01's recorded provider-selection study: ADR-0045 with criteria-before-verdicts and a build/defer/reject row per candidate
+- [x] 17-01-PLAN.md — Tracer: shared OpenAI-compatible core (`compat/`), the Kimi preset on it, and the `cfg`-gated provider registry table, proven end-to-end against a mock transport
+- [x] 17-02-PLAN.md — PROV-01's recorded provider-selection study: ADR-0045 with criteria-before-verdicts and a build/defer/reject row per candidate
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
