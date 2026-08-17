@@ -16,9 +16,15 @@ let settings = paladin_ai_core::config::ApplicationSettings::from_file("config.y
 
 ## LLM Provider
 
+Nine providers are supported: `openai`, `anthropic`, `deepseek`, `kimi`, `qwen`, `grok`,
+`ollama`, `gemini`, and a generic operator-configured `openai-compatible` provider for any
+other OpenAI-compatible endpoint. Only the providers compiled in via the matching
+`llm-<provider>` Cargo feature are usable at runtime; the compiled default remains
+`openai` + `anthropic` + `deepseek` (see [Feature Flags](../api-reference/feature-flags.md)).
+
 ```yaml
 llm:
-  default_provider: "openai"   # openai | deepseek | anthropic
+  default_provider: "openai"   # openai | anthropic | deepseek | kimi | qwen | grok | ollama | gemini | openai-compatible
 
   openai:
     base_url: "https://api.openai.com/v1"
@@ -40,6 +46,44 @@ llm:
     default_temperature: 0.7
     timeout_seconds: 300
     max_retries: 3
+
+  # Six providers added alongside the original three. Base URLs and default model IDs for
+  # Kimi/Qwen/Grok/Gemini were recorded from vendor documentation but have not been
+  # verified against a live endpoint in this environment.
+  kimi:
+    base_url: "https://api.moonshot.ai/v1"
+    default_model: "moonshot-v1-8k"
+    timeout_seconds: 60
+
+  qwen:
+    base_url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    default_model: "qwen-plus"
+    timeout_seconds: 60
+
+  grok:
+    base_url: "https://api.x.ai/v1"
+    default_model: "grok-4"
+    timeout_seconds: 60
+
+  # Ollama (self-hosted) requires no api_key at all (D-12) — omit the field entirely.
+  ollama:
+    base_url: "http://localhost:11434/v1"
+    default_model: "llama3"
+    timeout_seconds: 60
+
+  # Gemini uses a bespoke `generateContent` protocol, not OpenAI-compatible.
+  gemini:
+    base_url: "https://generativelanguage.googleapis.com/v1beta"
+    default_model: "gemini-2.5-flash"
+    timeout_seconds: 60
+
+  # Generic adapter for ANY OpenAI-compatible endpoint not named above (self-hosted
+  # vLLM/LiteLLM, Groq, Together, Mistral, Fireworks, Bedrock's OpenAI-compat mode, ...).
+  # base_url and default_model are REQUIRED here — there is no vendor default.
+  openai-compatible:
+    base_url: "https://your-endpoint.example.com/v1"
+    default_model: "your-model-name"
+    timeout_seconds: 60
 ```
 
 **API keys** are read exclusively from environment variables:
@@ -49,6 +93,12 @@ llm:
 | `OPENAI_API_KEY` | OpenAI |
 | `DEEPSEEK_API_KEY` | DeepSeek |
 | `ANTHROPIC_API_KEY` | Anthropic |
+| `MOONSHOT_API_KEY` | Kimi |
+| `DASHSCOPE_API_KEY` | Qwen |
+| `XAI_API_KEY` | Grok |
+| — (none required) | Ollama — self-hosted, no vendor credential (D-12) |
+| `GEMINI_API_KEY` | Gemini |
+| `OPENAI_COMPATIBLE_API_KEY` | Generic OpenAI-compatible provider — **not** the same variable as `OPENAI_API_KEY`, a different credential for a different provider; the two names are one word apart, read both character-by-character before exporting either |
 | `APP_LLM_DEFAULT_PROVIDER` | Override default provider at runtime |
 
 > **Security:** Never put API keys in `config.yml`. Use environment variables or
