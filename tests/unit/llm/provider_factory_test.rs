@@ -264,6 +264,33 @@ fn test_list_available_providers() {
     // of scope at the end of this function.
 }
 
+/// D-11 (amended 2026-08-17, option-b) / ADR-0046 regression guard: the
+/// facade's `llm-*` feature flags are now real gates on `paladin-llm`'s own
+/// features rather than inert stubs, but `default = ["llm-openai",
+/// "llm-anthropic", "llm-deepseek"]` must still compile — and therefore
+/// still resolve — exactly the same three providers a default build did
+/// before this plan. A `cargo tree` assertion alone proves the feature
+/// graph is wired; this test proves the runtime consequence (`create(..)`
+/// still finding a registered row) actually holds under whatever features
+/// this test binary was compiled with.
+#[test]
+fn default_features_still_resolve_openai_anthropic_and_deepseek() {
+    let _env = CleanProviderEnv::acquire();
+    let factory = LlmProviderFactory::new();
+
+    for name in ["openai", "anthropic", "deepseek"] {
+        // `Arc<dyn LlmPort>` (the `Ok` type) is not `Debug`, so the whole
+        // `Result` cannot be formatted with `{:?}` — match on a reference
+        // and report only the `Err` variant when the assertion trips.
+        let result = factory.create(name);
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "provider {name:?} must still resolve under default features (D-11/ADR-0046); got {:?}",
+            result.as_ref().err()
+        );
+    }
+}
+
 #[test]
 fn test_factory_zero_sized() {
     let factory = LlmProviderFactory::new();
