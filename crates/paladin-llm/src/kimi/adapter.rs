@@ -167,10 +167,17 @@ impl KimiAdapter {
             },
             fallback_models: KIMI_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
-            // T-17-18 (plan 17-04): Kimi's endpoint is a fixed vendor host,
-            // not operator-supplied, so this preset keeps the engine's
-            // original behaviour (reqwest's default redirect policy).
-            redirect_policy: None,
+            // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the
+            // 17-04 comment this replaces: `KIMI_DEFAULT_BASE_URL` is only
+            // this preset's *default* — `MOONSHOT_BASE_URL` is documented
+            // and operator-settable (`KimiConfig::from_env`), so a `3xx`
+            // from whatever host it resolves to could otherwise replay the
+            // `Authorization` header carrying the operator's credential to
+            // a different host. Setting `Policy::none()` here is what
+            // prevents that, matching `openai_compatible`'s posture
+            // (T-17-18); a refused redirect surfaces via the engine's
+            // `300..=399` `map_error` arm.
+            redirect_policy: Some(reqwest::redirect::Policy::none()),
         };
 
         Ok(Self {
