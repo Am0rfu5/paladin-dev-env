@@ -6,7 +6,17 @@
 //! the Rust orphan rule restriction (both source and target types are local to
 //! this crate).
 
-#[cfg(any(feature = "openai", feature = "anthropic", feature = "deepseek"))]
+#[cfg(any(
+    feature = "openai",
+    feature = "anthropic",
+    feature = "deepseek",
+    feature = "kimi",
+    feature = "qwen",
+    feature = "grok",
+    feature = "ollama",
+    feature = "gemini",
+    feature = "openai-compatible"
+))]
 use crate::config::llm::LlmProviderConfig;
 
 #[cfg(feature = "openai")]
@@ -17,6 +27,26 @@ use crate::anthropic::adapter::AnthropicConfig;
 
 #[cfg(feature = "deepseek")]
 use crate::deepseek::adapter::DeepSeekConfig;
+
+#[cfg(feature = "kimi")]
+use crate::kimi::adapter::KimiConfig;
+
+#[cfg(feature = "qwen")]
+use crate::qwen::adapter::QwenConfig;
+
+#[cfg(feature = "grok")]
+use crate::grok::adapter::GrokConfig;
+
+#[cfg(feature = "ollama")]
+use crate::ollama::adapter::OllamaConfig;
+
+#[cfg(feature = "gemini")]
+use crate::gemini::adapter::GeminiConfig;
+
+#[cfg(feature = "openai-compatible")]
+use crate::openai_compatible::adapter::{
+    OpenAiCompatibleCapabilitiesConfig, OpenAiCompatibleConfig,
+};
 
 #[cfg(feature = "vision")]
 use crate::config::vision::VisionConfig as ConfigVisionConfig;
@@ -88,6 +118,171 @@ impl From<&LlmProviderConfig> for DeepSeekConfig {
                 .unwrap_or_else(|| "deepseek-chat".to_string()),
             timeout_seconds: cfg.timeout_seconds.unwrap_or(60),
         }
+    }
+}
+
+// ── Kimi (Moonshot AI) ───────────────────────────────────────────────────────
+
+#[cfg(feature = "kimi")]
+impl From<&LlmProviderConfig> for KimiConfig {
+    /// Convert an [`LlmProviderConfig`] into a [`KimiConfig`], falling back
+    /// to Kimi's own defaults for any absent optional field.
+    fn from(cfg: &LlmProviderConfig) -> Self {
+        Self {
+            api_key: cfg.api_key.clone(),
+            base_url: cfg
+                .base_url
+                .clone()
+                .unwrap_or_else(|| crate::kimi::adapter::KIMI_DEFAULT_BASE_URL.to_string()),
+            model: cfg
+                .default_model
+                .clone()
+                .unwrap_or_else(|| crate::kimi::adapter::KIMI_DEFAULT_MODEL.to_string()),
+            timeout_seconds: cfg.timeout_seconds.unwrap_or(60),
+        }
+    }
+}
+
+// ── Qwen (DashScope) ─────────────────────────────────────────────────────────
+
+#[cfg(feature = "qwen")]
+impl From<&LlmProviderConfig> for QwenConfig {
+    /// Convert an [`LlmProviderConfig`] into a [`QwenConfig`], falling back
+    /// to Qwen's own defaults for any absent optional field.
+    fn from(cfg: &LlmProviderConfig) -> Self {
+        Self {
+            api_key: cfg.api_key.clone(),
+            base_url: cfg
+                .base_url
+                .clone()
+                .unwrap_or_else(|| crate::qwen::adapter::QWEN_DEFAULT_BASE_URL.to_string()),
+            model: cfg
+                .default_model
+                .clone()
+                .unwrap_or_else(|| crate::qwen::adapter::QWEN_DEFAULT_MODEL.to_string()),
+            timeout_seconds: cfg.timeout_seconds.unwrap_or(60),
+        }
+    }
+}
+
+// ── Grok (xAI) ───────────────────────────────────────────────────────────────
+
+#[cfg(feature = "grok")]
+impl From<&LlmProviderConfig> for GrokConfig {
+    /// Convert an [`LlmProviderConfig`] into a [`GrokConfig`], falling back
+    /// to Grok's own defaults for any absent optional field.
+    fn from(cfg: &LlmProviderConfig) -> Self {
+        Self {
+            api_key: cfg.api_key.clone(),
+            base_url: cfg
+                .base_url
+                .clone()
+                .unwrap_or_else(|| crate::grok::adapter::GROK_DEFAULT_BASE_URL.to_string()),
+            model: cfg
+                .default_model
+                .clone()
+                .unwrap_or_else(|| crate::grok::adapter::GROK_DEFAULT_MODEL.to_string()),
+            timeout_seconds: cfg.timeout_seconds.unwrap_or(60),
+        }
+    }
+}
+
+// ── Gemini ───────────────────────────────────────────────────────────────────
+
+#[cfg(feature = "gemini")]
+impl From<&LlmProviderConfig> for GeminiConfig {
+    /// Convert an [`LlmProviderConfig`] into a [`GeminiConfig`], falling
+    /// back to Gemini's own defaults for any absent optional field.
+    fn from(cfg: &LlmProviderConfig) -> Self {
+        Self {
+            api_key: cfg.api_key.clone(),
+            base_url: cfg
+                .base_url
+                .clone()
+                .unwrap_or_else(|| crate::gemini::adapter::GEMINI_DEFAULT_BASE_URL.to_string()),
+            model: cfg
+                .default_model
+                .clone()
+                .unwrap_or_else(|| crate::gemini::adapter::GEMINI_DEFAULT_MODEL.to_string()),
+            timeout_seconds: cfg.timeout_seconds.unwrap_or(60),
+        }
+    }
+}
+
+// ── Ollama ───────────────────────────────────────────────────────────────────
+
+#[cfg(feature = "ollama")]
+impl From<&LlmProviderConfig> for OllamaConfig {
+    /// Convert an [`LlmProviderConfig`] into an [`OllamaConfig`], falling
+    /// back to Ollama's own defaults for any absent optional field.
+    ///
+    /// `cfg.api_key` is deliberately **ignored** — [`OllamaConfig`] has no
+    /// credential field at all (D-12: Ollama requires none). Threading an
+    /// empty string through would imply a credential concept this provider
+    /// does not have; the operator-facing `LlmProviderConfig.api_key` field
+    /// stays required by its own type, but its value is simply never read
+    /// here.
+    fn from(cfg: &LlmProviderConfig) -> Self {
+        Self {
+            base_url: cfg
+                .base_url
+                .clone()
+                .unwrap_or_else(|| crate::ollama::adapter::OLLAMA_DEFAULT_BASE_URL.to_string()),
+            model: cfg
+                .default_model
+                .clone()
+                .unwrap_or_else(|| crate::ollama::adapter::OLLAMA_DEFAULT_MODEL.to_string()),
+            timeout_seconds: cfg.timeout_seconds.unwrap_or(120),
+        }
+    }
+}
+
+// ── Generic operator-configured OpenAI-compatible provider (D-03) ──────────────
+
+#[cfg(feature = "openai-compatible")]
+impl TryFrom<&LlmProviderConfig> for OpenAiCompatibleConfig {
+    type Error = String;
+
+    /// Convert an [`LlmProviderConfig`] into an [`OpenAiCompatibleConfig`].
+    ///
+    /// Unlike every other provider's `From` impl in this file, this is a
+    /// **`TryFrom`** — deliberately, not for symmetry with the rest. Every
+    /// other provider has a vendor to inherit `base_url`/`model` defaults
+    /// from; the generic provider does not (D-03), so a config block
+    /// missing either is a genuine configuration error rather than a value
+    /// this conversion could paper over with an invented placeholder.
+    /// `capabilities` has no `LlmProviderConfig` counterpart at all — this
+    /// bridge cannot express an operator's capability declaration, so it
+    /// falls back to [`OpenAiCompatibleCapabilitiesConfig`]'s own
+    /// conservative defaults (D-04: unset means the conservative answer).
+    /// A caller needing capability control must construct
+    /// [`OpenAiCompatibleConfig`] directly or go through
+    /// [`OpenAiCompatibleConfig::from_env`].
+    fn try_from(cfg: &LlmProviderConfig) -> Result<Self, Self::Error> {
+        let base_url = cfg
+            .base_url
+            .clone()
+            .ok_or_else(|| "openai-compatible config requires base_url to be set".to_string())?;
+        let model = cfg.default_model.clone().ok_or_else(|| {
+            "openai-compatible config requires default_model to be set".to_string()
+        })?;
+
+        Ok(Self {
+            api_key: cfg.api_key.clone(),
+            base_url,
+            model,
+            timeout_seconds: cfg.timeout_seconds.unwrap_or(60),
+            capabilities: OpenAiCompatibleCapabilitiesConfig {
+                supports_streaming: true,
+                supports_tool_calling: false,
+                supports_function_calling: false,
+                supports_vision: false,
+                supports_embeddings: false,
+                supports_system_messages: false,
+                max_context_tokens: None,
+                temperature_range: None,
+            },
+        })
     }
 }
 
