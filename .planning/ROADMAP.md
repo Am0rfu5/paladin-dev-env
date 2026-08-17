@@ -1145,7 +1145,37 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
   4. **The adapters are tested to the standard already in force**, not exempted from it: mock-transport unit tests for request shaping, response parsing, streaming chunk assembly, and error mapping into `LlmError`; the workspace stays above the 82% line-coverage floor with the new code included; every public item carries rustdoc, and any live-API test is gated behind a credential-requiring feature so CI stays green without secrets.
   5. **The advertised surface matches the shipped one.** `paladin-llm`'s `Cargo.toml` description/keywords, the crate README, and the configuration documentation name exactly the providers that exist — so this phase does not create the same documentation-currency debt Phase 16 is closing.
 
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 17-01-PLAN.md — Tracer: shared OpenAI-compatible core (`compat/`), the Kimi preset on it, and the `cfg`-gated provider registry table, proven end-to-end against a mock transport
+- [ ] 17-02-PLAN.md — PROV-01's recorded provider-selection study: ADR-0045 with criteria-before-verdicts and a build/defer/reject row per candidate
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 17-03-PLAN.md — Qwen, Grok and Ollama presets on the shared core, with mock-transport tests and registry rows
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 17-04-PLAN.md — Generic operator-configured `openai-compatible` provider with pessimistic capability defaults *(blocking decision checkpoint: public surface naming, D-03 one-way)*
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 17-05-PLAN.md — Gemini bespoke adapter (`generateContent`, `systemInstruction`, `alt=sse` streaming), text-only
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 17-06-PLAN.md — Facade `llm-*` flags wired for real (BREAKING default build, ADR-0046) and the config surface extended to nine providers *(blocking decision checkpoint: default flag set, D-11 one-way)*
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 17-07-PLAN.md — Capability invariants for the six new adapters, the factory regression test, the Ollama Docker Tier 2 suite, and the 82% coverage gate
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 17-08-PLAN.md — Advertised surface brought in line (Cargo metadata, README, config example and docs), exports baseline regenerated *(blocking human-verify checkpoint)*
 
 ## Progress
 
