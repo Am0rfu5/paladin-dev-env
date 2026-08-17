@@ -48,6 +48,20 @@
 //! decision is the operator's own `GEMINI_BASE_URL`: nothing in this
 //! module validates where the *host* points, only the model segment
 //! appended to it. That surface is plan 17-10's subject.
+//!
+//! ## Trust boundary: the operator-supplied base URL (T-17-52, WR-04)
+//!
+//! `GEMINI_BASE_URL` determines where every credential-bearing request
+//! goes — the `x-goog-api-key` default header set in [`GeminiAdapter::new`]
+//! rides on every request this client sends. The redirect policy is
+//! `none` (also set in [`GeminiAdapter::new`]) so a `3xx` response can
+//! never move that header to a host the operator did not configure; a
+//! refused redirect surfaces via [`GeminiAdapter::map_error`]'s
+//! `300..=399` arm. The residual case — an operator deliberately pointing
+//! `base_url` at an internal address — is the operator's own trust
+//! decision; no allowlist is introduced, matching
+//! [`crate::openai_compatible`]'s documented posture (T-17-18) and
+//! PROJECT.md's single-tenant, operator-controlled configuration model.
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -222,6 +236,17 @@ impl GeminiAdapter {
         let client = Client::builder()
             .timeout(Duration::from_secs(config.timeout_seconds))
             .default_headers(headers)
+            // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53): `GEMINI_BASE_URL` is
+            // documented and operator-settable, and the `x-goog-api-key`
+            // default header above rides on every request this client
+            // sends — so a `3xx` from whatever host it resolves to could
+            // otherwise replay that live credential to a different,
+            // attacker-influenced host. Matches every `CompatEngine`-based
+            // preset's identical `Policy::none()` (T-17-18) — see this
+            // module's own top-level doc for the full trust-boundary
+            // rationale. A refused redirect surfaces via `map_error`'s
+            // `300..=399` arm.
+            .redirect(reqwest::redirect::Policy::none())
             .build()
             .map_err(|e| LlmError::NetworkError(format!("Failed to create HTTP client: {e}")))?;
 
@@ -421,6 +446,29 @@ impl GeminiAdapter {
             404 if rpc_status == Some("NOT_FOUND") => LlmError::ModelNotAvailable(excerpt),
             429 => LlmError::RateLimitExceeded,
             _ if rpc_status == Some("RESOURCE_EXHAUSTED") => LlmError::RateLimitExceeded,
+            // WR-04 (`17-REVIEW.md`, T-17-52): this client's redirect
+            // policy is `none` (see `GeminiAdapter::new`), so a `3xx`
+            // response is never followed — it arrives here as an ordinary
+            // non-success status instead. Named explicitly, mirroring
+            // `CompatEngine::map_error`'s identical arm, so the operator
+            // whose previously-working `GEMINI_BASE_URL` now fails gets an
+            // actionable message rather than an opaque one.
+            //
+            // `LlmError::ProcessingError` is this adapter's retryable set
+            // (see `execute_with_retry`), so a redirecting host is retried
+            // up to `max_retries` before this surfaces — the same accepted
+            // cost recorded for the compat presets (T-17-54): adding a new
+            // `LlmError` variant would breach PROV-02's "existing variants
+            // only" rule, and no existing non-retryable variant means
+            // "refused redirect".
+            300..=399 => LlmError::ProcessingError(format!(
+                "Gemini request failed (HTTP {status}): the configured GEMINI_BASE_URL \
+                 responded with a redirect (HTTP {status}), which this client refuses to \
+                 follow because doing so would forward the x-goog-api-key credential header \
+                 to a different, potentially attacker-influenced host. Correct the \
+                 GEMINI_BASE_URL setting to point directly at the intended endpoint. \
+                 Response excerpt: {excerpt}"
+            )),
             _ => LlmError::ProcessingError(format!(
                 "Gemini request failed (HTTP {status}{}): {excerpt}",
                 rpc_status
