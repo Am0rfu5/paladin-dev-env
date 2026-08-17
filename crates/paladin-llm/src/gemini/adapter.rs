@@ -1530,7 +1530,7 @@ mod tests {
 
     #[tokio::test]
     async fn generate_stream_safety_blocked_frame_terminates_without_error() {
-        let sse_body = concat!("data: {\"candidates\":[{\"finishReason\":\"SAFETY\"}]}\n\n",);
+        let sse_body = "data: {\"candidates\":[{\"finishReason\":\"SAFETY\"}]}\n\n";
 
         let mut server = Server::new_async().await;
         server
