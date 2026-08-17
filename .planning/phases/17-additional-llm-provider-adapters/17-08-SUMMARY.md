@@ -12,6 +12,7 @@ provides:
   - "paladin-llm's Cargo.toml description/keywords, crate README, config.example.yml, docs/src/getting-started/configuration.md and docs/src/api-reference/feature-flags.md all name the shipped nine-provider set (openai/anthropic/deepseek/kimi/qwen/grok/ollama/gemini/openai-compatible) plus mock -- closing PROV-04's documentation-currency half"
   - "config.example.yml gained a full llm: block (absent before this plan) with one sub-block per provider, every api_key using ${ENV_VAR} indirection, Ollama's block carrying no api_key key at all, openai-compatible's base_url/default_model marked required"
   - ".project/current-exports.txt regenerated via the same invocation the CI api-surface job uses; ./scripts/check-api-surface.sh exits 0 against it"
+  - "Human sign-off (Task 3) confirming the advertised surface matches the shipped surface (PROV-04), ADR-0045's reasoning reads as sound (PROV-01), and the default-build outcome (D-11 option-b, no break) is accepted -- phase 17's final gate is now closed"
 affects: []
 
 # Tech tracking
@@ -36,11 +37,10 @@ key-decisions:
   - "config.example.yml's openai-compatible block does NOT include a capability declaration, contrary to the plan's action text (\"should show at least one capability declaration\"). Verified against crates/paladin-llm/src/config/llm.rs and config/bridge.rs: LlmProviderConfig (the YAML-facing shape) carries no capabilities field at all -- OpenAiCompatibleCapabilitiesConfig exists as a standalone type for \"a future config-file loader\" per its own module doc, not yet wired into LlmConfig/LlmProviderConfig. Capability declaration is only reachable via OPENAI_COMPATIBLE_SUPPORTS_* environment variables today. Documented as a comment in the config block and in the README rather than inventing a YAML field the deserializer does not accept."
   - "Task 2's acceptance criterion \"git diff | grep '^+' | grep -c 'paladin_llm'\" returns 0, not >=1, and is a plan-authoring assumption mismatch (same class of issue 17-07 documented for its own doc-table acceptance criterion). cargo-public-api's simplified format renders a `pub use` re-export as only its target path (`pub use paladin::AnthropicAdapter`), never the qualified source path -- confirmed by checking the pre-existing baseline's other `pub use paladin::LlmProviderFactory` line, which also carries no `paladin_llm::` substring despite `LlmProviderFactory` being a paladin_llm type. Substituted an equivalent check: both new types (AnthropicAdapter/AnthropicConfig, DeepSeekAdapter/DeepSeekConfig) are confirmed paladin_llm-crate-sourced by cross-referencing src/lib.rs:183/186's `pub use paladin_llm::anthropic::{...}` / `pub use paladin_llm::deepseek::{...}` re-export lines."
   - "The exports diff is not perfectly additive at the raw-file level: 2 lines change beyond the 4 new pub-use lines -- the regenerated timestamp header and the trailing 'Total public items' count. Neither is a real API surface change; check-api-surface.sh's own comparison filters both out before diffing (grep -v on exactly those two line shapes), which is why ./scripts/check-api-surface.sh reports the surface unchanged/pass even though git diff shows 2 deletions. Recorded per the acceptance criterion's own instruction to explain any non-purely-additive discrepancy before committing."
+  - "Task 3 (human currency checkpoint) resolved APPROVED. Provenance: the human user approved via an interactive AskUserQuestion prompt raised by the /gsd-execute-phase 17 orchestrator on 2026-08-17, after the orchestrator independently performed and reported the mechanical portions of the verification (nine-provider parity across modules/features/facade-flags, ADR-0045 structure, default-build outcome, OPENAI_COMPATIBLE_API_KEY distinction). Recorded here as a human approval obtained at that checkpoint, not as this executor's self-assessment."
+  - "17-08-PLAN.md's own Task 3 prose (\"a default build of paladin-ai no longer compiles Anthropic and DeepSeek in\") is stale: it describes the SUPERSEDED option-a shape of D-11. The human amended D-11 to option-b (preserve the default provider set) in commit f9abcb6, before this phase executed. The 17-07-SUMMARY.md continuation agent and this plan's own prior-session partial SUMMARY both independently flagged this. The human explicitly chose NOT to amend the already-executed plan document; this SUMMARY notes the discrepancy instead, per that instruction. There is no default-build break to accept -- the CHANGELOG [Unreleased] entry and root Cargo.toml default set (openai+anthropic+deepseek) both confirm the default build is unchanged from before this phase."
 
-requirements-completed: [PROV-03]
-# PROV-04 intentionally NOT listed as complete: Task 3 (the human currency checkpoint) is the
-# gate for PROV-04's "advertised surface matches shipped surface" truth and has not run yet in
-# this session. See ## CHECKPOINT section below.
+requirements-completed: [PROV-01, PROV-02, PROV-03, PROV-04]
 
 coverage:
   - id: D1
@@ -54,7 +54,7 @@ coverage:
         ref: "grep -c 'DeepSeek, and mock' crates/paladin-llm/Cargo.toml -> 0; keywords array has 5 entries all <=20 chars; MOONSHOT_API_KEY/DASHSCOPE_API_KEY/XAI_API_KEY/GEMINI_API_KEY each grep >=1 in README.md; config.example.yml parses as valid YAML; zero literal-looking api_key values; llm-gemini and llm-openai-compatible both named in feature-flags.md; cargo check -p paladin-llm exits 0"
         status: pass
     human_judgment: true
-    rationale: "The plan's Task 3 checkpoint explicitly requires a human to read the Cargo.toml [features] block, description/keywords, README, and root Cargo.toml llm-* flags side by side and confirm no provider is named that does not exist and none is omitted -- 'the is the reasoning sound reading no test can perform' framing the plan itself uses. All automated acceptance criteria pass, but the plan's own must_haves list this specific human confirmation as a required truth, and that checkpoint has not yet run in this session."
+    rationale: "The plan's Task 3 checkpoint requires a human to read the Cargo.toml [features] block, description/keywords, README, and root Cargo.toml llm-* flags side by side and confirm no provider is named that does not exist and none is omitted. RESOLVED: human approved via AskUserQuestion on 2026-08-17, after the orchestrator confirmed 1:1 correspondence across nine provider modules, nine paladin-llm features, and nine llm-* facade flags plus llm-all -- nothing advertised without a shipping counterpart, nothing shipped left undocumented."
   - id: D2
     description: ".project/current-exports.txt regenerated so the api-surface CI guard passes with the phase's new public types included; compat wire types confirmed crate-private"
     requirement: "PROV-04"
@@ -66,31 +66,37 @@ coverage:
   - id: D3
     description: "The provider-selection study (.planning/decisions/0045-additional-llm-provider-selection.md) reads as sound reasoning -- criteria before verdicts, Kimi/Gemini/Qwen/Llama each dispositioned, Llama routed to Ollama as its host, Groq/Together/Mistral/Fireworks/Bedrock rejected as already-covered rather than deferred"
     requirement: "PROV-01"
-    verification: []
+    verification:
+      - kind: other
+        ref: "cat .planning/decisions/0045-additional-llm-provider-selection.md -> \"### Criteria (recorded before scoring)\" at line 45 precedes \"## Decision\" at line 67, confirming criteria genuinely precede verdicts"
+        status: pass
     human_judgment: true
-    rationale: "This is explicitly the 'is the reasoning sound' reading the plan's checkpoint states no automated test can perform. Pending Task 3."
+    rationale: "This is explicitly the 'is the reasoning sound' reading the plan's checkpoint states no automated test can perform. RESOLVED: human approved via AskUserQuestion on 2026-08-17, after the orchestrator confirmed the structural ordering (criteria at line 45, decision at line 67)."
   - id: D4
     description: "The default-build provider-set change described in CHANGELOG.md is the outcome selected at plan 17-06's checkpoint, and is one the human accepts shipping"
     requirement: "PROV-04"
-    verification: []
+    verification:
+      - kind: other
+        ref: "CHANGELOG.md [Unreleased] states the default build compiles the same three providers as before (openai, anthropic, deepseek), matching root Cargo.toml's default = [\"llm-openai\", \"llm-anthropic\", \"llm-deepseek\"] -- there is no default-build break to accept, contrary to Task 3's own stale prose (see key-decisions)"
+        status: pass
     human_judgment: true
-    rationale: "Pending Task 3. See the CHECKPOINT section below for an important correction to this checkpoint's own literal wording: as authored, Task 3 asks the human to confirm 'a default build of paladin-ai no longer compiles Anthropic and DeepSeek in' -- that describes an EARLIER shape of D-11 that was subsequently amended to option-b (commit f9abcb6, 'preserve the default provider set'). The actual, currently-committed CHANGELOG.md [Unreleased] entry and root Cargo.toml both state the opposite: the default build compiles the SAME three providers as before (openai+anthropic+deepseek), unchanged, no consumer action required. The human should verify against the current CHANGELOG.md/Cargo.toml text, not the plan's now-stale paraphrase of it."
+    rationale: "RESOLVED: human approved via AskUserQuestion on 2026-08-17. Important correction preserved for the record: Task 3's own literal checkpoint text asks the human to confirm 'a default build of paladin-ai no longer compiles Anthropic and DeepSeek in' -- that describes an EARLIER, SUPERSEDED shape of D-11 (option-a). D-11 was amended to option-b (preserve the default provider set) in commit f9abcb6, before this phase executed. The human's approval was obtained against the CURRENT, correct CHANGELOG.md/Cargo.toml state (default set unchanged), not against the plan's stale paraphrase. The human explicitly chose not to edit the already-executed plan document; this discrepancy is recorded here instead so a future auditor sees the correct picture without the plan being rewritten after the fact."
 
 # Metrics
-duration: ~50min (Tasks 1-2, this session; Task 3 pending)
+duration: ~50min (Tasks 1-2, prior session) + ~10min (Task 3 close-out, this continuation)
 completed: 2026-08-17
-status: checkpoint
+status: complete
 ---
 
 # Phase 17 Plan 08: Advertised-Surface Currency Summary
 
-**Cargo.toml description/keywords, the paladin-llm README, config.example.yml, and both configuration docs pages now name the shipped nine-provider set (openai/anthropic/deepseek/kimi/qwen/grok/ollama/gemini/openai-compatible), and the public-API baseline is regenerated and green -- Tasks 1 and 2 complete; Task 3, the phase's final human currency-check checkpoint, has not yet run.**
+**Cargo.toml description/keywords, the paladin-llm README, config.example.yml, and both configuration docs pages now name the shipped nine-provider set (openai/anthropic/deepseek/kimi/qwen/grok/ollama/gemini/openai-compatible); the public-API baseline is regenerated and green; and a human has confirmed, side by side, that the advertised surface matches the shipped surface, that ADR-0045's provider-selection reasoning is sound, and that the default-build outcome (D-11 option-b, no break) is accepted. All three tasks complete -- this is phase 17's final plan and final gate.**
 
 ## Performance
 
-- **Duration:** ~50 min (Tasks 1-2)
-- **Completed (Tasks 1-2):** 2026-08-17
-- **Tasks:** 2 of 3 executed (Task 3 is a blocking human-verify checkpoint, gate="blocking")
+- **Duration:** ~50 min (Tasks 1-2, prior session) + ~10 min (Task 3 close-out, this continuation)
+- **Completed:** 2026-08-17
+- **Tasks:** 3 of 3 executed. Task 3 (blocking human-verify checkpoint) resolved APPROVED.
 - **Files modified:** 6
 
 ## Accomplishments
@@ -111,13 +117,21 @@ status: checkpoint
   - DEBT-01 held: zero dot-less `project/current-exports.txt` references remain in either script.
   - See key-decisions for two documented deviations from the plan's literal acceptance criteria (the `paladin_llm` substring check, and the 2 non-additive boilerplate lines).
 
+- **Task 3: human currency check -- RESOLVED APPROVED.**
+  - Type: `human-verify`, gate `blocking`. This was the phase's final gate (all three of 17-VALIDATION.md's manual-only verifications).
+  - The orchestrator gathered mechanical evidence and presented it to the human via an interactive `AskUserQuestion` prompt on 2026-08-17:
+    1. **Advertised vs shipped -- exact 1:1 correspondence.** Nine provider modules on disk (`anthropic`, `deepseek`, `gemini`, `grok`, `kimi`, `ollama`, `openai`, `openai_compatible`, `qwen`); nine `paladin-llm` provider features; nine facade `llm-*` flags plus `llm-all`. Nothing advertised without a shipping counterpart; nothing shipped left undocumented.
+    2. **ADR-0045 structure sound.** `### Criteria (recorded before scoring)` at line 45 precedes `## Decision` at line 67 -- criteria genuinely precede verdicts.
+    3. **Default-build outcome accepted.** CHANGELOG `[Unreleased]` states the default build compiles the same three providers as before (`openai`, `anthropic`, `deepseek`), matching root `Cargo.toml`'s `default = ["llm-openai", "llm-anthropic", "llm-deepseek"]`. There is no default-build break to accept.
+    4. **`OPENAI_COMPATIBLE_API_KEY` vs `OPENAI_API_KEY` distinction** -- the condition the human attached to their wave-3 naming choice -- is satisfied by a README callout, a note in `docs/src/getting-started/configuration.md`, and an inline comment in `config.example.yml`.
+  - **Human response: "approved."**
+  - **Known stale plan prose, recorded not acted on:** Task 3's own written text in `17-08-PLAN.md` claims "a default build of paladin-ai no longer compiles Anthropic and DeepSeek in." That describes the SUPERSEDED option-a shape of D-11; the human amended D-11 to option-b (preserve the default provider set) in commit `f9abcb6`, before this phase executed. The human explicitly chose NOT to amend the already-executed plan document -- `17-08-PLAN.md` was not edited by this close-out. This discrepancy is recorded here (and was recorded in the prior-session partial SUMMARY, and independently in 17-07-SUMMARY.md) so a future auditor sees the correct, current picture without the executed plan being rewritten after the fact.
+
 ## Task Commits
 
 1. **Task 1: Bring the advertised surface in line with the shipped provider set** - `7c04dd7` (docs)
 2. **Task 2: Regenerate the public-API baseline so the api-surface guard stays green** - `4e8aac9` (chore)
-3. **Task 3: Human currency check** - NOT YET RUN. See `## CHECKPOINT` below.
-
-_Plan metadata commit deferred until Task 3 resolves and the plan is fully complete._
+3. **Task 3: Human currency check** - resolved APPROVED; no code changes (verification-only task). Outcome recorded in this SUMMARY per the plan's own `<verification>` instruction ("do not commit anything for Task 3 beyond recording the outcome in the SUMMARY").
 
 ## Files Created/Modified
 
@@ -130,7 +144,7 @@ _Plan metadata commit deferred until Task 3 resolves and the plan is fully compl
 
 ## Decisions Made
 
-See `key-decisions` in the frontmatter above. Most consequential: the `Cargo.toml` keyword-replacement rationale (one-line justification per entry, since the five-slot cap forced a full replacement rather than an append), and flagging that Task 3's own literal checkpoint text describes an outdated (pre-amendment) shape of D-11 -- the human verifying Task 3 should check against the CURRENT `CHANGELOG.md`/`Cargo.toml`, not the plan's paraphrase.
+See `key-decisions` in the frontmatter above. Most consequential: the `Cargo.toml` keyword-replacement rationale (one-line justification per entry, since the five-slot cap forced a full replacement rather than an append); the documented, provenance-recorded human approval of Task 3's checkpoint; and the explicit record that Task 3's own literal checkpoint text describes an outdated (pre-amendment) shape of D-11 -- the human's approval was obtained against the CURRENT `CHANGELOG.md`/`Cargo.toml` text, not the plan's stale paraphrase, and the plan document itself was deliberately left unedited per the human's own choice.
 
 ## Deviations from Plan
 
@@ -157,10 +171,17 @@ See `key-decisions` in the frontmatter above. Most consequential: the `Cargo.tom
 - **Files modified:** None beyond the intended `.project/current-exports.txt` regeneration
 - **Committed in:** `4e8aac9`
 
+**4. [Documented, plan prose stale -- not edited] Task 3's own checkpoint text describes a superseded shape of D-11**
+- **Found during:** Task 3 verification (both the prior-session partial SUMMARY and this close-out)
+- **Issue:** `17-08-PLAN.md`'s Task 3 `<how-to-verify>` step 3 asks the human to confirm "a default build of paladin-ai no longer compiles Anthropic and DeepSeek in" -- describing the SUPERSEDED option-a shape of D-11. D-11 was amended to option-b (preserve the default provider set) in commit `f9abcb6`, before this phase executed.
+- **Fix:** No plan edit made -- the human explicitly chose not to amend the already-executed plan document. The correct, current state (CHANGELOG `[Unreleased]` and root `Cargo.toml`'s `default = [...]` both confirm the default build is unchanged) was surfaced to and accepted by the human at the checkpoint, and is recorded here for a future auditor.
+- **Files modified:** None. `17-08-PLAN.md` was NOT edited (explicit human instruction).
+- **Committed in:** N/A (documentation-only finding, recorded in this SUMMARY)
+
 ---
 
-**Total deviations:** 3 documented (1 plan-authoring-bug substitution, 1 fictional-field avoidance, 1 non-additive-boilerplate note). None required architectural changes; none affected shipped behavior.
-**Impact on plan:** No scope creep. All three are documentation-accuracy or verification-precision findings, consistent with this plan's own purpose.
+**Total deviations:** 4 documented (1 plan-authoring-bug substitution, 1 fictional-field avoidance, 1 non-additive-boilerplate note, 1 stale-plan-prose record). None required architectural changes; none affected shipped behavior.
+**Impact on plan:** No scope creep. All four are documentation-accuracy or verification-precision findings, consistent with this plan's own purpose.
 
 ## Known Remaining Surface (outside this plan's files_modified)
 
@@ -175,19 +196,34 @@ None of these were in this plan's `files_modified` frontmatter and none were edi
 
 ## Issues Encountered
 
-None blocking. See Deviations above for documented findings during execution.
+None blocking. Task 3's checkpoint is resolved (approved). See Deviations above for documented findings during execution.
 
 ## User Setup Required
 
-None - no external service configuration required for Tasks 1-2. Task 3 requires human review (see CHECKPOINT below), not external service setup.
+None. Task 3's human review is complete (approved 2026-08-17).
+
+## Broken-Windows Ledger
+
+No new ledger entries from this plan. This close-out did not introduce any new stub, skipped test, unrun `<verify>`, or deviation beyond the four already documented above and folded into this SUMMARY (none of which meet the ledger's bar for a separate `.planning/WINDOWS.md` row -- they are plan-authoring/acceptance-criteria precision notes, not shipped defects).
+
+## Phase-Closing Honesty Ledger (carried forward from 17-07, unresolved)
+
+This is phase 17's final plan and final SUMMARY. The following verification debt from 17-07 remains genuinely open and is **not** resolved by this plan (Task 3's checkpoint scope was documentation currency and the two other manual-only ROADMAP verifications, not these three items):
+
+- **`.planning/WINDOWS.md` id 12** -- The Ollama Docker-gated Tier 2 integration suite (`tests/integration/ollama_docker_test.rs`, authored in 17-07) was authored and proven to compile, lint clean, and skip gracefully, but has **never run against a real Ollama server** -- no Docker daemon was available in any sandbox this phase executed in.
+- **`.planning/WINDOWS.md` id 13** -- The 82% workspace line-coverage floor (ADR-0006) is **UNMEASURED**, not estimated or failing -- `make coverage` requires Redis and MinIO via Docker, unavailable in every sandbox this phase executed in.
+- **`.planning/WINDOWS.md` id 14** -- The `ollama-test` service's healthcheck substitutes `ollama list` for the plan's originally preferred curl-based `/v1/models` check (curl/wget availability in the base image could not be verified without Docker); the substitution itself is unverified against the real image.
+- **Vendor facts for Kimi/Qwen/Grok/Gemini** (base URLs, default/fallback model IDs) were taken from vendor documentation but never verified against a live endpoint -- no network egress in any sandbox this phase executed in (17-RESEARCH.md Assumptions Log A1-A5).
+
+**A human with Docker access and/or live provider credentials must close these before treating phase 17 as fully verified end-to-end**, per 17-07-SUMMARY.md's own "User Setup Required" section. This plan's Task 3 approval covers documentation currency, the ADR-0045 reasoning quality, and the default-build outcome -- it does not and cannot substitute for running the Docker-gated suite or measuring coverage.
 
 ## Next Phase Readiness
 
-**Blocked on Task 3 (this plan's own final task) before phase 17 can be considered complete.** Tasks 1 and 2 are fully committed and their automated acceptance criteria all pass. The remaining work is exclusively the human currency-check checkpoint this plan's Task 3 defines -- see `## CHECKPOINT REACHED` in the executor's return message for the full structured state.
+**Phase 17 (additional LLM provider adapters) is complete as a documentation/gate matter: all 8 plans across 7 waves executed, this plan's Task 3 (the phase's final blocking checkpoint) is resolved APPROVED.** The four items in the Phase-Closing Honesty Ledger above are genuine, tracked, open verification debt (`.planning/WINDOWS.md` ids 12-14, plus the unverified vendor facts) that a human with Docker/network access should close before treating the nine-provider surface as fully proven in production. Nothing in that debt blocks phase closure per this plan's own scope -- it was correctly deferred and documented by 17-07, not silently dropped.
 
 ---
 *Phase: 17-additional-llm-provider-adapters*
-*Completed (Tasks 1-2): 2026-08-17*
+*Completed: 2026-08-17*
 
 ## Self-Check: PASSED
 
