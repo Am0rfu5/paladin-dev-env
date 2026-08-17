@@ -1183,7 +1183,7 @@ Plans:
 
 **Wave 9** *(blocked on Wave 8 — shares `gemini/adapter.rs`)*
 
-- [ ] 17-10-PLAN.md — WR-04: `Policy::none()` for Kimi, Qwen, Grok, Ollama and Gemini so a redirect can never replay a credential header to another host, four inaccurate rationales corrected
+- [x] 17-10-PLAN.md — WR-04: `Policy::none()` for Kimi, Qwen, Grok, Ollama and Gemini so a redirect can never replay a credential header to another host, four inaccurate rationales corrected
 
 **Wave 10** *(blocked on Wave 9 — shares `gemini/adapter.rs`)*
 
