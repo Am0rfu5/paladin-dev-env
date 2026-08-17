@@ -2069,4 +2069,90 @@ mod tests {
 
         mock.assert_async().await;
     }
+
+    // ── WR-04: redirect-following credential replay (plan 17-10) ──
+
+    #[tokio::test]
+    async fn gemini_does_not_replay_the_api_key_header_to_a_redirect_target() {
+        // A 302 to a POST is downgraded to a bodyless GET by the redirect
+        // layer (RFC 7231 6.4.2/6.4.3, as implemented by tower-http's
+        // follow_redirect — the layer reqwest's default policy runs on),
+        // so the redirect target's mock matches "GET", not "POST".
+        let mut redirect_target = Server::new_async().await;
+        let redirect_target_mock = redirect_target
+            .mock("GET", Matcher::Any)
+            .match_query(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "candidates": [{
+                        "content": {"role": "model", "parts": [{"text": "should never be seen"}]},
+                        "finishReason": "STOP"
+                    }],
+                    "usageMetadata": {
+                        "promptTokenCount": 1,
+                        "candidatesTokenCount": 1,
+                        "totalTokenCount": 2
+                    }
+                })
+                .to_string(),
+            )
+            .expect(0)
+            .create_async()
+            .await;
+
+        let mut primary = Server::new_async().await;
+        let primary_mock = primary
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .with_status(302)
+            .with_header(
+                "location",
+                &format!(
+                    "{}/models/gemini-2.5-flash:generateContent",
+                    redirect_target.url()
+                ),
+            )
+            // `ProcessingError` (what the refused-redirect arm returns once
+            // fixed) is retryable, so the fixed adapter may hit `primary`
+            // more than once (up to `max_retries` = 3); today, before the
+            // fix, the redirect is followed transparently and the call
+            // succeeds on the first attempt. `expect_at_least(1)` holds in
+            // both the RED and GREEN states.
+            .expect_at_least(1)
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&primary.url());
+        let request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+
+        // Load-bearing assertions FIRST (D-00e) — see the sibling Kimi
+        // test's comment for why: today the default redirect policy follows
+        // the 302 and the redirect target answers with a well-formed
+        // response, so `result` is actually `Ok` in the RED state — it is
+        // this `.expect(0)` mock assertion, proving the credential-bearing
+        // request WAS forwarded, that fails in the RED state, not the
+        // `result.is_err()` check below.
+        redirect_target_mock.assert_async().await;
+        primary_mock.assert_async().await;
+
+        assert!(
+            result.is_err(),
+            "a refused redirect must surface as an error, got: {result:?}"
+        );
+        let message = result.unwrap_err().to_string();
+        assert!(
+            message.contains("redirect"),
+            "refused-redirect error must name the redirect, got: {message}"
+        );
+    }
 }
