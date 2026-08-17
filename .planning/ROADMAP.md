@@ -1145,7 +1145,7 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
   4. **The adapters are tested to the standard already in force**, not exempted from it: mock-transport unit tests for request shaping, response parsing, streaming chunk assembly, and error mapping into `LlmError`; the workspace stays above the 82% line-coverage floor with the new code included; every public item carries rustdoc, and any live-API test is gated behind a credential-requiring feature so CI stays green without secrets.
   5. **The advertised surface matches the shipped one.** `paladin-llm`'s `Cargo.toml` description/keywords, the crate README, and the configuration documentation name exactly the providers that exist — so this phase does not create the same documentation-currency debt Phase 16 is closing.
 
-**Plans**: 8 plans
+**Plans**: 11 plans *(8 executed; 3 added 2026-08-17 by `/gsd-plan-phase 17 --gaps` to close the blocking verification gap and two security-adjacent review findings)*
 
 Plans:
 **Wave 1**
@@ -1176,6 +1176,20 @@ Plans:
 **Wave 7** *(blocked on Wave 6 completion)*
 
 - [x] 17-08-PLAN.md — Advertised surface brought in line (Cargo metadata, README, config example and docs), exports baseline regenerated *(blocking human-verify checkpoint)*
+
+**Wave 8** *(gap closure — blocked on Wave 7; verification returned `gaps_found` 2026-08-17)*
+
+- [ ] 17-09-PLAN.md — Tracer: close CR-01, the blocking Critical — allow-list guard on the caller-supplied Gemini model identifier before any request URL is built, red-then-green
+
+**Wave 9** *(blocked on Wave 8 — shares `gemini/adapter.rs`)*
+
+- [ ] 17-10-PLAN.md — WR-04: `Policy::none()` for Kimi, Qwen, Grok, Ollama and Gemini so a redirect can never replay a credential header to another host, four inaccurate rationales corrected
+
+**Wave 10** *(blocked on Wave 9 — shares `gemini/adapter.rs`)*
+
+- [ ] 17-11-PLAN.md — WR-03: every Gemini 401/403 and every credential-shaped 400 classifies as an auth failure, so a doomed request is attempted once rather than four times while holding a live key
+
+*Scoped to CR-01 + the two security-adjacent findings by developer decision, 2026-08-17. WR-01, WR-02, WR-05, WR-06, WR-07, IN-01 and IN-02 remain open, developer-accepted review debt; the three `human_verification` items (coverage floor, Ollama live server, vendor smoke test) remain blocked on Docker / network egress / vendor credentials.*
 
 ## Progress
 
