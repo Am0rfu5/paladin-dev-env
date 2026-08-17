@@ -1167,7 +1167,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 17-06-PLAN.md — Facade `llm-*` flags wired for real (BREAKING default build, ADR-0046) and the config surface extended to nine providers *(blocking decision checkpoint: default flag set, D-11 one-way)*
+- [ ] 17-06-PLAN.md — Facade `llm-` provider flags wired for real (ADR-0046) and the config surface extended to nine providers *(default set widened to preserve current behaviour — D-11 amended 2026-08-17, option-b; no breaking change, checkpoint pre-resolved)*
 
 **Wave 6** *(blocked on Wave 5 completion)*
 

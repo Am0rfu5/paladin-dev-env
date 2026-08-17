@@ -167,12 +167,30 @@ them; tests and documentation to the standard already in force.
   today compiles all three providers regardless of flags and PROJECT.md's "unavailable adapters must
   fail at compile time, never at runtime" is not what ships. Each flag becomes
   `llm-<provider> = ["paladin-llm/<provider>"]`, the new providers get flags on the same shape, and
-  `llm-all` and `full` are extended. **A default build stops silently including Anthropic and
-  DeepSeek**; that is a behaviour change and gets a CHANGELOG `BREAKING` entry. Leaving the existing
-  three as stubs while wiring only the new five was rejected — two classes of flag, some real and
-  some inert, is harder to explain than either end state.
-  — **Reversibility:** one-way — it changes what a default build contains for every consumer;
-  undoing it is a second breaking change, not a revert.
+  `llm-all` and `full` are extended. Leaving the existing three as stubs while wiring only the new
+  five was rejected — two classes of flag, some real and some inert, is harder to explain than
+  either end state.
+
+  **AMENDED 2026-08-17 — the default flag set preserves current behaviour (option-b).** D-11 as
+  originally recorded accepted that *"a default build stops silently including Anthropic and
+  DeepSeek"* and would take a CHANGELOG `BREAKING` entry. On review of the plan set the human
+  rejected that consequence: Phase 17 is an **expansion of the existing adapters, not a
+  replacement**, and no existing consumer should observe a change. `default` therefore becomes
+  `["llm-openai", "llm-anthropic", "llm-deepseek"]`. The flags still become real — the inert-stub
+  defect PROJECT.md documents is still fixed — but the compiled default set is unchanged, so the
+  entry is `Fixed`, not `BREAKING`.
+  **Accepted cost:** the default set still compiles three providers while the project's stated
+  posture is opt-in adapters, so PROJECT.md's *"unavailable adapters must fail at compile time"*
+  contract stays half-true by accident of the default. That posture question is **deferred to a
+  later phase**, explicitly, rather than settled here as a side effect of a plumbing fix.
+  **Provenance:** obtained from the human during the 2026-08-17 `/gsd-plan-phase 17` session via
+  the runtime's interactive question mechanism (`AskUserQuestion` → *"Lock option-b now"*), in
+  response to a direct challenge to whether the shipped three keep functioning. Recorded by the
+  plan-phase orchestrator, not by a subagent.
+  — **Reversibility:** reversible (was: one-way) — because the observable default is unchanged, no
+  consumer depends on the new arrangement, so restoring the previous manifest shape is a revert
+  rather than a second breaking change. The one-way rating applied to the *break*, which is no
+  longer being taken.
 
 - **D-12: Provider names and API-key env vars follow each vendor's own convention.**
   `"kimi"` / `MOONSHOT_API_KEY`, `"qwen"` / `DASHSCOPE_API_KEY`, `"grok"` / `XAI_API_KEY`,
