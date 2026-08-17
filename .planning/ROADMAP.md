@@ -1187,7 +1187,7 @@ Plans:
 
 **Wave 10** *(blocked on Wave 9 — shares `gemini/adapter.rs`)*
 
-- [ ] 17-11-PLAN.md — WR-03: every Gemini 401/403 and every credential-shaped 400 classifies as an auth failure, so a doomed request is attempted once rather than four times while holding a live key
+- [x] 17-11-PLAN.md — WR-03: every Gemini 401/403 and every credential-shaped 400 classifies as an auth failure, so a doomed request is attempted once rather than four times while holding a live key
 
 *Scoped to CR-01 + the two security-adjacent findings by developer decision, 2026-08-17. WR-01, WR-02, WR-05, WR-06, WR-07, IN-01 and IN-02 remain open, developer-accepted review debt; the three `human_verification` items (coverage floor, Ollama live server, vendor smoke test) remain blocked on Docker / network egress / vendor credentials.*
 
