@@ -2,7 +2,7 @@
 //
 // Unit tests for LLM provider factory
 
-use paladin_llm::provider_factory::{LlmProviderFactory, ProviderFactoryError};
+use paladin_llm::provider_factory::{LlmProviderFactory, ProviderFactoryError, provider_names};
 use std::env;
 use std::sync::Mutex;
 
@@ -289,6 +289,286 @@ fn default_features_still_resolve_openai_anthropic_and_deepseek() {
             result.as_ref().err()
         );
     }
+}
+
+/// Serializes access to the seven new-provider credential/configuration
+/// environment variables the two D-10 regression tests below read or mutate
+/// (`MOONSHOT_API_KEY`/`DASHSCOPE_API_KEY`/`XAI_API_KEY`/`GEMINI_API_KEY`/
+/// `OPENAI_COMPATIBLE_API_KEY`/`OPENAI_COMPATIBLE_BASE_URL`/
+/// `OPENAI_COMPATIBLE_MODEL`) — a disjoint variable set from
+/// [`PROVIDER_ENV_LOCK`], which owns the three shipped providers' vars, so a
+/// separate lock avoids serializing tests that touch unrelated variables.
+static NEW_PROVIDER_ENV_LOCK: Mutex<()> = Mutex::new(());
+
+/// RAII guard mirroring [`CleanProviderEnv`] for the seven new-provider
+/// credential/configuration variables: clears all seven for its lifetime and
+/// restores each to its prior value (present-with-value or absent) on drop,
+/// including on panic/unwind, so a failing assertion never leaks state into a
+/// sibling test.
+struct CleanNewProviderEnv<'a> {
+    _lock: std::sync::MutexGuard<'a, ()>,
+    moonshot_key: Option<String>,
+    dashscope_key: Option<String>,
+    xai_key: Option<String>,
+    gemini_key: Option<String>,
+    openai_compatible_key: Option<String>,
+    openai_compatible_base_url: Option<String>,
+    openai_compatible_model: Option<String>,
+}
+
+/// The seven variable names [`CleanNewProviderEnv`] owns, paired with the
+/// field that saves each one's pre-test value.
+const NEW_PROVIDER_ENV_VARS: [&str; 7] = [
+    "MOONSHOT_API_KEY",
+    "DASHSCOPE_API_KEY",
+    "XAI_API_KEY",
+    "GEMINI_API_KEY",
+    "OPENAI_COMPATIBLE_API_KEY",
+    "OPENAI_COMPATIBLE_BASE_URL",
+    "OPENAI_COMPATIBLE_MODEL",
+];
+
+impl CleanNewProviderEnv<'_> {
+    fn acquire() -> Self {
+        let lock = NEW_PROVIDER_ENV_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+
+        let moonshot_key = env::var("MOONSHOT_API_KEY").ok();
+        let dashscope_key = env::var("DASHSCOPE_API_KEY").ok();
+        let xai_key = env::var("XAI_API_KEY").ok();
+        let gemini_key = env::var("GEMINI_API_KEY").ok();
+        let openai_compatible_key = env::var("OPENAI_COMPATIBLE_API_KEY").ok();
+        let openai_compatible_base_url = env::var("OPENAI_COMPATIBLE_BASE_URL").ok();
+        let openai_compatible_model = env::var("OPENAI_COMPATIBLE_MODEL").ok();
+
+        for var in NEW_PROVIDER_ENV_VARS {
+            // SAFETY: NEW_PROVIDER_ENV_LOCK is held for this guard's lifetime
+            // (via `_lock`), so no other test in this binary can observe or
+            // mutate these process-wide vars while we hold it.
+            unsafe {
+                env::remove_var(var);
+            }
+        }
+
+        Self {
+            _lock: lock,
+            moonshot_key,
+            dashscope_key,
+            xai_key,
+            gemini_key,
+            openai_compatible_key,
+            openai_compatible_base_url,
+            openai_compatible_model,
+        }
+    }
+
+    /// Set one of the seven owned variables for the remainder of this
+    /// guard's lifetime.
+    fn set(&self, var: &str, value: &str) {
+        debug_assert!(
+            NEW_PROVIDER_ENV_VARS.contains(&var),
+            "{var} is not one of the variables this guard owns and restores on drop"
+        );
+        // SAFETY: `_lock` is held for this guard's entire lifetime, so no
+        // other test in this binary can observe or mutate `var` concurrently.
+        unsafe {
+            env::set_var(var, value);
+        }
+    }
+}
+
+impl Drop for CleanNewProviderEnv<'_> {
+    fn drop(&mut self) {
+        // SAFETY: `_lock` (a sibling field) is still held for the duration
+        // of this `Drop::drop` call — Rust drops struct fields after the
+        // `Drop` impl runs — so this restore cannot race a sibling test.
+        for (var, value) in [
+            ("MOONSHOT_API_KEY", &self.moonshot_key),
+            ("DASHSCOPE_API_KEY", &self.dashscope_key),
+            ("XAI_API_KEY", &self.xai_key),
+            ("GEMINI_API_KEY", &self.gemini_key),
+            ("OPENAI_COMPATIBLE_API_KEY", &self.openai_compatible_key),
+            (
+                "OPENAI_COMPATIBLE_BASE_URL",
+                &self.openai_compatible_base_url,
+            ),
+            ("OPENAI_COMPATIBLE_MODEL", &self.openai_compatible_model),
+        ] {
+            unsafe {
+                match value.as_deref() {
+                    Some(v) => env::set_var(var, v),
+                    None => env::remove_var(var),
+                }
+            }
+        }
+    }
+}
+
+/// D-10 regression guard (RESEARCH.md Pitfall 1/4, this plan's own remit): a
+/// provider whose feature is not compiled into this test binary must be
+/// absent from `list_available_providers()` even when its credential env var
+/// is set. `paladin-llm` denies `unsafe_code`, so this env-mutating variant
+/// of the regression lives in this workspace-level test crate instead (Task
+/// 1's own action text).
+///
+/// Written against whichever of the four credentialed new-provider
+/// candidates this workspace's `unit` test target's *currently-active*
+/// feature set genuinely does not compile in — determined at runtime via
+/// [`provider_names`], never assumed. Under this root crate's default
+/// feature set (`default = ["llm-openai", "llm-anthropic", "llm-deepseek"]`,
+/// D-11) all four are compiled out, but the lookup stays correct under any
+/// combination this test binary might be built with. If every candidate
+/// happens to be compiled in (e.g. a `--features llm-all` run), the plan's
+/// own fallback applies: assert the structural invariant that makes the
+/// defect impossible — every reported-available name is in the compiled-in
+/// registry — instead of the env-mutating single-name form.
+#[test]
+fn test_compiled_out_provider_absent_from_list_available_providers() {
+    let _env = CleanNewProviderEnv::acquire();
+    let compiled = provider_names();
+
+    let candidates: &[(&str, &str)] = &[
+        ("kimi", "MOONSHOT_API_KEY"),
+        ("qwen", "DASHSCOPE_API_KEY"),
+        ("grok", "XAI_API_KEY"),
+        ("gemini", "GEMINI_API_KEY"),
+    ];
+
+    let Some(&(name, env_var)) = candidates.iter().find(|(name, _)| !compiled.contains(name))
+    else {
+        assert!(
+            LlmProviderFactory::list_available_providers()
+                .iter()
+                .all(|available| compiled.contains(&available.as_str())),
+            "every name list_available_providers() reports must be in the compiled-in registry \
+             — the env-mutating compiled-out-provider form was not expressible under this \
+             build's feature set, which compiles every one of kimi/qwen/grok/gemini"
+        );
+        return;
+    };
+
+    _env.set(env_var, "test-key-set-despite-feature-being-compiled-out");
+
+    assert!(
+        !LlmProviderFactory::list_available_providers()
+            .iter()
+            .any(|available| available == name),
+        "{name} must be absent from list_available_providers() even with {env_var} set, because \
+         its feature is not compiled into this build (D-10 regression)"
+    );
+}
+
+/// D-10 regression: every new provider name this build's compiled feature
+/// set includes resolves through `create()` once its credential is set
+/// (Ollama needs none, D-12), and a name that is not compiled in at all
+/// always returns `UnknownProvider` whose message lists only the compiled-in
+/// names.
+#[test]
+fn test_new_provider_names_resolve_through_create() {
+    let _env = CleanNewProviderEnv::acquire();
+    let compiled = provider_names();
+    let factory = LlmProviderFactory::new();
+
+    if compiled.contains(&"kimi") {
+        _env.set("MOONSHOT_API_KEY", "test-key");
+        let result = factory.create("kimi");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "kimi is compiled in and its credential is set; create() must not return \
+             UnknownProvider: {:?}",
+            result.as_ref().err()
+        );
+    }
+    if compiled.contains(&"qwen") {
+        _env.set("DASHSCOPE_API_KEY", "test-key");
+        let result = factory.create("qwen");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "qwen is compiled in and its credential is set; create() must not return \
+             UnknownProvider: {:?}",
+            result.as_ref().err()
+        );
+    }
+    if compiled.contains(&"grok") {
+        _env.set("XAI_API_KEY", "test-key");
+        let result = factory.create("grok");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "grok is compiled in and its credential is set; create() must not return \
+             UnknownProvider: {:?}",
+            result.as_ref().err()
+        );
+    }
+    if compiled.contains(&"gemini") {
+        _env.set("GEMINI_API_KEY", "test-key");
+        let result = factory.create("gemini");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "gemini is compiled in and its credential is set; create() must not return \
+             UnknownProvider: {:?}",
+            result.as_ref().err()
+        );
+    }
+    if compiled.contains(&"ollama") {
+        // No credential env var to set — Ollama requires none (D-12).
+        let result = factory.create("ollama");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "ollama is compiled in and requires no credential; create() must not return \
+             UnknownProvider: {:?}",
+            result.as_ref().err()
+        );
+    }
+    if compiled.contains(&"openai-compatible") {
+        _env.set("OPENAI_COMPATIBLE_API_KEY", "test-key");
+        _env.set("OPENAI_COMPATIBLE_BASE_URL", "http://localhost:8080");
+        _env.set("OPENAI_COMPATIBLE_MODEL", "test-model");
+        let result = factory.create("openai-compatible");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "openai-compatible is compiled in and its three required vars are set; create() \
+             must not return UnknownProvider: {:?}",
+            result.as_ref().err()
+        );
+    }
+
+    // A name that is not compiled in — regardless of which feature set this
+    // binary was built with — must always return UnknownProvider, with a
+    // message that lists every compiled-in name and never the bogus one.
+    let bogus_name = "definitely-not-a-registered-provider";
+    let result = factory.create(bogus_name);
+    match result {
+        Err(ProviderFactoryError::UnknownProvider(name)) => {
+            assert_eq!(name, bogus_name);
+        }
+        Err(other) => panic!("expected UnknownProvider, got Err({other})"),
+        Ok(_) => panic!("expected UnknownProvider, got Ok(_)"),
+    }
+
+    // The message's Display impl necessarily echoes the *requested* name back
+    // (`"Unknown provider: {bogus_name}. Supported providers: ..."`), so the
+    // "does not list the bogus name" half of this assertion must look only at
+    // the supported-providers segment, not the whole message.
+    let message = ProviderFactoryError::UnknownProvider(bogus_name.to_string()).to_string();
+    let supported_segment = message
+        .split_once("Supported providers: ")
+        .map(|(_, rest)| rest)
+        .unwrap_or_else(|| {
+            panic!("UnknownProvider message missing 'Supported providers: ' segment: {message}")
+        });
+    for name in &compiled {
+        assert!(
+            supported_segment.contains(*name),
+            "UnknownProvider message's supported-providers segment must list every compiled-in \
+             provider name; missing {name:?}: {message}"
+        );
+    }
+    assert!(
+        !supported_segment.contains(bogus_name),
+        "UnknownProvider message's supported-providers segment must not list the bogus name: \
+         {message}"
+    );
 }
 
 #[test]
