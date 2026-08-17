@@ -1175,7 +1175,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 17-08-PLAN.md — Advertised surface brought in line (Cargo metadata, README, config example and docs), exports baseline regenerated *(blocking human-verify checkpoint)*
+- [x] 17-08-PLAN.md — Advertised surface brought in line (Cargo metadata, README, config example and docs), exports baseline regenerated *(blocking human-verify checkpoint)*
 
 ## Progress
 
