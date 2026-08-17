@@ -167,10 +167,17 @@ impl KimiAdapter {
             },
             fallback_models: KIMI_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
-            // T-17-18 (plan 17-04): Kimi's endpoint is a fixed vendor host,
-            // not operator-supplied, so this preset keeps the engine's
-            // original behaviour (reqwest's default redirect policy).
-            redirect_policy: None,
+            // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the
+            // 17-04 comment this replaces: `KIMI_DEFAULT_BASE_URL` is only
+            // this preset's *default* — `MOONSHOT_BASE_URL` is documented
+            // and operator-settable (`KimiConfig::from_env`), so a `3xx`
+            // from whatever host it resolves to could otherwise replay the
+            // `Authorization` header carrying the operator's credential to
+            // a different host. Setting `Policy::none()` here is what
+            // prevents that, matching `openai_compatible`'s posture
+            // (T-17-18); a refused redirect surfaces via the engine's
+            // `300..=399` `map_error` arm.
+            redirect_policy: Some(reqwest::redirect::Policy::none()),
         };
 
         Ok(Self {
@@ -974,5 +981,83 @@ mod tests {
         let result = adapter.generate(build_request("moonshot-v1-8k")).await;
         assert!(result.is_err());
         mock.assert_async().await;
+    }
+
+    // ── WR-04: redirect-following credential replay (plan 17-10) ──
+
+    #[tokio::test]
+    async fn kimi_does_not_replay_the_authorization_header_to_a_redirect_target() {
+        // A 302 to a POST is downgraded to a bodyless GET by the redirect
+        // layer (RFC 7231 6.4.2/6.4.3, as implemented by tower-http's
+        // follow_redirect — the layer reqwest's default policy runs on),
+        // so the redirect target's mock matches "GET", not "POST".
+        let mut redirect_target = Server::new_async().await;
+        let redirect_target_mock = redirect_target
+            .mock("GET", Matcher::Any)
+            .match_query(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "id": "cmpl-redirect",
+                    "model": "moonshot-v1-8k",
+                    "choices": [{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "should never be seen"},
+                        "finish_reason": "stop"
+                    }],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+                })
+                .to_string(),
+            )
+            .expect(0)
+            .create_async()
+            .await;
+
+        let mut primary = Server::new_async().await;
+        let primary_mock = primary
+            .mock("POST", "/chat/completions")
+            .with_status(302)
+            .with_header(
+                "location",
+                &format!("{}/chat/completions", redirect_target.url()),
+            )
+            // `ProcessingError` (what the refused-redirect arm returns once
+            // fixed) is retryable, so the fixed engine may hit `primary`
+            // more than once (up to `max_retries + 1` = 4); today, before
+            // the fix, the redirect is followed transparently and the call
+            // succeeds on the first attempt. `expect_at_least(1)` holds in
+            // both the RED and GREEN states.
+            .expect_at_least(1)
+            .create_async()
+            .await;
+
+        let config = KimiConfig::new(
+            "test-key-abc123".to_string(),
+            primary.url(),
+            KIMI_DEFAULT_MODEL.to_string(),
+        );
+        let adapter = KimiAdapter::new(config).unwrap();
+
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
+
+        // Load-bearing assertions FIRST (D-00e): today the default redirect
+        // policy follows the 302 and the redirect target answers with a
+        // well-formed response, so `result` is actually `Ok` in the RED
+        // state — it is this `.expect(0)` mock assertion, proving the
+        // credential-bearing request WAS forwarded, that fails in the RED
+        // state, not the `result.is_err()` check below.
+        redirect_target_mock.assert_async().await;
+        primary_mock.assert_async().await;
+
+        assert!(
+            result.is_err(),
+            "a refused redirect must surface as an error, got: {result:?}"
+        );
+        let message = result.unwrap_err().to_string();
+        assert!(
+            message.contains("redirect"),
+            "refused-redirect error must name the redirect, got: {message}"
+        );
     }
 }

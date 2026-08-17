@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 15
 waived_count: 0
 fixed_count: 1
-total_count: 15
-last_updated: 2026-08-17T19:33:52.477Z
+total_count: 16
+last_updated: 2026-08-17T20:01:16.281Z
 ---
 
 # Broken Windows Ledger
@@ -30,6 +30,7 @@ last_updated: 2026-08-17T19:33:52.477Z
 | 13 | 17 | unrun-verify | Makefile |  | 17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead. | open |  | 2026-08-17T14:17:37.112Z |  |
 | 14 | 17 | deviation | docker/docker-compose.test.yml |  | 17-07 Task 2: ollama-test healthcheck uses 'ollama list' (native /api/tags) instead of the plan's preferred curl-based /v1/models check, because curl/wget availability in the ollama/ollama:0.3.14 base image could not be verified without Docker in this sandbox. 'ollama list' is a well-precedented dependency-free healthcheck for this exact image. Compose file syntax validated via python yaml.safe_load only -- 'docker compose config' itself was never run. | open |  | 2026-08-17T14:17:46.408Z |  |
 | 15 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Snyk code scan (per snyk_rules.instructions.md) could not be run — no Snyk MCP tool or CLI available in this worktree's runtime (no network egress); recorded as not-run, never as passed | open |  | 2026-08-17T19:33:52.477Z |  |
+| 16 | 17 | unrun-verify | crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime | open |  | 2026-08-17T20:01:16.281Z |  |
 
 ````json
 [
@@ -211,6 +212,18 @@ last_updated: 2026-08-17T19:33:52.477Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-17T19:33:52.477Z",
+    "resolved_at": null
+  },
+  {
+    "id": 16,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs",
+    "line": null,
+    "description": "Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-17T20:01:16.281Z",
     "resolved_at": null
   }
 ]

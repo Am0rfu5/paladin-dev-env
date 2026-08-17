@@ -2578,20 +2578,24 @@ close-out amendments (2026-08-10)` section, "Reconciled against the two highligh
    `osv-scanner`, `api-surface`, `test`, `examples`, `crate-isolation`, `integration-tests`,
    `coverage`, `cli-tests`, `bench-check`, `docker`, `kubernetes-smoke`, `e2e-tests`, `benchmark`,
    `benchmark-regression-signal`, `publish-dry-run`.
+
 2. **`check-api-surface.sh:6` — no further action.** This item was already closed in the script at
    the time of this hand-off (D-09) and open only in four Milestone 12 requirement texts, which
    remain out of this phase's `PIPE-*`/`DEFER-*` scope — nothing in Phase 15 touches
    `check-api-surface.sh` or those four texts. Recorded here as disposed-elsewhere, not
    re-actioned.
+
 3. **The threshold variant is settled by ADR-0006.** See PIPE-02's own correction above — the
    78%-vs-70→74→78 variant (group 30) is resolved by ADR-0006's Phase 15 amendment recording one
    number (82%, derived from a fresh 82.39% measurement), not by picking a side of either inherited
    position. Both positions are recorded rejected in ADR-0006's `## Considered Options`.
+
 4. **The stale action line numbers are corrected by PIPE-04's own amendment above** — the count is
    seven upgraded plus one deleted (not eight upgraded), all eight original stale references are
    gone (`grep -rn 'actions-rs/\|cache@v3\|codecov-action@v3' .github/workflows/` → zero matches),
    and no new line-number citation is recorded here per PIPE-04's own note that any such citation
    goes stale the moment the file changes.
+
 5. **The mock prerequisite is resolved with ADR-0034's resolution applied.** DEFER-01 (mock
    infrastructure) shipped first (plan 15-05), unblocking DEFER-02 and DEFER-03 in sequence per the
    register's own stated order. ADR-0034's resolution (the `user_service.rs` split withdrawn, sized
@@ -3183,22 +3187,27 @@ threshold configuration and the local targets. Scope accordingly.
       against the file as it ships today (unsplit), exactly as ADR-0034 directs.
       **Every observed-versus-assumed difference plans 15-06 and 15-07 found, named with an
       owner:**
+
       - Duplicate-registration check is **email-scoped only** — a case-variant username with a
         distinct email is **accepted**, not rejected; no username-uniqueness check exists in
         `register_user` at the application layer (owner: none — this is the module's real,
         intentional behaviour, not a defect).
+
       - `validate_username`'s length bounds are enforced via `str::len()` (UTF-8 **byte** length),
         not `chars().count()` — a 2-character/4-byte Unicode username is accepted where a
         char-count rule would reject it (owner: none — pinned as observed behaviour, not changed).
+
       - **Notification failure does not block registration**, confirmed by discriminating test
         rather than assumed: `register_user` returns `Ok`, the user is retrievable, and a `Warn`
         log entry is written when the registered channel handler always fails.
+
       - **A production finding, named with an owner**: concurrent same-username registration has
         **no race in `register_user`'s own logic** — its email-scoped check clears both concurrent
         calls, but the database's `username TEXT UNIQUE NOT NULL` constraint (declared in
         `sqlite_user_repository.rs`'s migration) catches the collision downstream; exactly one
         `INSERT` succeeds, confirmed stable across 5 repeated runs (owner: none — no production
         change needed, the constraint is the safety net doing its job).
+
       - **A second production-shaped finding, named with an owner**: the "send a welcome
         notification" success path (`send_welcome_notification`'s `Ok(())` return) is unreachable
         in the module's own test suite by design — the shared `build_service()` fixture never
@@ -3207,11 +3216,13 @@ threshold configuration and the local targets. Scope accordingly.
         reached entirely through that call's *failure* branch. Owner: **none assigned** — closing
         this gap would need a third notification fixture (cached template + processor + a
         succeeding channel handler) that no requirement in this phase's scope named.
+
       - **Login-attempt tracking, named in this requirement's own test-scope text above, is not
         implemented anywhere in the module** — `login_user` has no attempt counter or lockout
         threshold, and `UserData` carries no related field; there is nothing to test. This
         requirement's own scope text names a path the shipped code does not have (owner: none —
         recorded as a scope-text defect, not a gap in test coverage).
+
       - **The generic "repository error" edge case is intentionally left untested at this layer**
         — every method propagates `UserRepositoryPort` failures with a bare `?`; forcing a live
         failure here would need a dedicated test double disproportionate to this requirement's
@@ -3444,7 +3455,7 @@ build before the study reports.
       adjudicated at phase close, per the Phase 3 precedent that a requirement is not marked
       complete while sibling plans carrying the same ID are still open.
 
-- [ ] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
+- [x] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
       contract**, not a convenient subset.
       The trait requires `generate`, `generate_stream`, `validate_model`,
       `get_available_models`, `get_provider_name` and `get_capabilities`
@@ -3471,7 +3482,7 @@ build before the study reports.
       to existing config files.
       *Not ingest-derived — user direction, 2026-08-15.*
 
-- [ ] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
+- [x] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
       the advertised surface matches the shipped one.
       **Tests**: mock-transport unit tests for request shaping, response parsing, streaming chunk
       assembly and error mapping — the workspace stays above the **82% line-coverage floor**

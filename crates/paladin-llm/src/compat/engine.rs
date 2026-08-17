@@ -106,17 +106,23 @@ pub struct CompatEngineConfig {
     ///
     /// `None` preserves this engine's original behaviour — no `.redirect()`
     /// call on the client builder, i.e. `reqwest`'s own default policy
-    /// (follow up to 10 hops). Every preset shipped before plan 17-04 (Kimi,
-    /// Qwen, Grok, Ollama) sets this `None`, so their request behaviour is
-    /// unchanged.
+    /// (follow up to 10 hops). The field's meaning is **not** inverted by
+    /// WR-04 (`17-REVIEW.md`): a future preset that legitimately needs to
+    /// follow a redirect can still leave this `None` to get that behaviour.
     ///
-    /// `Some(policy)` lets a preset restrict follow behaviour. Added for
-    /// `openai_compatible::OpenAiCompatibleAdapter` (T-17-18): the generic
-    /// provider's `base_url` is entirely operator-supplied, so a same-origin
-    /// assumption does not hold the way it does for a named vendor's fixed
-    /// endpoint. Setting `Policy::none()` there means a `3xx` response can
-    /// never cause the `Authorization` header carrying the operator's API
-    /// key to be replayed to a different, attacker-influenced host.
+    /// `Some(policy)` lets a preset restrict follow behaviour.
+    /// `openai_compatible::OpenAiCompatibleAdapter` was the first to set
+    /// `Some(Policy::none())` (T-17-18), because its `base_url` is entirely
+    /// operator-supplied with no vendor default to fall back on. Every
+    /// preset in this crate now sets the identical
+    /// `Some(reqwest::redirect::Policy::none())` (T-17-52, plan 17-10):
+    /// each one's `*_BASE_URL` is documented and operator-settable too, so
+    /// the same reasoning applies uniformly. Setting `Policy::none()` means
+    /// a `3xx` response can never cause the `Authorization` header carrying
+    /// the operator's API key to be replayed to a different,
+    /// attacker-influenced host — see [`CompatEngine::map_error`]'s
+    /// `300..=399` arm for what a refused redirect surfaces to the caller
+    /// as.
     pub redirect_policy: Option<reqwest::redirect::Policy>,
 }
 
@@ -303,6 +309,29 @@ impl CompatEngine {
             429 => LlmError::RateLimitExceeded,
             404 => LlmError::ModelNotAvailable(message.to_string()),
             400 => LlmError::InvalidPrompt(message.to_string()),
+            // WR-04 (`17-REVIEW.md`, T-17-52): every preset now builds its
+            // client with `redirect_policy: Some(Policy::none())`, so a
+            // `3xx` response is never followed — it arrives here as an
+            // ordinary non-success status instead. Named explicitly rather
+            // than falling into the catch-all below, so the operator whose
+            // previously-working endpoint now fails gets an actionable
+            // message: which setting to check, not an opaque "API error".
+            //
+            // `LlmError::ProcessingError` is this engine's retryable set
+            // (see `call_api_with_retry`), so a redirecting host is retried
+            // up to `max_retries` before this surfaces — deliberate: adding
+            // a new `LlmError` variant would breach PROV-02's "errors map
+            // into the existing variants, not a new parallel error type"
+            // rule, and no existing non-retryable variant means "refused
+            // redirect". A few extra requests to a host already answering
+            // `3xx` is the accepted cost (T-17-54, `17-REVIEW.md`).
+            300..=399 => LlmError::ProcessingError(format!(
+                "API error ({status}): the configured base URL responded with a redirect \
+                 (HTTP {status}), which this client refuses to follow because doing so would \
+                 forward the credential header to a different, potentially attacker-influenced \
+                 host. Correct the configured base-URL setting to point directly at the \
+                 intended endpoint. Response excerpt: {message}"
+            )),
             _ => LlmError::ProcessingError(format!("API error ({}): {}", status, message)),
         }
     }
@@ -738,6 +767,27 @@ mod tests {
             engine.map_error(500, "server error"),
             LlmError::ProcessingError(_)
         ));
+    }
+
+    #[test]
+    fn map_error_maps_a_redirect_status_to_an_actionable_processing_error() {
+        let engine = CompatEngine::new(test_config()).unwrap();
+
+        for status in [302u16, 307u16] {
+            match engine.map_error(status, "moved") {
+                LlmError::ProcessingError(msg) => {
+                    assert!(
+                        msg.contains("redirect"),
+                        "status {status}: message must name the refused redirect, got: {msg}"
+                    );
+                    assert!(
+                        msg.contains(&status.to_string()),
+                        "status {status}: message must carry the numeric status, got: {msg}"
+                    );
+                }
+                other => panic!("status {status}: expected ProcessingError, got {other:?}"),
+            }
+        }
     }
 
     #[test]

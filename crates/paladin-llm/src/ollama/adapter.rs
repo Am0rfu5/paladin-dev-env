@@ -194,11 +194,21 @@ impl OllamaAdapter {
                 .map(|s| s.to_string())
                 .collect(),
             error_override: None,
-            // T-17-18 (plan 17-04): Ollama's base URL is operator-overridable
-            // but points at a locally-run process, not an untrusted remote
-            // gateway; this preset keeps the engine's original behaviour
-            // (reqwest's default redirect policy).
-            redirect_policy: None,
+            // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the
+            // 17-04 comment this replaces: `OLLAMA_DEFAULT_BASE_URL` is
+            // only this preset's *default* — `OLLAMA_BASE_URL` is
+            // documented and operator-settable (`OllamaConfig::from_env`)
+            // and may legitimately point at a remote host, not only the
+            // local default. Unlike every other preset, the credential
+            // this adapter sends is the fixed, non-secret
+            // `OLLAMA_PLACEHOLDER_API_KEY` (never operator-supplied), so a
+            // followed redirect here is a request-forwarding exposure, not
+            // a credential-disclosure one — but `Policy::none()` is set
+            // for uniformity with the rest of the crate and because a
+            // redirecting `OLLAMA_BASE_URL` is still not a request this
+            // client should silently forward. A refused redirect surfaces
+            // via the engine's `300..=399` `map_error` arm.
+            redirect_policy: Some(reqwest::redirect::Policy::none()),
         };
 
         Ok(Self {
