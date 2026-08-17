@@ -4,38 +4,39 @@ reviewed: 2026-08-17T00:00:00Z
 depth: standard
 files_reviewed: 27
 files_reviewed_list:
+  - .project/current-exports.txt
+  - crates/paladin-llm/Cargo.toml
+  - crates/paladin-llm/README.md
   - crates/paladin-llm/src/compat/engine.rs
   - crates/paladin-llm/src/compat/mod.rs
   - crates/paladin-llm/src/compat/types.rs
-  - crates/paladin-llm/src/redaction.rs
-  - crates/paladin-llm/src/kimi/adapter.rs
-  - crates/paladin-llm/src/kimi/mod.rs
-  - crates/paladin-llm/src/qwen/adapter.rs
-  - crates/paladin-llm/src/qwen/mod.rs
+  - crates/paladin-llm/src/config/bridge.rs
+  - crates/paladin-llm/src/config/llm.rs
+  - crates/paladin-llm/src/gemini/adapter.rs
+  - crates/paladin-llm/src/gemini/mod.rs
   - crates/paladin-llm/src/grok/adapter.rs
   - crates/paladin-llm/src/grok/mod.rs
+  - crates/paladin-llm/src/kimi/adapter.rs
+  - crates/paladin-llm/src/kimi/mod.rs
+  - crates/paladin-llm/src/lib.rs
   - crates/paladin-llm/src/ollama/adapter.rs
   - crates/paladin-llm/src/ollama/mod.rs
   - crates/paladin-llm/src/openai_compatible/adapter.rs
   - crates/paladin-llm/src/openai_compatible/mod.rs
-  - crates/paladin-llm/src/gemini/adapter.rs
-  - crates/paladin-llm/src/gemini/mod.rs
   - crates/paladin-llm/src/provider_factory.rs
-  - crates/paladin-llm/src/config/bridge.rs
-  - crates/paladin-llm/src/config/llm.rs
-  - crates/paladin-llm/src/lib.rs
-  - crates/paladin-llm/Cargo.toml
-  - crates/paladin-llm/README.md
-  - tests/unit/llm/provider_factory_test.rs
-  - tests/integration/ollama_docker_test.rs
+  - crates/paladin-llm/src/qwen/adapter.rs
+  - crates/paladin-llm/src/qwen/mod.rs
+  - crates/paladin-llm/src/redaction.rs
   - docker/docker-compose.test.yml
   - docs/src/api-reference/feature-flags.md
   - docs/src/getting-started/configuration.md
+  - tests/integration/ollama_docker_test.rs
+  - tests/unit/llm/provider_factory_test.rs
 findings:
   critical: 1
-  warning: 7
-  info: 2
-  total: 10
+  warning: 4
+  info: 1
+  total: 6
 status: issues_found
 ---
 
@@ -43,269 +44,280 @@ status: issues_found
 
 **Reviewed:** 2026-08-17T00:00:00Z
 **Depth:** standard
-**Files Reviewed:** 27 (plus `.project/current-exports.txt`, `src/lib.rs`, and root `Cargo.toml` consulted cross-referentially per finding CR-01/WR-05)
+**Files Reviewed:** 27 (source/doc files touched by this phase; the crate compiles clean and `cargo clippy -p paladin-llm --all-features --tests -- -D warnings` is clean)
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the six new LLM provider adapters (Kimi, Qwen, Grok, Ollama, Gemini,
-openai-compatible), the shared `compat` engine they largely sit on, the redaction module,
-the table-driven provider factory, and the surrounding config/docs/test surface added in
-Phase 17. The five OpenAI-compatible presets are structurally near-identical thin wrappers
-over `CompatEngine` and are internally consistent and well-tested. `openai_compatible`'s
-SSRF mitigation (`Policy::none()` redirect policy, plaintext-to-non-loopback warning) is
-correctly implemented and tested.
+This review covers the six new LLM provider presets (Kimi, Qwen, Grok, Ollama, Gemini,
+OpenAI-compatible), the shared `CompatEngine`, the provider registry/factory, config bridge,
+and the redaction helper added/extended in Phase 17, plus the associated tests and docs.
 
-The bespoke Gemini adapter — flagged by the phase context as the highest-risk file, since
-its protocol mapping was written without a live endpoint — has one real defect worth
-blocking on: `request.model` is interpolated unescaped into the request URL path, unlike
-every compat-engine preset (which carries `model` in the JSON body instead). It also has an
-error-classification gap for common real-world Gemini auth-failure shapes, and does not
-replicate the compat engine's empty-completion detection for truncated reasoning
-completions.
+The previously-reported CR-01 (Gemini path-injection via `model`), WR-03 (Gemini
+credential-failure misclassification) and WR-04 (redirect-based credential replay) gaps
+described in the earlier review have been re-verified here, not just trusted: I read the
+fix code and its regression tests, and ran the full `paladin-llm` test suite (273 tests,
+including the redirect-refusal and model-identifier-guard regression tests) — all pass.
+No regression was found in any of the three fixes.
 
-Two further issues degrade robustness/diagnostics without being security-critical: the
-Ollama adapter's placeholder "credential" is a common English word, which causes the shared
-redaction routine to over-redact benign diagnostic text; and `provider_factory`'s
-availability check for `openai-compatible` only verifies one of the adapter's three required
-environment variables, so `list_available_providers()`/`get_default_provider()` can report
-it as available when construction will actually fail.
+However, direct execution of this phase's own workspace-level test file
+(`tests/unit/llm/provider_factory_test.rs`) under the crate's own documented,
+CI-exercised `llm-all` feature combination reproducibly fails two tests
+(`test_get_default_provider`, `test_list_available_providers`) against this very
+sandbox's ambient environment. That failure is not a fluke of this sandbox — it traces to
+a genuine logic defect in `provider_factory.rs` (see CR-01 below) that will misfire in any
+real deployment where an unrelated, unconfigured provider's credential env var happens to
+be present but empty (a common pattern: `.env` templates, Docker/K8s environments that
+pass through unset host vars as empty strings — this repository's own `.env` is itself an
+example). I am flagging this as the review's one Critical finding. The remaining findings
+are quality/consistency gaps (Warning) and one documentation note (Info).
 
 ## Critical Issues
 
-### CR-01: Gemini interpolates `request.model` unescaped into the request URL
+### CR-01: `list_available_providers()` / `get_default_provider()` treat an empty-but-set credential env var as "configured"
 
-**File:** `crates/paladin-llm/src/gemini/adapter.rs:564-567, 622-625`
-**Issue:** `GeminiAdapter::generate()` and `generate_stream()` build the request URL with
+**File:** `crates/paladin-llm/src/provider_factory.rs:371-395`
+**Also affects:** `tests/unit/llm/provider_factory_test.rs:185-226` (`test_get_default_provider`), `tests/unit/llm/provider_factory_test.rs:229-265` (`test_list_available_providers`)
 
-```rust
-let url = format!(
-    "{}/models/{}:generateContent",
-    self.config.base_url, request.model
-);
-```
-
-`request.model` comes from the caller-supplied `LlmRequest` (a field a higher layer — e.g.
-a model-selection UI — plausibly threads through from end-user input) and is never
-URL-encoded, never checked against `validate_model()`, and never restricted to a
-safe character set before being spliced into the path. A `model` value containing `/`,
-`?`, `#`, or `:` characters can alter the request path, inject/override query parameters
-(e.g. defeating the mandatory `alt=sse` parameter on the streaming path, or appending
-attacker-chosen parameters), or otherwise produce a request the operator did not intend —
-all while still carrying the configured `x-goog-api-key` credential. Every other adapter in
-this crate that sits on `CompatEngine` instead carries `model` inside the JSON request body
-(`compat/types.rs::CompatRequest.model`), which `serde_json` encodes safely; Gemini is the
-one adapter in this phase that puts it in the URL, and it is the one bespoke-protocol
-adapter this phase's own context flagged as unverified against a live endpoint.
-
-**Fix:** Percent-encode the model segment before interpolating it into the path, and/or
-reject a `model` value containing characters outside an allow-listed set (e.g.
-`[A-Za-z0-9._-]`) before constructing the URL:
+**Issue:** Both `LlmProviderFactory::get_default_provider()` and
+`LlmProviderFactory::list_available_providers()` decide whether a provider's credential is
+"configured" with:
 
 ```rust
-let encoded_model = percent_encoding::utf8_percent_encode(
-    &request.model,
-    percent_encoding::NON_ALPHANUMERIC,
-);
-let url = format!(
-    "{}/models/{}:generateContent",
-    self.config.base_url, encoded_model
-);
+match row.env_var {
+    Some(var) => std::env::var(var).is_ok(),
+    None => true,
+}
 ```
 
-or, more defensively, validate `request.model` against `self.available_models()` /a
-restricted character set and return `LlmError::InvalidPrompt` before ever formatting the
-URL.
+`std::env::var(var).is_ok()` is `true` for an env var that is set to the **empty string** —
+it only distinguishes "set" from "unset," not "set to a usable value." Every adapter's own
+`*Config::validate()` (e.g. `GrokConfig::validate()`,
+`crates/paladin-llm/src/grok/adapter.rs:117-118`) correctly rejects an empty `api_key`, so
+`factory.create(name)` for such a provider fails with `ConfigurationMissing` — but
+`list_available_providers()` had already reported that same provider as *available*,
+directly contradicting its own doc comment: "the names of all providers that are both
+compiled in and have their credential configured (**or need none**)." A caller that trusts
+`list_available_providers()`/`get_default_provider()` to hand back a provider that will
+actually construct is misled.
+
+This is not hypothetical. The crate's own test suite already knows the correct check —
+`provider_factory.rs`'s `provider_name_round_trip` test module (lines 714-773) explicitly
+uses `std::env::var(var).is_ok_and(|v| !v.trim().is_empty())` and documents exactly why:
+"an env var set to an empty (or whitespace-only) string is *set* but is not a usable
+credential." That fix was applied to a *test*, never to the production code it was
+guarding against.
+
+**Reproduction (verified in this sandbox):**
+
+```
+$ env | grep -i KEY
+GEMINI_API_KEY=
+XAI_API_KEY=
+...
+
+$ cargo test --test unit --features llm-all -- provider_factory --test-threads=1
+---- llm::provider_factory_test::test_get_default_provider stdout ----
+thread '...' panicked: assertion `left == right` failed
+  left: Some("grok")
+ right: None
+
+---- llm::provider_factory_test::test_list_available_providers stdout ----
+thread '...' panicked: assertion `left == right` failed
+  left: 3
+ right: 0
+```
+
+With `PROVIDER_ENV_LOCK` clearing only `OPENAI_API_KEY`/`DEEPSEEK_API_KEY`/
+`ANTHROPIC_API_KEY` (the three original providers), `GEMINI_API_KEY=""` and
+`XAI_API_KEY=""` (both merely *present*, ambient in this sandbox's `.env`) are enough to
+make `grok` and `gemini` — and `ollama`, which needs no credential at all — all read back
+as "available" with zero real credentials configured. This reproduces **deterministically**
+with `--test-threads=1`, so it is not a cross-test race; it is the `.is_ok()` defect alone.
+`--features llm-all` is a first-class, CI-defined build target
+(`.github/workflows/feature-flags.yml`'s `llm-all` matrix leg, and the `full` convenience
+feature in `feature-flags.md`), so this is a supported configuration, not an edge case.
+
+Note also that this specific CI leg would not have caught the failure even with the
+defect present: `feature-flags.yml`'s matrix runs `cargo test --workspace --lib
+${{ matrix.flags }}`, and `--lib` does not execute the `tests/unit/mod.rs`
+(`provider_factory_test.rs`) integration-test binary at all. The one CI job that *does*
+run the full `--workspace` suite without `--lib`
+(`ci.yml:502`, `cargo test --workspace --features integration-tests ...`) does not add
+`llm-all`, so it never compiles the six new provider rows into the registry either. The
+defect is real and currently invisible to CI in every configuration CI actually runs.
+
+**Fix:** Apply the same `is_ok_and(|v| !v.trim().is_empty())` check the crate's own
+`provider_name_round_trip` test already uses, in the two production call sites:
+
+```rust
+pub fn get_default_provider() -> Option<String> {
+    provider_registry()
+        .iter()
+        .find(|row| match row.env_var {
+            Some(var) => std::env::var(var).is_ok_and(|v| !v.trim().is_empty()),
+            None => true,
+        })
+        .map(|row| row.name.to_string())
+}
+
+pub fn list_available_providers() -> Vec<String> {
+    provider_registry()
+        .iter()
+        .filter(|row| match row.env_var {
+            Some(var) => std::env::var(var).is_ok_and(|v| !v.trim().is_empty()),
+            None => true,
+        })
+        .map(|row| row.name.to_string())
+        .collect()
+}
+```
+
+Additionally, `test_get_default_provider` and `test_list_available_providers` should guard
+against the six new-provider env vars too (they call functions that scan the *entire*
+registry, not just the three original providers) — either merge `CleanProviderEnv` and
+`CleanNewProviderEnv` into one guard covering all nine vars, or have these two tests
+acquire both locks. The current split's rationale ("a disjoint variable set... so a
+separate lock avoids serializing tests that touch unrelated variables," provider_factory
+_test.rs:294-300) does not hold for these two tests specifically, since
+`get_default_provider()`/`list_available_providers()` treat the two "disjoint" sets as one
+union.
 
 ## Warnings
 
-### WR-01: Ollama's placeholder "credential" causes the shared redactor to over-redact benign diagnostic text
+### WR-01: `LlmProviderFactory::create()` does not accept the `openai_compatible` (underscore) alias that `LlmConfig` does
 
-**File:** `crates/paladin-llm/src/ollama/adapter.rs:55-60`, `crates/paladin-llm/src/redaction.rs:101-110`
-**Issue:** `OLLAMA_PLACEHOLDER_API_KEY = "ollama"` is passed as the engine's `api_key`, which
-`CompatEngine::diagnostic_excerpt` / `redact_credentials` uses for an **exact-match
-substring replace** across the entire diagnostic body: `body.replace(api_key,
-CREDENTIAL_PLACEHOLDER)`. Because `"ollama"` is a common English word (the product's own
-name), any error or model-list body that legitimately contains the substring "ollama" —
-e.g. `"failed to reach ollama server"`, a model tag like `ollama/llama3`, or simply the
-word appearing in a provider error message — has every occurrence silently replaced with
-`[REDACTED]`, corrupting the diagnostic text for the one adapter this phase's own Tier-2
-suite (`tests/integration/ollama_docker_test.rs`) exercises against a real server. This is
-not a leak (over-redaction is the safe direction) but it is a real robustness/diagnostics
-defect: operator-facing error messages for Ollama become misleading or nonsensical whenever
-the word "ollama" appears in the upstream response for reasons unrelated to credentials.
-**Fix:** Skip the exact-match credential pass entirely when the configured "credential" is
-the known placeholder (or more generally, when it is empty/known-non-secret), relying on
-the `Bearer `/`sk-` shape-based passes instead:
+**File:** `crates/paladin-llm/src/provider_factory.rs:352-363`
+
+**Issue:** `LlmConfig::get_provider_config()`
+(`crates/paladin-llm/src/config/llm.rs:153-166`) explicitly accepts both
+`"openai-compatible"` and `"openai_compatible"` (case-insensitively) and
+`LlmConfig::validate()`'s `is_recognised_provider_field_name` accepts both spellings for
+`default_provider` too — so `default_provider: "openai_compatible"` is a config file that
+validates successfully. But `LlmProviderFactory::create()` matches only the registry's
+literal name (`"openai-compatible"`, hyphenated) after lower-casing:
 
 ```rust
-let is_real_credential = !api_key.is_empty() && api_key != OLLAMA_PLACEHOLDER_API_KEY;
-let exact = if is_real_credential { body.replace(api_key, CREDENTIAL_PLACEHOLDER) } else { body.to_string() };
+let lower = provider_name.to_lowercase();
+provider_registry().iter().find(|row| row.name == lower)
 ```
 
-### WR-02: `provider_factory`'s availability check for `openai-compatible` verifies only one of its three required env vars
+Any caller that plumbs `LlmConfig::get_default_provider_name()` (or a config value that
+passed `LlmConfig::validate()`) straight into `LlmProviderFactory::create()` — the natural
+composition of these two types — gets an unexpected `UnknownProvider` for the underscore
+spelling, even though the config layer accepted it as valid.
 
-**File:** `crates/paladin-llm/src/provider_factory.rs:282-297, 371-395`
-**Issue:** Every registry row's "is this provider available" check
-(`get_default_provider()` / `list_available_providers()`) is `std::env::var(var).is_ok()`
-against a single `env_var: Option<&'static str>`. For `openai-compatible`, that single
-variable is `OPENAI_COMPATIBLE_API_KEY` — but `OpenAiCompatibleConfig::from_env()` (called by
-`construct_openai_compatible`) requires **three** variables:
-`OPENAI_COMPATIBLE_API_KEY`, `OPENAI_COMPATIBLE_BASE_URL`, and `OPENAI_COMPATIBLE_MODEL`
-(see `openai_compatible/adapter.rs:362-397`). If only `OPENAI_COMPATIBLE_API_KEY` is set (a
-plausible partial-configuration state), `list_available_providers()` and
-`get_default_provider()` report `"openai-compatible"` as available/selected, but a
-subsequent `factory.create("openai-compatible")` — or `get_default_provider()` immediately
-followed by `create(default)` — fails with `ConfigurationMissing`. A caller that trusts the
-"available" signal (a reasonable assumption given the doc comment "have their credential
-configured (or need none)") gets a runtime surprise.
-**Fix:** Either widen `ProviderRegistration` to carry a list of required env vars (checking
-all of them), or add a small per-row "is fully configured" closure so `openai-compatible`'s
-row can express its three-variable requirement:
+**Fix:** Normalize the underscore variant in `create()` the same way `get_provider_config`
+does, e.g. `let lower = provider_name.to_lowercase().replace('_', "-");` before the
+registry lookup (or narrower: special-case `"openai_compatible" => "openai-compatible"`).
+
+### WR-02: `OPENAI_COMPATIBLE_TEMPERATURE_MIN`/`_MAX` accepts an inverted range
+
+**File:** `crates/paladin-llm/src/openai_compatible/adapter.rs:222-248` (`parse_temperature_range_env`)
+
+**Issue:** `parse_temperature_range_env` validates that both `min` and `max` are set (or
+neither) and that each parses as `f32`, but never checks `min <= max`. An operator setting
+`OPENAI_COMPATIBLE_TEMPERATURE_MIN=2.0` and `OPENAI_COMPATIBLE_TEMPERATURE_MAX=0.0` (e.g. a
+copy-paste swap) gets `Some((2.0, 0.0))` accepted silently and surfaced as
+`ProviderCapabilities::temperature_range`, an inverted range every other adapter in this
+crate declares with the tuple always ordered `(min, max)` (see `GrokConfig`'s
+`Some((0.0, 2.0))`, `KimiConfig`'s `Some((0.0, 1.0))`, etc.). Any downstream consumer that
+clamps a requested temperature into this range (e.g. `if t < range.0 { t = range.0 }`)
+will silently misbehave against an inverted tuple.
+
+**Fix:** Add a `min <= max` check to `parse_temperature_range_env`'s `(Some, Some)` arm,
+returning a configuration error (matching this function's existing error-on-half-set
+behavior) when violated:
 
 ```rust
-struct ProviderRegistration {
-    name: &'static str,
-    env_vars: &'static [&'static str], // ALL must be set
-    construct: fn() -> Result<Arc<dyn LlmPort>, ProviderFactoryError>,
+(Some(min_raw), Some(max_raw)) => {
+    let min: f32 = min_raw.trim().parse()...?;
+    let max: f32 = max_raw.trim().parse()...?;
+    if min > max {
+        return Err(format!(
+            "OPENAI_COMPATIBLE_TEMPERATURE_MIN ({min}) must not exceed \
+             OPENAI_COMPATIBLE_TEMPERATURE_MAX ({max})"
+        ));
+    }
+    Ok(Some((min, max)))
 }
 ```
 
-### WR-03: Gemini's `map_error` misclassifies common real-world credential-failure shapes
+### WR-03: Gemini's `parse_response` does not detect the reasoning-truncation-to-empty-content case every `CompatEngine` preset detects
 
-**File:** `crates/paladin-llm/src/gemini/adapter.rs:389-417`
-**Issue:** `map_error` only produces `LlmError::AuthenticationError` for `401 | 403` paired
-with `rpc_status == Some("PERMISSION_DENIED")`. Google's Generative Language API commonly
-reports an invalid/malformed API key as **`400` with `status: "INVALID_ARGUMENT"`** and a
-message such as `"API key not valid. Please pass a valid API key."` — under this adapter's
-current mapping that lands on the `400 if rpc_status == Some("INVALID_ARGUMENT")` arm,
-which returns `LlmError::InvalidPrompt`, telling the caller their *prompt* is malformed
-rather than their *credential*. Separately, any `401`/`403` whose `rpc_status` is something
-other than exactly `"PERMISSION_DENIED"` (e.g. `"UNAUTHENTICATED"`) falls through to the
-final catch-all arm, which returns the **retryable** `LlmError::ProcessingError` — so an
-unrecognised auth-failure shape is retried up to 3 times with exponential backoff before
-surfacing, burning quota/latency on a request that cannot succeed. This is exactly the
-class of protocol-mapping error the phase context flagged as plausible for this
-never-live-tested adapter.
-**Fix:** Broaden the authentication-failure match to cover the documented invalid-key shape
-and any `401`/`403` regardless of the exact `rpc_status` string, and keep the true
-`400`/`INVALID_ARGUMENT` mapping only for arguments that are not credential-shaped:
+**File:** `crates/paladin-llm/src/gemini/adapter.rs:400-429` (`parse_response`)
 
-```rust
-401 | 403 => LlmError::AuthenticationError(format!("Gemini authentication failed: {excerpt}")),
-400 if rpc_status == Some("INVALID_ARGUMENT")
-    && !raw_message.to_ascii_lowercase().contains("api key") =>
-    LlmError::InvalidPrompt(excerpt),
-400 if rpc_status == Some("INVALID_ARGUMENT") =>
-    LlmError::AuthenticationError(format!("Gemini rejected the configured API key: {excerpt}")),
-```
+**Issue:** `CompatEngine::detect_empty_completion`
+(`crates/paladin-llm/src/compat/engine.rs:277-287`) explicitly maps `finish_reason ==
+Length` (i.e. the vendor truncated the response) combined with empty content to
+`Err(LlmError::EmptyCompletion(...))`, on the documented rationale that this is the
+"reasoning model consumed its whole `max_tokens` budget" failure signature, and every
+Kimi/Qwen/Grok/Ollama/openai-compatible call goes through that check. `GeminiAdapter::
+parse_response` has no equivalent: a Gemini response with `finishReason: "MAX_TOKENS"` and
+an empty `parts[]` array (the same underlying failure mode — a reasoning-capable Gemini
+model consuming its token budget before producing visible text) returns `Ok(LlmResponse
+{ content: "", finish_reason: FinishReason::Length, .. })` instead of the
+`EmptyCompletion` error every other preset in this crate gives for the identical
+condition. A caller written against this crate's error-signal contract (checking for
+`LlmError::EmptyCompletion` rather than inspecting `finish_reason` on every success path)
+silently gets a truncated-empty "success" only from the Gemini adapter.
 
-### WR-04: Kimi/Qwen/Grok/Ollama/Gemini keep the default follow-redirects policy despite operator-overridable `base_url`
-
-**File:** `crates/paladin-llm/src/kimi/adapter.rs:170-174`, `qwen/adapter.rs:185-189`,
-`grok/adapter.rs:170-174`, `ollama/adapter.rs:197-202`
-**Issue:** Each of these presets sets `redirect_policy: None` with a comment asserting the
-endpoint is "a fixed vendor host, not operator-supplied." That is not accurate: each
-adapter's `*_BASE_URL` env var (`MOONSHOT_BASE_URL`, `DASHSCOPE_BASE_URL`, `XAI_BASE_URL`,
-`OLLAMA_BASE_URL`, and Gemini's `GEMINI_BASE_URL`) is documented and operator-settable.
-Because `redirect_policy: None` preserves `reqwest`'s default (follow up to 10 hops), a
-`3xx` response from whatever host `base_url` resolves to — vendor or operator-overridden —
-can cause the `Authorization`/`x-goog-api-key` header carrying the real credential to be
-replayed to a different host, exactly the class of risk `openai_compatible` explicitly
-mitigates with `Policy::none()` (T-17-18). This mirrors a pre-existing pattern already
-present for DeepSeek/Anthropic, so it is not a phase-17 regression in isolation, but the
-in-code rationale ("not operator-supplied") is factually wrong for every one of these five
-presets and could mislead a future maintainer auditing this exact threat.
-**Fix:** Either correct the comment to acknowledge the residual exposure is an accepted,
-operator-trust-boundary risk (matching `openai_compatible`'s own documented posture), or
-extend `Policy::none()` to every preset whose `base_url` is env-var-overridable.
-
-### WR-05: Six new providers are missing from the facade's top-level re-exports
-
-**File:** `src/lib.rs:174-188` (root crate), `Cargo.toml:279-288` (root crate)
-**Issue:** The root `Cargo.toml` defines `llm-kimi`, `llm-qwen`, `llm-grok`, `llm-ollama`,
-`llm-gemini`, and `llm-openai-compatible` feature flags, each forwarding into the matching
-`paladin-llm` feature — mirroring `llm-openai`/`llm-anthropic`/`llm-deepseek` exactly. But
-`src/lib.rs` only re-exports adapter types for the original three
-(`pub use paladin_llm::openai::{OpenAIAdapter, OpenAIConfig}` etc., gated on their
-`llm-*` features); there is no corresponding `pub use paladin_llm::kimi::{KimiAdapter,
-KimiConfig}` (or qwen/grok/ollama/gemini/openai_compatible) anywhere in the facade. A
-consumer of the `paladin` crate who enables `--features llm-kimi` gets the adapter compiled
-into `paladin-llm` but has no `paladin::KimiAdapter` to import — they must depend on
-`paladin-llm` directly to reach it, unlike the original three providers. Confirmed against
-`.project/current-exports.txt`'s regenerated snapshot (this diff), which lists
-`paladin::AnthropicAdapter`/`paladin::DeepSeekAdapter` newly but nothing for the six new
-providers.
-**Fix:** Add the same `#[cfg(feature = "llm-<provider>")] pub use paladin_llm::<provider>::{...}`
-pattern for each of the six new providers, or explicitly document that only
-`LlmProviderFactory`-mediated (string-keyed) access is supported for them going forward.
-
-### WR-06: Gemini never detects a truncated/empty completion the way every compat-engine preset does
-
-**File:** `crates/paladin-llm/src/gemini/adapter.rs:333-362`
-**Issue:** `CompatEngine::detect_empty_completion` (used by Kimi/Qwen/Grok/Ollama/
-openai-compatible) raises `LlmError::EmptyCompletion` when `finish_reason == Length` and
-the visible content is empty — the "reasoning consumed the whole budget" signature. Gemini's
-`parse_response` has no equivalent check: a `MAX_TOKENS` finish reason with empty
-`candidate_text(candidate)` (a real, achievable case for a Gemini "thinking" model whose
-hidden reasoning exhausts `maxOutputTokens`) returns `Ok(LlmResponse { content: "", finish_reason:
-FinishReason::Length, .. })` instead of surfacing the truncation as an error, silently
-diverging from every other adapter's contract in this crate.
-**Fix:** Mirror the compat engine's check in `parse_response`:
+**Fix:** Add the same check `parse_response` already has available (it already computes
+`finish_reason` and `content` before constructing the response):
 
 ```rust
 if matches!(finish_reason, FinishReason::Length) && content.trim().is_empty() {
-    return Err(LlmError::EmptyCompletion(format!(
-        "finish_reason=MAX_TOKENS with empty content — reasoning likely consumed the \
-         entire max_output_tokens budget; retry with a larger budget"
-    )));
+    return Err(LlmError::EmptyCompletion(
+        "Gemini finishReason=MAX_TOKENS with empty content — reasoning likely \
+         consumed the entire max_tokens budget; retry with a larger max_tokens"
+            .to_string(),
+    ));
 }
 ```
 
-### WR-07: `CompatEngine::call_api_with_retry`'s post-loop error path is unreachable
+### WR-04: `generate_stream()` never retries a transient failure on stream-open, unlike `generate()`
 
-**File:** `crates/paladin-llm/src/compat/engine.rs:317-357`
-**Issue:** The retry loop is `for attempt in 0..=max_retries { ... }`. On every iteration,
-either the operation succeeds (`return Ok`), the error is non-retryable (`return Err(e)`),
-or `attempt >= max_retries` (`return Err(e)`) — and the last possible value of `attempt`
-in the range is exactly `max_retries`, which always satisfies `attempt >= max_retries`. The
-loop therefore can never run to completion without returning from inside it, which makes
-the `last_error` variable and the trailing `Err(last_error.unwrap_or_else(|| ...))` after
-the loop dead code that can never execute. This is not presently causing incorrect
-behaviour, but it is misleading: it reads as a real fallback path and could hide a future
-off-by-one regression (e.g. if the loop bound is ever changed to `0..max_retries`) since
-the "dead" branch would silently start executing with a stale/synthetic error rather than
-failing a test.
-**Fix:** Restructure as a `loop { }` with an explicit break/return on the final attempt (as
-`GeminiAdapter::execute_with_retry` already does), removing the unreachable trailing
-`Err(...)` expression, or add a `#[allow(unreachable_code)]`-documented comment explaining
-why the dead branch is intentionally retained as a defensive fallback.
+**File:** `crates/paladin-llm/src/gemini/adapter.rs:756-809`, `crates/paladin-llm/src/compat/engine.rs:486-582`
+
+**Issue:** Both `GeminiAdapter::generate()` and every `CompatEngine`-based preset's
+`generate()` wrap the outbound request in a retry-with-backoff loop
+(`execute_with_retry`/`call_api_with_retry`, non-retryable set: auth/invalid-prompt/
+empty-completion/usage-limit). Neither `GeminiAdapter::generate_stream()` nor
+`CompatEngine::generate_stream()` wraps the initial POST in any retry logic at all — a
+single transient network blip (a `NetworkError` or `Timeout` opening the connection,
+before any bytes are streamed) fails the whole call immediately, where the exact same
+failure on the non-streaming path would be retried up to `max_retries` times. This is an
+inconsistency between the two methods of the same `LlmPort` implementation, not a
+regression this phase introduced (the pattern is inherited from the DeepSeek adapter this
+engine was extracted from) — but every provider this phase adds inherits it, so it is
+worth recording here rather than letting it look intentional-by-omission.
+
+**Fix:** At minimum, document the asymmetry on `generate_stream()`'s rustdoc (so it is a
+recorded decision rather than a silent gap); ideally, wrap the connection-opening POST
+(only — not the byte stream itself) in the same retry helper, since the failure being
+retried occurs before any SSE bytes are read.
 
 ## Info
 
-### IN-01: `compat/mod.rs` module doc is stale
+### IN-01: `.project/current-exports.txt` was regenerated under this build's default feature set only
 
-**File:** `crates/paladin-llm/src/compat/mod.rs:1-7`
-**Issue:** The module doc still reads "shared by every OpenAI-compatible provider preset
-(Kimi, and future presets under this feature gate)" — Qwen, Grok, Ollama, and
-`openai-compatible` have all since landed on this engine (per `lib.rs`'s own `cfg(any(...))`
-gate list and this phase's own plans 17-03/17-04).
-**Fix:** Update the doc comment to name the current preset set, or phrase it generically
-("every OpenAI-compatible preset in this crate") so it does not need updating per preset
-added.
+**File:** `.project/current-exports.txt`
 
-### IN-02: Inconsistent `base_url` scheme validation across presets
+**Issue:** The regenerated public-API surface snapshot lists only the three default
+providers (`OpenAIAdapter`, `DeepSeekAdapter`, `AnthropicAdapter`) via
+`pub use paladin::LlmProviderFactory`/etc. — none of the six new adapter types
+(`KimiAdapter`, `QwenAdapter`, `GrokAdapter`, `OllamaAdapter`, `GeminiAdapter`,
+`OpenAiCompatibleAdapter`) appear anywhere in the file, because it was generated (per its
+own header) without `--features llm-all`. This is consistent with the facade crate's
+unchanged default feature set (D-11) and is not itself wrong, but it means this snapshot
+cannot be used to detect an accidental public-API break in any of the six new adapters —
+only in the three defaults. If this file is meant to gate public-API drift for the whole
+crate (its stated purpose: "tracks all publicly exported items from the paladin crate"),
+consider also generating (or documenting the absence of) an `--all-features` variant.
 
-**File:** `crates/paladin-llm/src/kimi/adapter.rs:123-125`, `qwen/adapter.rs:134-136`,
-`grok/adapter.rs:123-125`, `ollama/adapter.rs:144-146`,
-`openai_compatible/adapter.rs:435-437`, vs. `gemini/adapter.rs:168-170`
-**Issue:** Five presets validate with `!self.base_url.starts_with("http")`, which accepts a
-malformed scheme like `httpfoo://` or `httpsevil://host` (anything merely prefixed with the
-four characters `http`). `GeminiConfig::validate()` instead correctly checks
-`!starts_with("http://") && !starts_with("https://")`. The looser check would still fail
-later at `reqwest::Url` parse/request time, so the practical impact is a less specific error
-message rather than a functional gap, but the inconsistency is worth normalizing.
-**Fix:** Standardize every preset's `validate()` on the stricter Gemini-style check.
+**Fix:** No action required for this phase to ship; note for a follow-up: regenerate (or
+add a sibling) `current-exports.txt` under `--features llm-all` so the six new adapters'
+public surface is tracked too.
 
 ---
 
