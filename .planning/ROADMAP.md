@@ -1179,7 +1179,7 @@ Plans:
 
 **Wave 8** *(gap closure — blocked on Wave 7; verification returned `gaps_found` 2026-08-17)*
 
-- [ ] 17-09-PLAN.md — Tracer: close CR-01, the blocking Critical — allow-list guard on the caller-supplied Gemini model identifier before any request URL is built, red-then-green
+- [x] 17-09-PLAN.md — Tracer: close CR-01, the blocking Critical — allow-list guard on the caller-supplied Gemini model identifier before any request URL is built, red-then-green
 
 **Wave 9** *(blocked on Wave 8 — shares `gemini/adapter.rs`)*
 
