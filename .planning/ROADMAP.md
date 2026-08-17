@@ -1171,7 +1171,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 17-07-PLAN.md — Capability invariants for the six new adapters, the factory regression test, the Ollama Docker Tier 2 suite, and the 82% coverage gate
+- [x] 17-07-PLAN.md — Capability invariants for the six new adapters, the factory regression test, the Ollama Docker Tier 2 suite, and the 82% coverage gate
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
