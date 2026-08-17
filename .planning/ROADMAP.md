@@ -1155,7 +1155,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 17-03-PLAN.md — Qwen, Grok and Ollama presets on the shared core, with mock-transport tests and registry rows
+- [x] 17-03-PLAN.md — Qwen, Grok and Ollama presets on the shared core, with mock-transport tests and registry rows
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
