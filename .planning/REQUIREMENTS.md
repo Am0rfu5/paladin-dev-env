@@ -3455,7 +3455,7 @@ build before the study reports.
       adjudicated at phase close, per the Phase 3 precedent that a requirement is not marked
       complete while sibling plans carrying the same ID are still open.
 
-- [x] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
+- [ ] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
       contract**, not a convenient subset.
       The trait requires `generate`, `generate_stream`, `validate_model`,
       `get_available_models`, `get_provider_name` and `get_capabilities`
@@ -3482,7 +3482,7 @@ build before the study reports.
       to existing config files.
       *Not ingest-derived — user direction, 2026-08-15.*
 
-- [x] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
+- [ ] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
       the advertised surface matches the shipped one.
       **Tests**: mock-transport unit tests for request shaping, response parsing, streaming chunk
       assembly and error mapping — the workspace stays above the **82% line-coverage floor**
