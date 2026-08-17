@@ -2203,4 +2203,155 @@ mod tests {
             "refused-redirect error must name the redirect, got: {message}"
         );
     }
+
+    // ── WR-03: credential-failure classification (17-11) ──
+    //
+    // Six regression tests proving two defects at map_error's 401|403 and
+    // 400/INVALID_ARGUMENT arms: an unrecognised auth failure (any status
+    // other than PERMISSION_DENIED, or no parseable envelope at all) falls
+    // through to the retryable ProcessingError catch-all, and Google's
+    // documented invalid-key shape (400/INVALID_ARGUMENT with an API-key
+    // message) reads as a bad prompt rather than a bad credential. Two
+    // controls (already passing) pin the boundary the fix must not cross.
+
+    #[test]
+    fn map_error_400_invalid_argument_naming_an_invalid_api_key_maps_to_authentication_error() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "error": {
+                "code": 400,
+                "status": "INVALID_ARGUMENT",
+                "message": "API key not valid. Please pass a valid API key."
+            }
+        })
+        .to_string();
+
+        let error = adapter.map_error(400, &body);
+        assert!(
+            matches!(error, LlmError::AuthenticationError(_)),
+            "expected AuthenticationError, got: {error:?}"
+        );
+    }
+
+    #[test]
+    fn map_error_401_unauthenticated_maps_to_authentication_error() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "error": {
+                "code": 401,
+                "status": "UNAUTHENTICATED",
+                "message": "Request had invalid authentication credentials."
+            }
+        })
+        .to_string();
+
+        let error = adapter.map_error(401, &body);
+        assert!(
+            matches!(error, LlmError::AuthenticationError(_)),
+            "expected AuthenticationError, got: {error:?}"
+        );
+    }
+
+    #[test]
+    fn map_error_403_with_no_parseable_envelope_maps_to_authentication_error() {
+        let adapter = test_adapter("https://example.invalid");
+        // The shape a gateway or proxy returns — not JSON at all — and the
+        // one most likely to reach the catch-all today.
+        let body = "Forbidden";
+
+        let error = adapter.map_error(403, body);
+        assert!(
+            matches!(error, LlmError::AuthenticationError(_)),
+            "expected AuthenticationError, got: {error:?}"
+        );
+    }
+
+    #[test]
+    fn map_error_400_invalid_argument_with_a_prompt_complaint_still_maps_to_invalid_prompt() {
+        // Adjacency/ordering control (must pass both before and after):
+        // a genuine Gemini prompt-shaped complaint must never be swallowed
+        // by the new credential arm.
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "error": {
+                "code": 400,
+                "status": "INVALID_ARGUMENT",
+                "message": "Unable to submit request because it has an empty contents field."
+            }
+        })
+        .to_string();
+
+        let error = adapter.map_error(400, &body);
+        assert!(
+            matches!(error, LlmError::InvalidPrompt(_)),
+            "expected InvalidPrompt, got: {error:?}"
+        );
+    }
+
+    #[test]
+    fn map_error_400_echoing_the_api_key_header_name_still_maps_to_invalid_prompt() {
+        // Over-trigger control (must pass both before and after): the
+        // hyphenated header name `x-goog-api-key` must never be a
+        // credential-shape signature — an echoed request body carries that
+        // string for reasons unrelated to credential validity, and matching
+        // on it would send an operator to rotate a working key.
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "error": {
+                "code": 400,
+                "status": "INVALID_ARGUMENT",
+                "message": "Bad request, header x-goog-api-key was present"
+            }
+        })
+        .to_string();
+
+        let error = adapter.map_error(400, &body);
+        assert!(
+            matches!(error, LlmError::InvalidPrompt(_)),
+            "expected InvalidPrompt, got: {error:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn generate_does_not_retry_an_unrecognised_authentication_failure() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .with_status(401)
+            .with_body(
+                json!({
+                    "error": {
+                        "code": 401,
+                        "status": "UNAUTHENTICATED",
+                        "message": "Request had invalid authentication credentials."
+                    }
+                })
+                .to_string(),
+            )
+            // Load-bearing (D-00e): today this misclassified error is
+            // retryable, so the mock receives four requests, not one — the
+            // finding's actual cost made visible in the RED state.
+            .expect(1)
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+
+        mock.assert_async().await;
+
+        assert!(
+            matches!(result, Err(LlmError::AuthenticationError(_))),
+            "expected AuthenticationError, got: {result:?}"
+        );
+    }
 }
