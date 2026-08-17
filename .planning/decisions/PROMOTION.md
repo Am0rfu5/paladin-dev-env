@@ -63,8 +63,16 @@ the plans that follow in this same phase):
 | 0041 | `in-process-token-store-single-replica-scope` | The shared-store requirement scoped to the `AuthPort` credential path, not the replica count; WEB-02's own two literal exits declined and the deviation stated explicitly; the shared store deferred with a named trigger (Phase 14, plan 14-05) |
 | 0042 | `llm-native-tool-calling-deferred` | LLM-native tool calling (Deferred-QA Epic 27) recorded as a future capability improvement, not built, with a named reintroduction trigger and owner (Phase 14, plan 14-06) |
 | 0045 | `additional-llm-provider-selection` | The additional-LLM-provider selection study — Kimi, Qwen, Grok, Ollama and Gemini build; Meta/Llama dispositioned via Ollama; Groq/Together/Mistral/Fireworks/Bedrock rejected as already covered by the generic operator-configured provider, not deferred (Phase 17, plan 17-02) |
+| 0046 | `facade-llm-feature-flag-wiring` | The facade's `llm-*` provider flags wired for real, with the default build preserved (D-11 amended, option-b) — a `Fixed` CHANGELOG entry, not `BREAKING` (Phase 17, plan 17-06) |
 
-**Next free ADR number: 0046**
+**Next free ADR number: 0047**
+
+*Dated note, 2026-08-17 (plan 17-06):* the line advances by **one**, from 0046 to 0047, because
+Phase 17 plan 17-06 authored ADR-0046 (the facade `llm-*` flag-wiring fix, D-11 as amended to
+option-b — the default build is preserved, so the entry is `Fixed` rather than `BREAKING`).
+`ls .planning/decisions/0046-*.md` (re-run before writing this note) confirms the file exists with
+the expected number, not skipped or reused, and no existing index row above was renumbered,
+reworded or reordered.
 
 *Dated note, 2026-08-17 (plan 17-02):* the line advances by **one**, from 0045 to 0046, because
 Phase 17 plan 17-02 authored ADR-0045 (the additional-LLM-provider selection study, `PROV-01`). The

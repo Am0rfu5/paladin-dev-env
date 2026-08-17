@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The facade's `llm-*` provider flags now actually gate their adapters.** Root `Cargo.toml`
+  previously declared `llm-openai = []`, `llm-anthropic = []` and `llm-deepseek = []` as empty
+  stubs while pulling `paladin-llm` in unconditionally (`Cargo.toml:55`, pre-fix) with
+  `features = ["openai", "anthropic", "deepseek", "mock", "vision"]` — every build compiled all
+  three provider adapters regardless of which flags were set. Each `llm-<provider>` flag now
+  forwards into the matching `paladin-llm` feature (`llm-openai = ["paladin-llm/openai"]`, and the
+  same shape for `anthropic`, `deepseek`, and the five providers Phase 17 added — `kimi`, `qwen`,
+  `grok`, `ollama`, `gemini`, plus the generic `openai-compatible` provider), and the
+  `paladin-llm` dependency line no longer hardcodes any provider feature. **The default build
+  compiles the same three providers it did before — `openai`, `anthropic`, `deepseek` — so no
+  action is required of any consumer.** See
+  [ADR-0046](.planning/decisions/0046-facade-llm-feature-flag-wiring.md).
+
 ## [0.8.0] - 2026-08-12
 
 ### Changed
