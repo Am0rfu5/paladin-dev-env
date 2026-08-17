@@ -194,3 +194,11 @@ Seven findings remain deferred, all recorded in `17-09-PLAN.md` §Deferred and r
 ---
 *Phase: 17-additional-llm-provider-adapters*
 *Completed: 2026-08-17*
+
+## Self-Check: PASSED
+
+- FOUND: `crates/paladin-llm/src/gemini/adapter.rs`
+- FOUND: `.planning/phases/17-additional-llm-provider-adapters/17-11-SUMMARY.md`
+- FOUND commit: `ee37de6` (test(17-11): RED)
+- FOUND commit: `a772305` (fix(17-11): GREEN)
+- FOUND commit: `29fa2e2` (docs(17-11): SUMMARY)
