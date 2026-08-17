@@ -19,6 +19,7 @@ default = ["openai", "mock"]
 openai = ["dep:reqwest", "dep:rand"]
 anthropic = ["dep:reqwest", "dep:rand"]
 deepseek = ["dep:reqwest", "dep:rand"]
+kimi = ["dep:reqwest", "dep:rand"]
 mock = []
 vision = ["openai", "dep:base64"]
 openai-embeddings = ["openai"]
@@ -42,6 +43,7 @@ base64 = { workspace = true, optional = true }
 [dev-dependencies]
 tokio-test = "0.4"
 criterion = "0.5"
+mockito = "1.7.0"
 
 [[bench]]
 name = "llm_serialization_benchmarks"

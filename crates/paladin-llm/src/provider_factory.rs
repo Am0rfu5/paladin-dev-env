@@ -1,10 +1,22 @@
 //! # LLM Provider Factory
 //!
 //! Creates [`paladin_ports::output::llm_port::LlmPort`] adapter instances by
-//! provider name. Supports any combination of the `openai`, `anthropic`, and
-//! `deepseek` feature flags.
+//! provider name.
+//!
+//! Backed by a single `cfg`-gated, table-driven registry (D-10):
+//! [`create`](LlmProviderFactory::create),
+//! [`get_default_provider`](LlmProviderFactory::get_default_provider),
+//! [`list_available_providers`](LlmProviderFactory::list_available_providers)
+//! and [`ProviderFactoryError::UnknownProvider`]'s message all derive from
+//! the same table. Adding a provider is one row in [`provider_registry`];
+//! a provider whose feature is compiled out is structurally absent from
+//! every one of those surfaces — there is no second lookup path to forget
+//! to `cfg`-gate (the defect this replaces:
+//! `provider_factory.rs:123-149` in the pre-D-10 shape reported a provider
+//! as available whenever its env var was set, even when its feature had
+//! been compiled out).
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use paladin_ports::output::llm_port::LlmPort;
 use thiserror::Error;
@@ -13,7 +25,10 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum ProviderFactoryError {
     /// The requested provider name is not recognised.
-    #[error("Unknown provider: {0}. Supported providers: openai, deepseek, anthropic")]
+    #[error(
+        "Unknown provider: {0}. Supported providers: {supported}",
+        supported = provider_names().join(", ")
+    )]
     UnknownProvider(String),
 
     /// Required environment variables or configuration are missing.
@@ -25,10 +40,147 @@ pub enum ProviderFactoryError {
     AdapterCreationFailed(String),
 }
 
+/// One row of the provider registry: a name, the env var whose presence
+/// signals a credential is configured (`None` for a provider that needs no
+/// credential, e.g. a future local-endpoint preset), and the constructor
+/// function.
+struct ProviderRegistration {
+    name: &'static str,
+    env_var: Option<&'static str>,
+    construct: fn() -> Result<Arc<dyn LlmPort>, ProviderFactoryError>,
+}
+
+#[cfg(feature = "openai")]
+fn construct_openai() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::openai::{OpenAIAdapter, OpenAIConfig};
+    let config = OpenAIConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "OpenAI configuration error: {}. Ensure OPENAI_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = OpenAIAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create OpenAI adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
+#[cfg(feature = "deepseek")]
+fn construct_deepseek() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::deepseek::{DeepSeekAdapter, DeepSeekConfig};
+    let config = DeepSeekConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "DeepSeek configuration error: {}. Ensure DEEPSEEK_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = DeepSeekAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create DeepSeek adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
+#[cfg(feature = "anthropic")]
+fn construct_anthropic() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::anthropic::{AnthropicAdapter, AnthropicConfig};
+    let config = AnthropicConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "Anthropic configuration error: {}. Ensure ANTHROPIC_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = AnthropicAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create Anthropic adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
+#[cfg(feature = "kimi")]
+fn construct_kimi() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::kimi::{KimiAdapter, KimiConfig};
+    let config = KimiConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "Kimi configuration error: {}. Ensure MOONSHOT_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = KimiAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!("Failed to create Kimi adapter: {}", e))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
+/// Build the `cfg`-gated provider registry table. Exactly one row per
+/// enabled provider feature; a provider whose feature is compiled out has
+/// no row at all, so it cannot be reported as available regardless of
+/// whether its env var happens to be set.
+///
+/// `vec![]` cannot express this construction: each row is individually
+/// `#[cfg]`-gated on its own provider feature, so the number of pushes
+/// varies per build — clippy's `vec_init_then_push` lint cannot see that
+/// from a single call site, hence the explicit `allow`.
+#[allow(unused_mut, clippy::vec_init_then_push)]
+fn build_provider_registry() -> Vec<ProviderRegistration> {
+    let mut rows: Vec<ProviderRegistration> = Vec::new();
+
+    #[cfg(feature = "openai")]
+    rows.push(ProviderRegistration {
+        name: "openai",
+        env_var: Some("OPENAI_API_KEY"),
+        construct: construct_openai,
+    });
+
+    #[cfg(feature = "deepseek")]
+    rows.push(ProviderRegistration {
+        name: "deepseek",
+        env_var: Some("DEEPSEEK_API_KEY"),
+        construct: construct_deepseek,
+    });
+
+    #[cfg(feature = "anthropic")]
+    rows.push(ProviderRegistration {
+        name: "anthropic",
+        env_var: Some("ANTHROPIC_API_KEY"),
+        construct: construct_anthropic,
+    });
+
+    #[cfg(feature = "kimi")]
+    rows.push(ProviderRegistration {
+        name: "kimi",
+        env_var: Some("MOONSHOT_API_KEY"),
+        construct: construct_kimi,
+    });
+
+    rows
+}
+
+/// The `cfg`-gated provider registry table, memoized for the process
+/// lifetime.
+fn provider_registry() -> &'static [ProviderRegistration] {
+    static REGISTRY: OnceLock<Vec<ProviderRegistration>> = OnceLock::new();
+    REGISTRY.get_or_init(build_provider_registry)
+}
+
+/// The names of every provider compiled into this build, in registry
+/// declaration order. Consumed by the config layer and by documentation
+/// tooling so both read one list rather than each hand-maintaining a copy.
+pub fn provider_names() -> Vec<&'static str> {
+    provider_registry().iter().map(|row| row.name).collect()
+}
+
 /// Factory for creating LLM provider adapters by name.
 ///
 /// Each provider is only available when the corresponding feature flag is
-/// enabled (`openai`, `anthropic`, or `deepseek`).
+/// enabled. See [`provider_names`] for the list compiled into this build.
 ///
 /// # Example
 ///
@@ -51,8 +203,10 @@ impl LlmProviderFactory {
 
     /// Create an [`LlmPort`] adapter by provider name.
     ///
-    /// Configuration is loaded from environment variables (see each adapter's
-    /// `*Config::from_env()` for the expected variable names).
+    /// Configuration is loaded from environment variables (see each
+    /// adapter's `*Config::from_env()` for the expected variable names).
+    /// The name is matched case-insensitively against
+    /// [`provider_names`].
     ///
     /// # Errors
     ///
@@ -60,92 +214,48 @@ impl LlmProviderFactory {
     /// required environment variable is absent, or the adapter fails to
     /// initialise.
     pub fn create(&self, provider_name: &str) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
-        match provider_name.to_lowercase().as_str() {
-            #[cfg(feature = "openai")]
-            "openai" => {
-                use crate::openai::{OpenAIAdapter, OpenAIConfig};
-                let config = OpenAIConfig::from_env().map_err(|e| {
-                    ProviderFactoryError::ConfigurationMissing(format!(
-                        "OpenAI configuration error: {}. Ensure OPENAI_API_KEY is set.",
-                        e
-                    ))
-                })?;
-                let adapter = OpenAIAdapter::new(config).map_err(|e| {
-                    ProviderFactoryError::AdapterCreationFailed(format!(
-                        "Failed to create OpenAI adapter: {}",
-                        e
-                    ))
-                })?;
-                Ok(Arc::new(adapter))
-            }
-            #[cfg(feature = "deepseek")]
-            "deepseek" => {
-                use crate::deepseek::{DeepSeekAdapter, DeepSeekConfig};
-                let config = DeepSeekConfig::from_env().map_err(|e| {
-                    ProviderFactoryError::ConfigurationMissing(format!(
-                        "DeepSeek configuration error: {}. Ensure DEEPSEEK_API_KEY is set.",
-                        e
-                    ))
-                })?;
-                let adapter = DeepSeekAdapter::new(config).map_err(|e| {
-                    ProviderFactoryError::AdapterCreationFailed(format!(
-                        "Failed to create DeepSeek adapter: {}",
-                        e
-                    ))
-                })?;
-                Ok(Arc::new(adapter))
-            }
-            #[cfg(feature = "anthropic")]
-            "anthropic" => {
-                use crate::anthropic::{AnthropicAdapter, AnthropicConfig};
-                let config = AnthropicConfig::from_env().map_err(|e| {
-                    ProviderFactoryError::ConfigurationMissing(format!(
-                        "Anthropic configuration error: {}. Ensure ANTHROPIC_API_KEY is set.",
-                        e
-                    ))
-                })?;
-                let adapter = AnthropicAdapter::new(config).map_err(|e| {
-                    ProviderFactoryError::AdapterCreationFailed(format!(
-                        "Failed to create Anthropic adapter: {}",
-                        e
-                    ))
-                })?;
-                Ok(Arc::new(adapter))
-            }
-            other => Err(ProviderFactoryError::UnknownProvider(other.to_string())),
-        }
+        let lower = provider_name.to_lowercase();
+        provider_registry()
+            .iter()
+            .find(|row| row.name == lower)
+            .map(|row| (row.construct)())
+            .unwrap_or_else(|| {
+                Err(ProviderFactoryError::UnknownProvider(
+                    provider_name.to_string(),
+                ))
+            })
     }
 
-    /// Return the name of the first available provider based on environment
-    /// variables, or `None` if no API keys are set.
+    /// Return the name of the first available provider — the first table
+    /// row (in registry declaration order) whose credential env var is
+    /// present, or whose row requires no credential at all.
     ///
-    /// Priority: OpenAI → DeepSeek → Anthropic.
+    /// Returns `None` when the table is empty (no provider feature
+    /// compiled in) or no row's credential is present.
     pub fn get_default_provider() -> Option<String> {
-        if std::env::var("OPENAI_API_KEY").is_ok() {
-            return Some("openai".to_string());
-        }
-        if std::env::var("DEEPSEEK_API_KEY").is_ok() {
-            return Some("deepseek".to_string());
-        }
-        if std::env::var("ANTHROPIC_API_KEY").is_ok() {
-            return Some("anthropic".to_string());
-        }
-        None
+        provider_registry()
+            .iter()
+            .find(|row| match row.env_var {
+                Some(var) => std::env::var(var).is_ok(),
+                None => true,
+            })
+            .map(|row| row.name.to_string())
     }
 
-    /// Return the names of all providers that have API keys configured.
+    /// Return the names of all providers that are both compiled in and
+    /// have their credential configured (or need none).
+    ///
+    /// A provider whose feature was not compiled in is structurally absent
+    /// from this list regardless of whether its env var happens to be set.
     pub fn list_available_providers() -> Vec<String> {
-        let mut providers = Vec::new();
-        if std::env::var("OPENAI_API_KEY").is_ok() {
-            providers.push("openai".to_string());
-        }
-        if std::env::var("DEEPSEEK_API_KEY").is_ok() {
-            providers.push("deepseek".to_string());
-        }
-        if std::env::var("ANTHROPIC_API_KEY").is_ok() {
-            providers.push("anthropic".to_string());
-        }
-        providers
+        provider_registry()
+            .iter()
+            .filter(|row| match row.env_var {
+                Some(var) => std::env::var(var).is_ok(),
+                None => true,
+            })
+            .map(|row| row.name.to_string())
+            .collect()
     }
 }
 
@@ -181,5 +291,135 @@ mod tests {
     fn test_list_available_providers_returns_vec() {
         // Smoke test — just ensure it returns without panicking.
         let _ = LlmProviderFactory::list_available_providers();
+    }
+
+    #[test]
+    fn provider_names_has_no_duplicate_entries() {
+        let names = provider_names();
+        let mut sorted = names.clone();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(
+            names.len(),
+            sorted.len(),
+            "duplicate provider name in registry: {:?}",
+            names
+        );
+    }
+
+    #[test]
+    fn list_available_providers_only_contains_names_from_the_registry() {
+        let registry_names: std::collections::HashSet<&str> =
+            provider_names().into_iter().collect();
+        for name in LlmProviderFactory::list_available_providers() {
+            assert!(
+                registry_names.contains(name.as_str()),
+                "list_available_providers returned {name}, which is not in the compiled-in \
+                 registry {registry_names:?} — a compiled-out provider must never be reported \
+                 as available"
+            );
+        }
+    }
+
+    // ── D-10 regression coverage: kimi-only build ──
+    //
+    // Exercised under `cargo test -p paladin-llm --no-default-features
+    // --features kimi provider_factory`. Gated so it does not run (and
+    // therefore does not assert an exact single-entry list) under the
+    // default `openai` + `mock` feature set.
+    #[cfg(all(
+        feature = "kimi",
+        not(feature = "openai"),
+        not(feature = "anthropic"),
+        not(feature = "deepseek")
+    ))]
+    mod kimi_only_build {
+        use super::*;
+
+        #[test]
+        fn provider_names_returns_exactly_kimi() {
+            assert_eq!(provider_names(), vec!["kimi"]);
+        }
+
+        #[test]
+        fn create_bogus_provider_error_message_lists_kimi() {
+            let factory = LlmProviderFactory::new();
+            let result = factory.create("bogus_provider");
+            match result {
+                Err(ProviderFactoryError::UnknownProvider(name)) => {
+                    assert_eq!(name, "bogus_provider");
+                }
+                Err(other) => panic!("expected UnknownProvider, got Err({other})"),
+                Ok(_) => panic!("expected UnknownProvider, got Ok(_)"),
+            }
+
+            let message =
+                ProviderFactoryError::UnknownProvider("bogus_provider".to_string()).to_string();
+            assert!(
+                message.contains("kimi"),
+                "UnknownProvider message must list the compiled-in providers: {message}"
+            );
+        }
+
+        #[test]
+        fn create_normalizes_case_for_a_registered_provider_name() {
+            let factory = LlmProviderFactory::new();
+            let upper = factory.create("KIMI");
+            let lower = factory.create("kimi");
+
+            // Neither call should fail with UnknownProvider — the row is
+            // found regardless of case. (It may still fail with
+            // ConfigurationMissing if MOONSHOT_API_KEY is unset in this
+            // test process, which is expected and fine here.)
+            assert!(!matches!(
+                upper,
+                Err(ProviderFactoryError::UnknownProvider(_))
+            ));
+            assert!(!matches!(
+                lower,
+                Err(ProviderFactoryError::UnknownProvider(_))
+            ));
+        }
+
+        #[test]
+        fn build_with_zero_providers_is_not_exercised_here() {
+            // Documents intent: the zero-provider empty-table case
+            // (`cargo build -p paladin-llm --no-default-features`, no
+            // provider feature at all) is covered by the acceptance
+            // criterion's build command, not by an in-crate test — there
+            // is no way to compile this test module without at least one
+            // provider feature enabled.
+        }
+    }
+
+    /// `create()` is safe to call concurrently: N concurrent calls each
+    /// resolve the registry independently and return distinct results with
+    /// no shared mutable state. Exercised against an unknown provider name
+    /// rather than a credentialed one — mutating `MOONSHOT_API_KEY` via
+    /// `std::env::set_var` is `unsafe` under Rust 2024 and this crate
+    /// denies `unsafe_code`; the credentialed 20-concurrent-`create("kimi")`
+    /// variant is deferred to the workspace-level test target (plan 17-07
+    /// owns env-var-dependent tests). This test still proves the concurrency
+    /// property D-10 depends on: the lazily-initialized `OnceLock` registry
+    /// resolves safely under concurrent readers.
+    #[tokio::test]
+    async fn create_is_safe_to_call_concurrently() {
+        let factory = Arc::new(LlmProviderFactory::new());
+        let mut handles = Vec::new();
+
+        for _ in 0..20 {
+            let factory = Arc::clone(&factory);
+            handles.push(tokio::spawn(async move {
+                factory.create("bogus-concurrent-provider")
+            }));
+        }
+
+        for handle in handles {
+            let result = handle.await.expect("task must not panic");
+            assert!(matches!(
+                result,
+                Err(ProviderFactoryError::UnknownProvider(_))
+            ));
+        }
     }
 }

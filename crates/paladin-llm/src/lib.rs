@@ -13,6 +13,7 @@
 //! | `openai` (default) | OpenAI | [`openai::OpenAIAdapter`], [`openai::OpenAIConfig`] |
 //! | `anthropic` | Anthropic | [`anthropic::AnthropicAdapter`], [`anthropic::AnthropicConfig`] |
 //! | `deepseek` | DeepSeek | [`deepseek::DeepSeekAdapter`], [`deepseek::DeepSeekConfig`] |
+//! | `kimi` | Kimi (Moonshot AI) | [`kimi::KimiAdapter`], [`kimi::KimiConfig`] |
 //! | `mock` (default) | Testing | [`mock::MockLlmAdapter`], [`mock::MultiStepMockLlmPort`] |
 //! | `openai-embeddings` | OpenAI Embeddings | [`openai::OpenAIEmbeddingAdapter`] |
 //! | `vision` | Vision (multimodal) | Extends OpenAI and Anthropic adapters |
@@ -53,6 +54,19 @@ pub mod llm_analysis_service;
 /// Factory for selecting provider adapters from runtime configuration.
 #[allow(missing_docs)]
 pub mod provider_factory;
+/// Credential redaction shared by every provider adapter (not feature-gated
+/// — reused by the shared compatible core and by bespoke adapters alike).
+#[allow(missing_docs)]
+pub mod redaction;
+
+#[cfg(feature = "kimi")]
+/// Shared OpenAI-compatible protocol engine (D-05) that thin provider
+/// presets sit on. Widen to `any(feature = "kimi", feature = "...")` as
+/// later presets land — a single-feature `any(...)` trips
+/// `clippy::non_minimal_cfg`, so this stays a plain `feature = "kimi"`
+/// until a second compatible-core feature exists.
+#[allow(missing_docs)]
+pub mod compat;
 
 #[cfg(feature = "openai")]
 /// OpenAI provider adapter and related configuration.
@@ -73,6 +87,11 @@ pub mod deepseek;
 /// Mock provider adapters for tests and deterministic workflows.
 #[allow(missing_docs)]
 pub mod mock;
+
+#[cfg(feature = "kimi")]
+/// Kimi (Moonshot AI) provider adapter and related configuration.
+#[allow(missing_docs)]
+pub mod kimi;
 
 /// Cross-adapter capability invariants (WEB-03, ADR-0004).
 ///
