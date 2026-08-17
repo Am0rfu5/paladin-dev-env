@@ -21,7 +21,7 @@ Paladin uses Cargo feature flags to enable fine-grained control over compiled de
 Feature flags in Paladin follow these principles:
 
 1. **Core Framework Always Available** - Paladin agents, Battalion orchestration, Garrison memory, Arsenal tools, and Herald formatters are always compiled
-2. **Provider Choice** - Choose which LLM providers to support (OpenAI, Anthropic, DeepSeek)
+2. **Provider Choice** - Choose which of the nine LLM providers to support (OpenAI, Anthropic, DeepSeek, Kimi, Qwen, Grok, Ollama, Gemini, or the generic OpenAI-compatible adapter)
 3. **Subsystem Opt-In** - Enable only the subsystems you need (web servers, content processing, notifications)
 4. **Infrastructure Selection** - Pick storage/queue adapters (Redis, S3/MinIO, Qdrant)
 5. **Testing Flexibility** - Enable integration tests only when needed
@@ -30,9 +30,15 @@ Feature flags in Paladin follow these principles:
 
 | Configuration | Features Enabled | Use Case |
 |--------------|------------------|----------|
-| **Default** | `llm-openai` only | Production orchestration with OpenAI |
-| **Full** | All optional features | Development, testing, full functionality |
+| **Default** | `llm-openai`, `llm-anthropic`, `llm-deepseek` | Production orchestration with any of the three original providers |
+| **Full** | All optional features (`llm-all` plus every subsystem) | Development, testing, full functionality |
 | **No Default** | Core framework only | Library usage, custom integrations |
+
+> **This default has not changed.** The `llm-*` flags were rewired (see below) so each one
+> now actually gates its adapter instead of being an inert stub, but the *compiled default
+> provider set* is deliberately unchanged from before that fix — `openai` + `anthropic` +
+> `deepseek`. See the `[Unreleased]` section of `CHANGELOG.md` for the fix this note refers
+> to. No consumer action is required.
 
 ## Available Feature Flags
 
@@ -40,10 +46,19 @@ Feature flags in Paladin follow these principles:
 
 | Flag | Dependencies | Modules Gated | Description |
 |------|--------------|---------------|-------------|
-| `llm-openai` | None (uses `reqwest`) | `infrastructure::adapters::llm::openai_adapter` | OpenAI GPT models (GPT-3.5, GPT-4, GPT-4-turbo, GPT-4o) |
-| `llm-anthropic` | None (uses `reqwest`) | `infrastructure::adapters::llm::anthropic_adapter` | Anthropic Claude models (Claude 3 Opus, Sonnet, Haiku) |
-| `llm-deepseek` | None (uses `reqwest`) | `infrastructure::adapters::llm::deepseek_adapter` | DeepSeek models (DeepSeek-V3, DeepSeek-Chat) |
-| `llm-all` | `llm-openai`, `llm-anthropic`, `llm-deepseek` | All LLM adapters | All supported LLM providers |
+| `llm-openai` | None (uses `reqwest`) | `paladin_llm::openai` | OpenAI GPT models (GPT-3.5, GPT-4, GPT-4-turbo, GPT-4o). Compiled by default. |
+| `llm-anthropic` | None (uses `reqwest`) | `paladin_llm::anthropic` | Anthropic Claude models. Compiled by default. |
+| `llm-deepseek` | None (uses `reqwest`) | `paladin_llm::deepseek` | DeepSeek models (DeepSeek-V3, DeepSeek-Chat). Compiled by default. |
+| `llm-kimi` | None (uses `reqwest`) | `paladin_llm::kimi` | Kimi (Moonshot AI). Not compiled by default. |
+| `llm-qwen` | None (uses `reqwest`) | `paladin_llm::qwen` | Qwen (Alibaba DashScope). Not compiled by default. |
+| `llm-grok` | None (uses `reqwest`) | `paladin_llm::grok` | Grok (xAI). Not compiled by default. |
+| `llm-ollama` | None (uses `reqwest`) | `paladin_llm::ollama` | Ollama (self-hosted, no credential required). Not compiled by default. |
+| `llm-gemini` | None (uses `reqwest`) | `paladin_llm::gemini` | Gemini (Google) — bespoke `generateContent` protocol, not OpenAI-compatible. Not compiled by default. |
+| `llm-openai-compatible` | None (uses `reqwest`) | `paladin_llm::openai_compatible` | Generic operator-configured adapter for any OpenAI-compatible endpoint not covered above. Not compiled by default. |
+| `llm-all` | all nine flags above | All LLM adapters | Every supported LLM provider plus the generic OpenAI-compatible adapter |
+
+> Vendor base URLs and default model IDs for Kimi/Qwen/Grok/Gemini were recorded from vendor
+> documentation but have not been verified against a live endpoint in this environment.
 
 ### Subsystem Flags
 
@@ -98,23 +113,24 @@ cargo build --bin paladin-cli --features cli
 
 ## Default Configuration
 
-**Current Default** (as of v0.5.0):
+**Current Default:**
 
 ```toml
 [dependencies]
-paladin-ai = "0.5"
+paladin-ai = "0.8"
 ```
 
-This enables **only**:
+This enables:
 - ✅ `llm-openai` - OpenAI LLM provider
+- ✅ `llm-anthropic` - Anthropic LLM provider
+- ✅ `llm-deepseek` - DeepSeek LLM provider
 - ✅ Core framework (always available)
 
-**Previous Default** (before v0.5.0):
-
-```toml
-# Old default - no longer applies
-default = ["redis-queue", "s3-storage", "openai-embeddings"]
-```
+The six providers Phase 17 added (`llm-kimi`, `llm-qwen`, `llm-grok`, `llm-ollama`,
+`llm-gemini`, `llm-openai-compatible`) are **not** in the default set — opt in explicitly
+per-provider or via `llm-all`. See `CHANGELOG.md`'s `[Unreleased]` entry: the `llm-*` flags
+were rewired to actually gate their adapters, but the compiled default provider set is
+unchanged from before that fix.
 
 See [migration-guide.md](migration-guide.md) for migration guidance.
 
@@ -244,7 +260,13 @@ full
 ├── llm-all
 │   ├── llm-openai
 │   ├── llm-anthropic
-│   └── llm-deepseek
+│   ├── llm-deepseek
+│   ├── llm-kimi
+│   ├── llm-qwen
+│   ├── llm-grok
+│   ├── llm-ollama
+│   ├── llm-gemini
+│   └── llm-openai-compatible
 ├── content-processing
 │   ├── pdf-extract
 │   ├── scraper
