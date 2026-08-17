@@ -3428,6 +3428,22 @@ build before the study reports.
       *Not ingest-derived — user direction, 2026-08-15. Reads against `crates/paladin-llm/` as
       shipped at v0.8.0.*
 
+      **Amended 2026-08-17, plan 17-02, citing
+      [ADR-0045](.planning/decisions/0045-additional-llm-provider-selection.md).** The study is
+      recorded, with its criteria written down before any candidate was scored. Verdict summary:
+      **build** — Kimi, Qwen, Grok, Ollama, Gemini; **reject (already covered by the generic
+      operator-configured OpenAI-compatible provider)** — Groq, Together, Mistral, Fireworks,
+      Bedrock; **Meta/Llama** dispositioned by naming **Ollama** as the host it targets (D-02).
+      Every candidate carries exactly one verdict with its reason, per ADR-0045's scored candidate
+      table. **PROV-02's size is therefore fixed at five named presets (Kimi, Qwen, Grok, Ollama,
+      Gemini) plus one generic operator-configured provider** — the "one adapter or four" open
+      question this requirement's own note left for PROV-02 is now answered. Provenance: every
+      verdict was human-selected in an interactive `/gsd-discuss-phase 17` session on 2026-08-16
+      (D-00i) — none is `--auto`-derived. **PROV-01's checkbox stays unticked**: this amendment
+      satisfies the requirement's "Done when" clause, but the phase's requirement checkboxes are
+      adjudicated at phase close, per the Phase 3 precedent that a requirement is not marked
+      complete while sibling plans carrying the same ID are still open.
+
 - [ ] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
       contract**, not a convenient subset.
       The trait requires `generate`, `generate_stream`, `validate_model`,
