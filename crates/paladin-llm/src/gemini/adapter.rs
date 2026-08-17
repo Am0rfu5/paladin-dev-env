@@ -34,6 +34,20 @@
 //! entirely — `LlmRequest` has no field through which a tool definition
 //! could travel, so sending an empty value would be a capability signal
 //! this adapter cannot honour.
+//!
+//! ## Trust boundary: the caller-supplied model identifier
+//!
+//! `LlmRequest.model` crosses from the caller into the request **path**
+//! (`{base_url}/models/{model}:generateContent`), not into a
+//! serde-encoded JSON body like every `CompatEngine`-based preset in this
+//! crate. The `validate_model_identifier` guard is the sole barrier that
+//! stops a hostile value from displacing an existing path segment or
+//! injecting a query parameter (CR-01, `17-VERIFICATION.md`) — it runs as
+//! the first statement of both `generate` and `generate_stream`, before
+//! any URL is built. The residual, deliberately out-of-scope trust
+//! decision is the operator's own `GEMINI_BASE_URL`: nothing in this
+//! module validates where the *host* points, only the model segment
+//! appended to it. That surface is plan 17-10's subject.
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -560,6 +574,7 @@ impl GeminiAdapter {
 #[async_trait]
 impl LlmPort for GeminiAdapter {
     async fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
+        validate_model_identifier(&request.model)?;
         let gemini_request = self.build_request(&request)?;
         let url = format!(
             "{}/models/{}:generateContent",
@@ -618,6 +633,7 @@ impl LlmPort for GeminiAdapter {
         &self,
         request: LlmRequest,
     ) -> Result<Box<dyn Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError> {
+        validate_model_identifier(&request.model)?;
         let gemini_request = self.build_request(&request)?;
         let url = format!(
             "{}/models/{}:streamGenerateContent",
@@ -817,6 +833,71 @@ struct GeminiModelEntry {
 }
 
 // ── Free functions shared between the non-streaming and streaming paths ──
+
+/// Reject a caller-supplied Gemini `model` identifier before it is
+/// interpolated into a request URL (closes CR-01,
+/// `17-VERIFICATION.md`).
+///
+/// `request.model` is spliced into the request **path** —
+/// `{base_url}/models/{model}:generateContent` — unlike every
+/// `CompatEngine`-based preset in this crate, which carries the model
+/// inside the serde-encoded JSON request body instead. A path segment is
+/// a fundamentally different trust boundary than a body field: a hostile
+/// `model` value can displace an existing path segment (`/`), append an
+/// operation suffix (`:`), or — on the streaming path — inject a query
+/// parameter (`?`) that displaces the mandatory `alt=sse` framing
+/// parameter, all on a request that carries the live `x-goog-api-key`
+/// credential.
+///
+/// The permitted set is ASCII letters, digits, `.`, `_` and `-`
+/// (`[A-Za-z0-9._-]`). Every character in that set is URL-unreserved, so
+/// an already-valid identifier is unaffected by this guard and there is
+/// nothing to percent-encode. Encoding an *invalid* value instead of
+/// rejecting it would silently rewrite the caller's request into a
+/// request for a different model than the one they named — an operator
+/// must never receive a completion from a model they did not ask for.
+/// Rejecting also adds no dependency: `percent-encoding` is not a
+/// declared dependency of this crate, and a new dependency is itself a
+/// cost PROV-01's own criteria weigh against `make deny` / `make audit`.
+///
+/// This is a *character* allow-list, not a membership check against
+/// [`GeminiAdapter::available_models`]. Gating `generate()` on the
+/// memoized model list would force a network fetch into the hot path of
+/// every call and would reject any model the provider ships after this
+/// release (D-13) — exactly the failure mode D-13 exists to avoid.
+fn validate_model_identifier(model: &str) -> Result<(), LlmError> {
+    if model.is_empty() {
+        return Err(LlmError::InvalidPrompt(format!(
+            "Gemini `model` must be a non-empty identifier made of ASCII letters, digits, \
+             '.', '_' or '-' (set via the GEMINI_MODEL environment variable, or the request's \
+             model field); got: \"{}\"",
+            bounded_excerpt(model, RESPONSE_EXCERPT_CHAR_BUDGET)
+        )));
+    }
+
+    if let Some(bad) = model
+        .chars()
+        .find(|c| !(c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')))
+    {
+        return Err(LlmError::InvalidPrompt(format!(
+            "Gemini `model` contains a character outside the permitted set (ASCII letters, \
+             digits, '.', '_' or '-'): {bad:?}. Correct the GEMINI_MODEL environment variable, \
+             or the request's model field; got: \"{}\"",
+            bounded_excerpt(model, RESPONSE_EXCERPT_CHAR_BUDGET)
+        )));
+    }
+
+    if !model.chars().any(|c| c.is_ascii_alphanumeric()) {
+        return Err(LlmError::InvalidPrompt(format!(
+            "Gemini `model` must contain at least one ASCII letter or digit — a value built \
+             only from '.', '_' or '-' is not a meaningful model name. Correct the \
+             GEMINI_MODEL environment variable, or the request's model field; got: \"{}\"",
+            bounded_excerpt(model, RESPONSE_EXCERPT_CHAR_BUDGET)
+        )));
+    }
+
+    Ok(())
+}
 
 /// Concatenate the text of every part in a candidate's content, in array
 /// order. A candidate with no `content` at all (fully safety-blocked, no
@@ -1678,12 +1759,79 @@ mod tests {
         );
     }
 
+    // ── validate_model_identifier: pure-logic tests over the guard itself ──
+
+    #[test]
+    fn validate_model_identifier_accepts_the_default_and_every_fallback_model() {
+        for model in
+            std::iter::once(GEMINI_DEFAULT_MODEL).chain(GEMINI_FALLBACK_MODELS.iter().copied())
+        {
+            assert!(
+                validate_model_identifier(model).is_ok(),
+                "expected Ok for shipped default/fallback {model:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_model_identifier_rejects_each_url_metacharacter() {
+        let metacharacters = ['/', '?', '#', ':', '@', '%', '&', '=', ' ', '\\', '\n'];
+        for c in metacharacters {
+            let hostile = format!("gemini-2.5-flash{c}x");
+            let result = validate_model_identifier(&hostile);
+            assert!(
+                matches!(result, Err(LlmError::InvalidPrompt(_))),
+                "expected LlmError::InvalidPrompt for metacharacter {c:?} in {hostile:?}, got {result:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_model_identifier_rejects_a_value_with_no_alphanumeric_character() {
+        for value in [".", "..", "---", "_"] {
+            let result = validate_model_identifier(value);
+            assert!(
+                matches!(result, Err(LlmError::InvalidPrompt(_))),
+                "expected LlmError::InvalidPrompt for {value:?} (no alphanumeric char), got {result:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_model_identifier_rejects_a_long_multibyte_value_without_panicking() {
+        // A 2,000-character multi-byte value. The test completing at all —
+        // rather than panicking on a mid-codepoint byte slice — is part of
+        // what this test proves.
+        let hostile: String = "\u{1F5E1}".repeat(2000);
+        let result = validate_model_identifier(&hostile);
+
+        let message = match result {
+            Err(LlmError::InvalidPrompt(msg)) => msg,
+            other => panic!("expected LlmError::InvalidPrompt, got {other:?}"),
+        };
+
+        // The embedded excerpt is capped at RESPONSE_EXCERPT_CHAR_BUDGET
+        // characters; the surrounding sentence and elision marker add a
+        // small, fixed amount on top. The bound below allows for that
+        // fixed prefix/suffix without allowing the excerpt itself to grow
+        // unbounded.
+        assert!(
+            message.chars().count() <= RESPONSE_EXCERPT_CHAR_BUDGET + 400,
+            "rejection message was not bounded: {} chars",
+            message.chars().count()
+        );
+    }
+
+    #[test]
+    fn validate_model_identifier_accepts_every_character_of_the_allowed_set() {
+        assert!(validate_model_identifier("aZ0.9_x-1").is_ok());
+    }
+
     // ── CR-01: a caller-supplied model identifier must never reach the wire
-    //    unescaped — regression tests proving the injection is live today.
-    //    See `.planning/phases/17-additional-llm-provider-adapters/17-REVIEW.md`
-    //    §CR-01 and `17-VERIFICATION.md`. This tree is intentionally red
-    //    until Task 2 wires `validate_model_identifier` into `generate()`
-    //    and `generate_stream()`. ──
+    //    unescaped — regression tests proving the guard above is actually
+    //    wired into both LlmPort methods. See
+    //    `.planning/phases/17-additional-llm-provider-adapters/17-REVIEW.md`
+    //    §CR-01 and `17-VERIFICATION.md`. ──
 
     #[tokio::test]
     async fn generate_rejects_a_model_containing_a_path_separator_without_issuing_a_request() {
