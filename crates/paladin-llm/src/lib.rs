@@ -15,6 +15,7 @@
 //! | `deepseek` | DeepSeek | [`deepseek::DeepSeekAdapter`], [`deepseek::DeepSeekConfig`] |
 //! | `kimi` | Kimi (Moonshot AI) | [`kimi::KimiAdapter`], [`kimi::KimiConfig`] |
 //! | `qwen` | Qwen (Alibaba DashScope) | [`qwen::QwenAdapter`], [`qwen::QwenConfig`] |
+//! | `grok` | Grok (xAI) | [`grok::GrokAdapter`], [`grok::GrokConfig`] |
 //! | `mock` (default) | Testing | [`mock::MockLlmAdapter`], [`mock::MultiStepMockLlmPort`] |
 //! | `openai-embeddings` | OpenAI Embeddings | [`openai::OpenAIEmbeddingAdapter`] |
 //! | `vision` | Vision (multimodal) | Extends OpenAI and Anthropic adapters |
@@ -60,7 +61,7 @@ pub mod provider_factory;
 #[allow(missing_docs)]
 pub mod redaction;
 
-#[cfg(any(feature = "kimi", feature = "qwen"))]
+#[cfg(any(feature = "kimi", feature = "qwen", feature = "grok"))]
 /// Shared OpenAI-compatible protocol engine (D-05) that thin provider
 /// presets sit on. Widen this `any(...)` list as later presets land.
 #[allow(missing_docs)]
@@ -95,6 +96,11 @@ pub mod kimi;
 /// Qwen (Alibaba DashScope) provider adapter and related configuration.
 #[allow(missing_docs)]
 pub mod qwen;
+
+#[cfg(feature = "grok")]
+/// Grok (xAI) provider adapter and related configuration.
+#[allow(missing_docs)]
+pub mod grok;
 
 /// Cross-adapter capability invariants (WEB-03, ADR-0004).
 ///

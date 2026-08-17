@@ -134,6 +134,21 @@ fn construct_qwen() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     Ok(Arc::new(adapter))
 }
 
+#[cfg(feature = "grok")]
+fn construct_grok() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::grok::{GrokAdapter, GrokConfig};
+    let config = GrokConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "Grok configuration error: {}. Ensure XAI_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = GrokAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!("Failed to create Grok adapter: {}", e))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
 /// Build the `cfg`-gated provider registry table. Exactly one row per
 /// enabled provider feature; a provider whose feature is compiled out has
 /// no row at all, so it cannot be reported as available regardless of
@@ -180,6 +195,13 @@ fn build_provider_registry() -> Vec<ProviderRegistration> {
         name: "qwen",
         env_var: Some("DASHSCOPE_API_KEY"),
         construct: construct_qwen,
+    });
+
+    #[cfg(feature = "grok")]
+    rows.push(ProviderRegistration {
+        name: "grok",
+        env_var: Some("XAI_API_KEY"),
+        construct: construct_grok,
     });
 
     rows
@@ -354,7 +376,8 @@ mod tests {
         not(feature = "openai"),
         not(feature = "anthropic"),
         not(feature = "deepseek"),
-        not(feature = "qwen")
+        not(feature = "qwen"),
+        not(feature = "grok")
     ))]
     mod kimi_only_build {
         use super::*;
