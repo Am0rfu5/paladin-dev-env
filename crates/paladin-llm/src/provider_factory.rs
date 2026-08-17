@@ -119,6 +119,21 @@ fn construct_kimi() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     Ok(Arc::new(adapter))
 }
 
+#[cfg(feature = "qwen")]
+fn construct_qwen() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::qwen::{QwenAdapter, QwenConfig};
+    let config = QwenConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "Qwen configuration error: {}. Ensure DASHSCOPE_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = QwenAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!("Failed to create Qwen adapter: {}", e))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
 /// Build the `cfg`-gated provider registry table. Exactly one row per
 /// enabled provider feature; a provider whose feature is compiled out has
 /// no row at all, so it cannot be reported as available regardless of
@@ -158,6 +173,13 @@ fn build_provider_registry() -> Vec<ProviderRegistration> {
         name: "kimi",
         env_var: Some("MOONSHOT_API_KEY"),
         construct: construct_kimi,
+    });
+
+    #[cfg(feature = "qwen")]
+    rows.push(ProviderRegistration {
+        name: "qwen",
+        env_var: Some("DASHSCOPE_API_KEY"),
+        construct: construct_qwen,
     });
 
     rows
@@ -331,7 +353,8 @@ mod tests {
         feature = "kimi",
         not(feature = "openai"),
         not(feature = "anthropic"),
-        not(feature = "deepseek")
+        not(feature = "deepseek"),
+        not(feature = "qwen")
     ))]
     mod kimi_only_build {
         use super::*;
