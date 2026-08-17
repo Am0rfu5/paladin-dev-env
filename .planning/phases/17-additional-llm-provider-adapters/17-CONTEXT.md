@@ -160,7 +160,7 @@ them; tests and documentation to the standard already in force.
   — **Reversibility:** costly — the registry becomes the contract every provider registers through;
   returning to a match means unpicking all nine call sites.
 
-- **D-11: The facade's `llm-*` flags are wired for real.** The resulting default-build change is
+- **D-11: The facade's `llm-` provider flags are wired for real.** The resulting default-build change is
   recorded as BREAKING. Root `Cargo.toml` declares `llm-openai = []`, `llm-anthropic = []` and
   `llm-deepseek = []` — empty stubs — while pulling `paladin-llm` in at line 55 with
   `features = ["openai", "anthropic", "deepseek", "mock", "vision"]` unconditionally, so every build

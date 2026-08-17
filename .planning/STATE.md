@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
-current_phase: 15.1
-status: completed
-stopped_at: Phase 17 context gathered
-last_updated: "2026-08-16T22:14:45.591Z"
-last_activity: 2026-08-15
-last_activity_desc: Phase 15.1 marked complete
+current_phase: 17
+status: planned
+stopped_at: Phase 17 planned — ready to execute
+last_updated: "2026-08-17T00:00:00.000Z"
+last_activity: 2026-08-17
+last_activity_desc: Phase 17 planned — 8 plans in 7 waves
 progress:
   total_phases: 13
   completed_phases: 12
   total_plans: 113
   completed_plans: 113
-current_phase_name: Git & CI Governance (INSERTED
+current_phase_name: Additional LLM Provider Adapters
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 15.1 — Git & CI Governance (INSERTED)
+**Current focus:** Phase 17 — Additional LLM Provider Adapters
 
 **Progress:** [████████████████████] 113/113 plans (100%)
 
@@ -39,10 +39,10 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 15.1 — COMPLETE
-Plan: 1 of 10
-Status: Phase 15.1 complete
-Last activity: 2026-08-15 — Phase 15.1 marked complete
+Phase: 17 — Additional LLM Provider Adapters
+Plan: 0 of 8
+Status: Ready to execute
+Last activity: 2026-08-17 — Phase 17 planned (8 plans, 7 waves)
 
 ## Performance Metrics
 
