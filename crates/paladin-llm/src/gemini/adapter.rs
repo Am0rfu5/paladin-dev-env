@@ -107,6 +107,34 @@ pub const GEMINI_FALLBACK_MODELS: &[&str] = &["gemini-2.5-flash", "gemini-2.5-pr
 /// top-level rustdoc for why.
 pub const GEMINI_API_KEY_HEADER: &str = "x-goog-api-key";
 
+/// Narrow, named signatures that discriminate a credential-shaped Gemini
+/// `400`/`INVALID_ARGUMENT` from a genuine bad-prompt one (closes WR-03,
+/// `17-REVIEW.md`).
+///
+/// **Why this exists:** Google's documented invalid-key response is HTTP
+/// `400` with `status: "INVALID_ARGUMENT"` — never a `401` — so the HTTP
+/// status alone cannot separate a bad key from a bad prompt. This list, and
+/// [`is_credential_failure_message`] which consults it, is that
+/// discriminator. Follows this crate's established precedent for a named,
+/// documented, narrowly-matched provider message signature:
+/// `crate::anthropic::adapter::ANTHROPIC_USAGE_CAP_SIGNATURE`.
+///
+/// **Why the hyphenated header name `x-goog-api-key` is deliberately
+/// absent:** an echoed request body carries the header's *name* for reasons
+/// unrelated to credential validity (e.g. a proxy or gateway restating the
+/// rejected header), and matching on it would send an operator to rotate a
+/// working key.
+/// `map_error_400_echoing_the_api_key_header_name_still_maps_to_invalid_prompt`
+/// is the test that pins this. Any future addition to this list must come
+/// with a corresponding over-trigger control test.
+const GEMINI_CREDENTIAL_MESSAGE_SIGNATURES: &[&str] = &[
+    "api key",
+    "api_key",
+    "unauthenticated",
+    "invalid authentication",
+    "credential",
+];
+
 /// Configuration for the Gemini LLM adapter.
 #[derive(Debug, Clone)]
 pub struct GeminiConfig {
@@ -411,6 +439,31 @@ impl GeminiAdapter {
     /// diagnostic excerpt — redact-then-bound, never the reverse, per
     /// `crate::redaction`'s own ordering discipline (T-17-25).
     ///
+    /// ## Credential-failure classification (WR-03, `17-REVIEW.md`)
+    ///
+    /// A `401` or `403` is **always** classified as
+    /// [`LlmError::AuthenticationError`], regardless of the RPC status
+    /// string and whether or not the envelope parses at all. The
+    /// alternative is a fall-through to the retryable
+    /// [`LlmError::ProcessingError`] catch-all, and
+    /// [`Self::execute_with_retry`]'s non-retryable set already halts on
+    /// `AuthenticationError` — so misclassifying an unrecognised auth
+    /// failure would re-transmit a live `x-goog-api-key` credential to an
+    /// endpoint that has already rejected it, up to `max_retries` times.
+    ///
+    /// A `400`/`INVALID_ARGUMENT` is ambiguous between a bad key and a bad
+    /// prompt: Google commonly reports an invalid or malformed API key as
+    /// `400`/`INVALID_ARGUMENT`, not a `401`. The named, narrow
+    /// [`GEMINI_CREDENTIAL_MESSAGE_SIGNATURES`] list —
+    /// [`is_credential_failure_message`] — is how the two are separated;
+    /// every other `400`/`INVALID_ARGUMENT` stays [`LlmError::InvalidPrompt`].
+    ///
+    /// The asymmetry decides the default: a bad prompt misread as a bad key
+    /// costs the operator a wasted credential rotation, while a bad key
+    /// misread as a bad prompt costs three extra transmissions of a live
+    /// secret. The discriminator therefore errs narrow, and the unmatched
+    /// case stays `InvalidPrompt`.
+    ///
     /// ## `RESOURCE_EXHAUSTED` disposition — a documented assumption
     ///
     /// Gemini's `RESOURCE_EXHAUSTED` RPC status covers both a transient
@@ -439,8 +492,31 @@ impl GeminiAdapter {
         let excerpt = bounded_excerpt(&redacted_message, RESPONSE_EXCERPT_CHAR_BUDGET);
 
         match status {
-            401 | 403 if rpc_status == Some("PERMISSION_DENIED") => {
+            // WR-03: unconditional — whatever the RPC status string is, and
+            // whether or not the envelope parses at all. This is the arm
+            // that makes `execute_with_retry`'s existing non-retryable set
+            // (which already halts on `AuthenticationError`) correct: a
+            // misclassified auth failure would otherwise be retried,
+            // re-transmitting a live credential to an endpoint that has
+            // already rejected it.
+            401 | 403 => {
                 LlmError::AuthenticationError(format!("Gemini authentication failed: {excerpt}"))
+            }
+            // WR-03: Google's documented invalid-key shape is HTTP `400`
+            // with `status: "INVALID_ARGUMENT"`, not a `401` — so the HTTP
+            // status alone cannot separate a bad key from a bad prompt.
+            // `is_credential_failure_message` reads `raw_message` (not
+            // `excerpt`) because `bounded_excerpt` truncates at
+            // `RESPONSE_EXCERPT_CHAR_BUDGET` and a signature appearing past
+            // that boundary would otherwise be missed — but only `excerpt`
+            // (redacted, then bounded) is ever emitted below, never
+            // `raw_message`.
+            400 if rpc_status == Some("INVALID_ARGUMENT")
+                && is_credential_failure_message(raw_message) =>
+            {
+                LlmError::AuthenticationError(format!(
+                    "Gemini rejected the configured credential: {excerpt}"
+                ))
             }
             400 if rpc_status == Some("INVALID_ARGUMENT") => LlmError::InvalidPrompt(excerpt),
             404 if rpc_status == Some("NOT_FOUND") => LlmError::ModelNotAvailable(excerpt),
@@ -945,6 +1021,23 @@ fn validate_model_identifier(model: &str) -> Result<(), LlmError> {
     }
 
     Ok(())
+}
+
+/// Whether a Gemini error envelope's raw message names a credential
+/// failure, per [`GEMINI_CREDENTIAL_MESSAGE_SIGNATURES`] (WR-03).
+///
+/// Lowercases `message` once into a local `String` and checks whether any
+/// signature is contained in it — no regex, no new dependency, no
+/// `unwrap()`. Callers must pass the raw, unbounded provider message, not
+/// the redacted/bounded excerpt: a signature appearing past the excerpt's
+/// truncation boundary would otherwise be missed. Only the discriminator
+/// itself reads the raw message — the caller must still only ever emit the
+/// redacted, bounded excerpt in the resulting error.
+fn is_credential_failure_message(message: &str) -> bool {
+    let lowered = message.to_ascii_lowercase();
+    GEMINI_CREDENTIAL_MESSAGE_SIGNATURES
+        .iter()
+        .any(|signature| lowered.contains(signature))
 }
 
 /// Concatenate the text of every part in a candidate's content, in array
