@@ -149,6 +149,25 @@ fn construct_grok() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     Ok(Arc::new(adapter))
 }
 
+#[cfg(feature = "openai-compatible")]
+fn construct_openai_compatible() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::openai_compatible::{OpenAiCompatibleAdapter, OpenAiCompatibleConfig};
+    let config = OpenAiCompatibleConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "openai-compatible configuration error: {}. Ensure OPENAI_COMPATIBLE_API_KEY, \
+             OPENAI_COMPATIBLE_BASE_URL and OPENAI_COMPATIBLE_MODEL are all set.",
+            e
+        ))
+    })?;
+    let adapter = OpenAiCompatibleAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create openai-compatible adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
 #[cfg(feature = "ollama")]
 fn construct_ollama() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     use crate::ollama::{OllamaAdapter, OllamaConfig};
@@ -219,6 +238,20 @@ fn build_provider_registry() -> Vec<ProviderRegistration> {
         name: "grok",
         env_var: Some("XAI_API_KEY"),
         construct: construct_grok,
+    });
+
+    // Placed after every curated (named-vendor) preset row so it never
+    // pre-empts an explicitly-configured named provider in
+    // `get_default_provider()`'s declared-table-order scan, but BEFORE
+    // Ollama: Ollama's `env_var: None` row unconditionally "matches" in
+    // that scan, so if it were declared first it would always win and the
+    // generic provider's own credential would never be reachable through
+    // `get_default_provider()` at all.
+    #[cfg(feature = "openai-compatible")]
+    rows.push(ProviderRegistration {
+        name: "openai-compatible",
+        env_var: Some("OPENAI_COMPATIBLE_API_KEY"),
+        construct: construct_openai_compatible,
     });
 
     // Placed after every credentialed row: a compiled-in, credential-free
@@ -378,6 +411,25 @@ mod tests {
         );
     }
 
+    /// The second of Task 3's two hygiene assertions (17-04): every
+    /// registered provider name is an operator-facing configuration value
+    /// (typed into an env var or a config file), so it must be lowercase
+    /// and free of whitespace regardless of which features are compiled in.
+    #[test]
+    fn provider_names_are_lowercase_and_whitespace_free() {
+        for name in provider_names() {
+            assert_eq!(
+                name,
+                name.to_lowercase(),
+                "provider name {name:?} must be lowercase"
+            );
+            assert!(
+                !name.chars().any(|c| c.is_whitespace()),
+                "provider name {name:?} must contain no whitespace"
+            );
+        }
+    }
+
     #[test]
     fn list_available_providers_only_contains_names_from_the_registry() {
         let registry_names: std::collections::HashSet<&str> =
@@ -504,6 +556,13 @@ mod tests {
     // --features kimi,qwen,grok,ollama`. Proves table declaration order is
     // preserved end to end and that the credential-free `ollama` row lands
     // last, never pre-empting a credentialed row.
+    //
+    // Gate widened in plan 17-04 (Rule 1 auto-fix, mirroring plan 17-03's
+    // own precedent for this exact gate): `not(feature = "openai-compatible")`
+    // added so this module's exact five-row-free assertion does not silently
+    // break under the plan's own combined verification command
+    // (`--features kimi,qwen,grok,ollama,openai-compatible`), which now adds
+    // a fifth row. See `five_new_preset_build` below for that combined case.
     #[cfg(all(
         feature = "kimi",
         feature = "qwen",
@@ -511,7 +570,8 @@ mod tests {
         feature = "ollama",
         not(feature = "openai"),
         not(feature = "anthropic"),
-        not(feature = "deepseek")
+        not(feature = "deepseek"),
+        not(feature = "openai-compatible")
     ))]
     mod four_new_preset_build {
         use super::*;
@@ -519,6 +579,117 @@ mod tests {
         #[test]
         fn provider_names_returns_exactly_kimi_qwen_grok_ollama_in_table_order() {
             assert_eq!(provider_names(), vec!["kimi", "qwen", "grok", "ollama"]);
+        }
+    }
+
+    // ── D-10 regression coverage: the five-new-preset build (17-04) ──
+    //
+    // Exercised under `cargo test -p paladin-llm --no-default-features
+    // --features kimi,qwen,grok,ollama,openai-compatible`. Proves the
+    // generic `openai-compatible` row lands after every curated preset but
+    // BEFORE the credential-free `ollama` row — see the placement comment on
+    // `build_provider_registry` for why that specific position is required
+    // for `get_default_provider()` to ever be able to select it.
+    #[cfg(all(
+        feature = "kimi",
+        feature = "qwen",
+        feature = "grok",
+        feature = "ollama",
+        feature = "openai-compatible",
+        not(feature = "openai"),
+        not(feature = "anthropic"),
+        not(feature = "deepseek")
+    ))]
+    mod five_new_preset_build {
+        use super::*;
+
+        #[test]
+        fn provider_names_returns_exactly_kimi_qwen_grok_openai_compatible_ollama_in_table_order() {
+            assert_eq!(
+                provider_names(),
+                vec!["kimi", "qwen", "grok", "openai-compatible", "ollama"]
+            );
+        }
+    }
+
+    // ── The registry-wide provider-name round-trip invariant (Task 3, 17-04) ──
+    //
+    // Companion test to this plan's `<assumption_delta_decision>`: every
+    // adapter reachable through the registry must resolve to its own
+    // registered name, for every compiled-in provider. It goes red the
+    // moment a future phase reintroduces the singular
+    // one-adapter-type-one-name assumption — most likely by adding a second
+    // generic row that reuses the `"openai-compatible"` literal under a
+    // different table name.
+    //
+    // Gated on `feature = "ollama"` specifically: Ollama's registry row
+    // requires no credential (`env_var: None`) and is therefore guaranteed
+    // to construct regardless of which secrets happen to be present in the
+    // test process. That guarantee is what makes the "at least one row was
+    // exercised" assertion below safe to run in an environment with zero
+    // configured credentials — without it, a CI run with no API keys set
+    // could exercise zero rows and pass vacuously, which is the exact
+    // failure mode this test exists to prevent. Exercised in this plan's own
+    // verification command: `cargo test -p paladin-llm --no-default-features
+    // --features ollama,openai-compatible provider_name_round_trips`.
+    #[cfg(feature = "ollama")]
+    mod provider_name_round_trip {
+        use super::*;
+
+        #[test]
+        fn provider_name_round_trips_for_every_registry_row() {
+            let mut exercised = 0usize;
+
+            for row in provider_registry() {
+                // Deliberately stricter than `get_default_provider()`'s own
+                // `.is_ok()` check: an env var set to an empty (or
+                // whitespace-only) string is *set* but is not a usable
+                // credential — every preset's own `validate()` rejects an
+                // empty key. Treating it as "present" here would panic on
+                // `construct()`'s resulting `AdapterCreationFailed`, which
+                // is a false alarm about this test's own invariant (every
+                // adapter that *does* construct round-trips its name), not
+                // a real violation of it.
+                let credential_present = match row.env_var {
+                    Some(var) => std::env::var(var).is_ok_and(|v| !v.trim().is_empty()),
+                    None => true,
+                };
+
+                if !credential_present {
+                    eprintln!(
+                        "skipping provider_name round-trip for {:?} — its credential env var \
+                         is not set (or is empty) in this test process",
+                        row.name
+                    );
+                    continue;
+                }
+
+                match (row.construct)() {
+                    Ok(adapter) => {
+                        exercised += 1;
+                        assert_eq!(
+                            adapter.get_provider_name(),
+                            row.name,
+                            "row {:?} constructed an adapter whose get_provider_name() did not \
+                             round-trip to its own registered name",
+                            row.name
+                        );
+                    }
+                    Err(e) => {
+                        panic!(
+                            "row {:?} reported its credential as present but construct() failed: {e}",
+                            row.name
+                        );
+                    }
+                }
+            }
+
+            assert!(
+                exercised > 0,
+                "no registry row was exercised — this module is gated on `feature = \"ollama\"` \
+                 specifically so its credential-free row guarantees at least one construction \
+                 regardless of environment; zero exercised rows means that guarantee broke"
+            );
         }
     }
 

@@ -102,6 +102,22 @@ pub struct CompatEngineConfig {
     /// is how a future preset (e.g. one with its own 402 semantics) adds an
     /// arm without editing the shared engine.
     pub error_override: Option<fn(u16, &str) -> Option<LlmError>>,
+    /// Optional override for the underlying HTTP client's redirect policy.
+    ///
+    /// `None` preserves this engine's original behaviour — no `.redirect()`
+    /// call on the client builder, i.e. `reqwest`'s own default policy
+    /// (follow up to 10 hops). Every preset shipped before plan 17-04 (Kimi,
+    /// Qwen, Grok, Ollama) sets this `None`, so their request behaviour is
+    /// unchanged.
+    ///
+    /// `Some(policy)` lets a preset restrict follow behaviour. Added for
+    /// `openai_compatible::OpenAiCompatibleAdapter` (T-17-18): the generic
+    /// provider's `base_url` is entirely operator-supplied, so a same-origin
+    /// assumption does not hold the way it does for a named vendor's fixed
+    /// endpoint. Setting `Policy::none()` there means a `3xx` response can
+    /// never cause the `Authorization` header carrying the operator's API
+    /// key to be replayed to a different, attacker-influenced host.
+    pub redirect_policy: Option<reqwest::redirect::Policy>,
 }
 
 /// The shared OpenAI-compatible engine every preset built on this core
@@ -119,7 +135,7 @@ impl CompatEngine {
     /// Returns [`LlmError::AuthenticationError`] if the API key cannot be
     /// encoded as a header value, or [`LlmError::NetworkError`] if the
     /// underlying HTTP client cannot be built.
-    pub fn new(config: CompatEngineConfig) -> Result<Self, LlmError> {
+    pub fn new(mut config: CompatEngineConfig) -> Result<Self, LlmError> {
         let timeout = Duration::from_secs(config.timeout_seconds);
 
         let mut headers = HeaderMap::new();
@@ -131,9 +147,12 @@ impl CompatEngine {
             })?,
         );
 
-        let client = Client::builder()
-            .timeout(timeout)
-            .default_headers(headers)
+        let mut client_builder = Client::builder().timeout(timeout).default_headers(headers);
+        if let Some(policy) = config.redirect_policy.take() {
+            client_builder = client_builder.redirect(policy);
+        }
+
+        let client = client_builder
             .build()
             .map_err(|e| LlmError::NetworkError(format!("Failed to create HTTP client: {}", e)))?;
 
@@ -630,6 +649,7 @@ mod tests {
             },
             fallback_models: vec!["fallback-model".to_string()],
             error_override: None,
+            redirect_policy: None,
         }
     }
 
