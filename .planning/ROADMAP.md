@@ -1159,7 +1159,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 17-04-PLAN.md — Generic operator-configured `openai-compatible` provider with pessimistic capability defaults *(blocking decision checkpoint: public surface naming, D-03 one-way)*
+- [x] 17-04-PLAN.md — Generic operator-configured `openai-compatible` provider with pessimistic capability defaults *(blocking decision checkpoint: public surface naming, D-03 one-way)*
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
