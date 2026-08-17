@@ -18,6 +18,7 @@
 //! | `grok` | Grok (xAI) | [`grok::GrokAdapter`], [`grok::GrokConfig`] |
 //! | `ollama` | Ollama (self-hosted, keyless) | [`ollama::OllamaAdapter`], [`ollama::OllamaConfig`] |
 //! | `openai-compatible` | Any OpenAI-compatible endpoint (operator-configured) | [`openai_compatible::OpenAiCompatibleAdapter`], [`openai_compatible::OpenAiCompatibleConfig`] |
+//! | `gemini` | Google Gemini (text-only, bespoke protocol) | [`gemini::GeminiAdapter`], [`gemini::GeminiConfig`] |
 //! | `mock` (default) | Testing | [`mock::MockLlmAdapter`], [`mock::MultiStepMockLlmPort`] |
 //! | `openai-embeddings` | OpenAI Embeddings | [`openai::OpenAIEmbeddingAdapter`] |
 //! | `vision` | Vision (multimodal) | Extends OpenAI and Anthropic adapters |
@@ -121,6 +122,14 @@ pub mod ollama;
 /// with no new code.
 #[allow(missing_docs)]
 pub mod openai_compatible;
+
+#[cfg(feature = "gemini")]
+/// Google Gemini (text-only) provider adapter and related configuration
+/// (D-08) — implements [`paladin_ports::output::llm_port::LlmPort`]
+/// directly against Gemini's own bespoke `generateContent` protocol; does
+/// not sit on [`compat::CompatEngine`].
+#[allow(missing_docs)]
+pub mod gemini;
 
 /// Cross-adapter capability invariants (WEB-03, ADR-0004).
 ///

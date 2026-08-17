@@ -149,6 +149,24 @@ fn construct_grok() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     Ok(Arc::new(adapter))
 }
 
+#[cfg(feature = "gemini")]
+fn construct_gemini() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::gemini::{GeminiAdapter, GeminiConfig};
+    let config = GeminiConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "Gemini configuration error: {}. Ensure GEMINI_API_KEY is set.",
+            e
+        ))
+    })?;
+    let adapter = GeminiAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create Gemini adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
 #[cfg(feature = "openai-compatible")]
 fn construct_openai_compatible() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     use crate::openai_compatible::{OpenAiCompatibleAdapter, OpenAiCompatibleConfig};
@@ -238,6 +256,20 @@ fn build_provider_registry() -> Vec<ProviderRegistration> {
         name: "grok",
         env_var: Some("XAI_API_KEY"),
         construct: construct_grok,
+    });
+
+    // Gemini is a curated (named-vendor) preset like Kimi/Qwen/Grok — it
+    // just happens to be bespoke-protocol rather than compat-engine-backed
+    // (D-08). Declared alongside the other curated presets, before the
+    // generic openai-compatible row and Ollama's credential-free row, for
+    // the same reason those two are ordered last: neither should ever
+    // pre-empt an explicitly-configured named provider in
+    // `get_default_provider()`'s declared-table-order scan.
+    #[cfg(feature = "gemini")]
+    rows.push(ProviderRegistration {
+        name: "gemini",
+        env_var: Some("GEMINI_API_KEY"),
+        construct: construct_gemini,
     });
 
     // Placed after every curated (named-vendor) preset row so it never
@@ -590,6 +622,13 @@ mod tests {
     // BEFORE the credential-free `ollama` row — see the placement comment on
     // `build_provider_registry` for why that specific position is required
     // for `get_default_provider()` to ever be able to select it.
+    //
+    // Gate widened in plan 17-05 (Rule 1 auto-fix, mirroring plan 17-04's own
+    // precedent for this exact gate): `not(feature = "gemini")` added so this
+    // module's exact five-row assertion does not silently break under plan
+    // 17-05's own combined verification command (`--features
+    // kimi,qwen,grok,ollama,openai-compatible,gemini`), which now adds a
+    // sixth row. See `six_new_preset_build` below for that combined case.
     #[cfg(all(
         feature = "kimi",
         feature = "qwen",
@@ -598,7 +637,8 @@ mod tests {
         feature = "openai-compatible",
         not(feature = "openai"),
         not(feature = "anthropic"),
-        not(feature = "deepseek")
+        not(feature = "deepseek"),
+        not(feature = "gemini")
     ))]
     mod five_new_preset_build {
         use super::*;
@@ -608,6 +648,45 @@ mod tests {
             assert_eq!(
                 provider_names(),
                 vec!["kimi", "qwen", "grok", "openai-compatible", "ollama"]
+            );
+        }
+    }
+
+    // ── D-10 regression coverage: the six-preset build (17-05) ──
+    //
+    // Exercised under `cargo test -p paladin-llm --no-default-features
+    // --features kimi,qwen,grok,ollama,openai-compatible,gemini` — plan
+    // 17-05's own combined verification command. Proves Gemini's row lands
+    // alongside the other curated (named-vendor) presets, before the
+    // generic `openai-compatible` row and Ollama's credential-free row —
+    // see the placement comment on `build_provider_registry` for why.
+    #[cfg(all(
+        feature = "kimi",
+        feature = "qwen",
+        feature = "grok",
+        feature = "ollama",
+        feature = "openai-compatible",
+        feature = "gemini",
+        not(feature = "openai"),
+        not(feature = "anthropic"),
+        not(feature = "deepseek")
+    ))]
+    mod six_preset_build {
+        use super::*;
+
+        #[test]
+        fn provider_names_returns_exactly_kimi_qwen_grok_gemini_openai_compatible_ollama_in_table_order()
+         {
+            assert_eq!(
+                provider_names(),
+                vec![
+                    "kimi",
+                    "qwen",
+                    "grok",
+                    "gemini",
+                    "openai-compatible",
+                    "ollama"
+                ]
             );
         }
     }
