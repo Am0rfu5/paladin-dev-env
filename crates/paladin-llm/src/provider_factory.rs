@@ -149,6 +149,25 @@ fn construct_grok() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     Ok(Arc::new(adapter))
 }
 
+#[cfg(feature = "openai-compatible")]
+fn construct_openai_compatible() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
+    use crate::openai_compatible::{OpenAiCompatibleAdapter, OpenAiCompatibleConfig};
+    let config = OpenAiCompatibleConfig::from_env().map_err(|e| {
+        ProviderFactoryError::ConfigurationMissing(format!(
+            "openai-compatible configuration error: {}. Ensure OPENAI_COMPATIBLE_API_KEY, \
+             OPENAI_COMPATIBLE_BASE_URL and OPENAI_COMPATIBLE_MODEL are all set.",
+            e
+        ))
+    })?;
+    let adapter = OpenAiCompatibleAdapter::new(config).map_err(|e| {
+        ProviderFactoryError::AdapterCreationFailed(format!(
+            "Failed to create openai-compatible adapter: {}",
+            e
+        ))
+    })?;
+    Ok(Arc::new(adapter))
+}
+
 #[cfg(feature = "ollama")]
 fn construct_ollama() -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
     use crate::ollama::{OllamaAdapter, OllamaConfig};
@@ -219,6 +238,20 @@ fn build_provider_registry() -> Vec<ProviderRegistration> {
         name: "grok",
         env_var: Some("XAI_API_KEY"),
         construct: construct_grok,
+    });
+
+    // Placed after every curated (named-vendor) preset row so it never
+    // pre-empts an explicitly-configured named provider in
+    // `get_default_provider()`'s declared-table-order scan, but BEFORE
+    // Ollama: Ollama's `env_var: None` row unconditionally "matches" in
+    // that scan, so if it were declared first it would always win and the
+    // generic provider's own credential would never be reachable through
+    // `get_default_provider()` at all.
+    #[cfg(feature = "openai-compatible")]
+    rows.push(ProviderRegistration {
+        name: "openai-compatible",
+        env_var: Some("OPENAI_COMPATIBLE_API_KEY"),
+        construct: construct_openai_compatible,
     });
 
     // Placed after every credentialed row: a compiled-in, credential-free
@@ -504,6 +537,13 @@ mod tests {
     // --features kimi,qwen,grok,ollama`. Proves table declaration order is
     // preserved end to end and that the credential-free `ollama` row lands
     // last, never pre-empting a credentialed row.
+    //
+    // Gate widened in plan 17-04 (Rule 1 auto-fix, mirroring plan 17-03's
+    // own precedent for this exact gate): `not(feature = "openai-compatible")`
+    // added so this module's exact five-row-free assertion does not silently
+    // break under the plan's own combined verification command
+    // (`--features kimi,qwen,grok,ollama,openai-compatible`), which now adds
+    // a fifth row. See `five_new_preset_build` below for that combined case.
     #[cfg(all(
         feature = "kimi",
         feature = "qwen",
@@ -511,7 +551,8 @@ mod tests {
         feature = "ollama",
         not(feature = "openai"),
         not(feature = "anthropic"),
-        not(feature = "deepseek")
+        not(feature = "deepseek"),
+        not(feature = "openai-compatible")
     ))]
     mod four_new_preset_build {
         use super::*;
@@ -519,6 +560,36 @@ mod tests {
         #[test]
         fn provider_names_returns_exactly_kimi_qwen_grok_ollama_in_table_order() {
             assert_eq!(provider_names(), vec!["kimi", "qwen", "grok", "ollama"]);
+        }
+    }
+
+    // ── D-10 regression coverage: the five-new-preset build (17-04) ──
+    //
+    // Exercised under `cargo test -p paladin-llm --no-default-features
+    // --features kimi,qwen,grok,ollama,openai-compatible`. Proves the
+    // generic `openai-compatible` row lands after every curated preset but
+    // BEFORE the credential-free `ollama` row — see the placement comment on
+    // `build_provider_registry` for why that specific position is required
+    // for `get_default_provider()` to ever be able to select it.
+    #[cfg(all(
+        feature = "kimi",
+        feature = "qwen",
+        feature = "grok",
+        feature = "ollama",
+        feature = "openai-compatible",
+        not(feature = "openai"),
+        not(feature = "anthropic"),
+        not(feature = "deepseek")
+    ))]
+    mod five_new_preset_build {
+        use super::*;
+
+        #[test]
+        fn provider_names_returns_exactly_kimi_qwen_grok_openai_compatible_ollama_in_table_order() {
+            assert_eq!(
+                provider_names(),
+                vec!["kimi", "qwen", "grok", "openai-compatible", "ollama"]
+            );
         }
     }
 

@@ -167,6 +167,10 @@ impl GrokAdapter {
             },
             fallback_models: GROK_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
+            // T-17-18 (plan 17-04): Grok's endpoint is a fixed vendor host,
+            // not operator-supplied, so this preset keeps the engine's
+            // original behaviour (reqwest's default redirect policy).
+            redirect_policy: None,
         };
 
         Ok(Self {

@@ -167,6 +167,10 @@ impl KimiAdapter {
             },
             fallback_models: KIMI_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
+            // T-17-18 (plan 17-04): Kimi's endpoint is a fixed vendor host,
+            // not operator-supplied, so this preset keeps the engine's
+            // original behaviour (reqwest's default redirect policy).
+            redirect_policy: None,
         };
 
         Ok(Self {

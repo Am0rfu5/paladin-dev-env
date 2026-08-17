@@ -17,6 +17,7 @@
 //! | `qwen` | Qwen (Alibaba DashScope) | [`qwen::QwenAdapter`], [`qwen::QwenConfig`] |
 //! | `grok` | Grok (xAI) | [`grok::GrokAdapter`], [`grok::GrokConfig`] |
 //! | `ollama` | Ollama (self-hosted, keyless) | [`ollama::OllamaAdapter`], [`ollama::OllamaConfig`] |
+//! | `openai-compatible` | Any OpenAI-compatible endpoint (operator-configured) | [`openai_compatible::OpenAiCompatibleAdapter`], [`openai_compatible::OpenAiCompatibleConfig`] |
 //! | `mock` (default) | Testing | [`mock::MockLlmAdapter`], [`mock::MultiStepMockLlmPort`] |
 //! | `openai-embeddings` | OpenAI Embeddings | [`openai::OpenAIEmbeddingAdapter`] |
 //! | `vision` | Vision (multimodal) | Extends OpenAI and Anthropic adapters |
@@ -66,7 +67,8 @@ pub mod redaction;
     feature = "kimi",
     feature = "qwen",
     feature = "grok",
-    feature = "ollama"
+    feature = "ollama",
+    feature = "openai-compatible"
 ))]
 /// Shared OpenAI-compatible protocol engine (D-05) that thin provider
 /// presets sit on. Widen this `any(...)` list as later presets land.
@@ -112,6 +114,13 @@ pub mod grok;
 /// Ollama (self-hosted, keyless) provider adapter and related configuration.
 #[allow(missing_docs)]
 pub mod ollama;
+
+#[cfg(feature = "openai-compatible")]
+/// Generic operator-configured OpenAI-compatible provider adapter and
+/// related configuration (D-03) — points at any OpenAI-compatible endpoint
+/// with no new code.
+#[allow(missing_docs)]
+pub mod openai_compatible;
 
 /// Cross-adapter capability invariants (WEB-03, ADR-0004).
 ///

@@ -194,6 +194,11 @@ impl OllamaAdapter {
                 .map(|s| s.to_string())
                 .collect(),
             error_override: None,
+            // T-17-18 (plan 17-04): Ollama's base URL is operator-overridable
+            // but points at a locally-run process, not an untrusted remote
+            // gateway; this preset keeps the engine's original behaviour
+            // (reqwest's default redirect policy).
+            redirect_policy: None,
         };
 
         Ok(Self {
