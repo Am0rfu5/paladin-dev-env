@@ -14,6 +14,9 @@
 //! | `anthropic` | Anthropic | [`anthropic::AnthropicAdapter`], [`anthropic::AnthropicConfig`] |
 //! | `deepseek` | DeepSeek | [`deepseek::DeepSeekAdapter`], [`deepseek::DeepSeekConfig`] |
 //! | `kimi` | Kimi (Moonshot AI) | [`kimi::KimiAdapter`], [`kimi::KimiConfig`] |
+//! | `qwen` | Qwen (Alibaba DashScope) | [`qwen::QwenAdapter`], [`qwen::QwenConfig`] |
+//! | `grok` | Grok (xAI) | [`grok::GrokAdapter`], [`grok::GrokConfig`] |
+//! | `ollama` | Ollama (self-hosted, keyless) | [`ollama::OllamaAdapter`], [`ollama::OllamaConfig`] |
 //! | `mock` (default) | Testing | [`mock::MockLlmAdapter`], [`mock::MultiStepMockLlmPort`] |
 //! | `openai-embeddings` | OpenAI Embeddings | [`openai::OpenAIEmbeddingAdapter`] |
 //! | `vision` | Vision (multimodal) | Extends OpenAI and Anthropic adapters |
@@ -59,12 +62,14 @@ pub mod provider_factory;
 #[allow(missing_docs)]
 pub mod redaction;
 
-#[cfg(feature = "kimi")]
+#[cfg(any(
+    feature = "kimi",
+    feature = "qwen",
+    feature = "grok",
+    feature = "ollama"
+))]
 /// Shared OpenAI-compatible protocol engine (D-05) that thin provider
-/// presets sit on. Widen to `any(feature = "kimi", feature = "...")` as
-/// later presets land — a single-feature `any(...)` trips
-/// `clippy::non_minimal_cfg`, so this stays a plain `feature = "kimi"`
-/// until a second compatible-core feature exists.
+/// presets sit on. Widen this `any(...)` list as later presets land.
 #[allow(missing_docs)]
 pub mod compat;
 
@@ -92,6 +97,21 @@ pub mod mock;
 /// Kimi (Moonshot AI) provider adapter and related configuration.
 #[allow(missing_docs)]
 pub mod kimi;
+
+#[cfg(feature = "qwen")]
+/// Qwen (Alibaba DashScope) provider adapter and related configuration.
+#[allow(missing_docs)]
+pub mod qwen;
+
+#[cfg(feature = "grok")]
+/// Grok (xAI) provider adapter and related configuration.
+#[allow(missing_docs)]
+pub mod grok;
+
+#[cfg(feature = "ollama")]
+/// Ollama (self-hosted, keyless) provider adapter and related configuration.
+#[allow(missing_docs)]
+pub mod ollama;
 
 /// Cross-adapter capability invariants (WEB-03, ADR-0004).
 ///
