@@ -37,7 +37,7 @@
 
 use async_trait::async_trait;
 use chrono::Utc;
-use futures::Stream;
+use futures::{Stream, StreamExt};
 use reqwest::{
     Client,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
@@ -46,6 +46,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::time::Duration;
+use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 use paladin_core::platform::container::prompt::{PromptRole, PromptType};
@@ -179,6 +180,7 @@ impl GeminiConfig {
 pub struct GeminiAdapter {
     client: Client,
     config: GeminiConfig,
+    models_cache: OnceCell<Vec<String>>,
 }
 
 impl GeminiAdapter {
@@ -209,7 +211,11 @@ impl GeminiAdapter {
             .build()
             .map_err(|e| LlmError::NetworkError(format!("Failed to create HTTP client: {e}")))?;
 
-        Ok(Self { client, config })
+        Ok(Self {
+            client,
+            config,
+            models_cache: OnceCell::new(),
+        })
     }
 
     /// Build the outgoing request body from a port-level [`LlmRequest`].
@@ -462,6 +468,93 @@ impl GeminiAdapter {
             }
         }
     }
+
+    /// Fetch the live model list from `GET {base_url}/models`.
+    ///
+    /// Google returns fully-qualified names of the form
+    /// `models/gemini-2.5-flash`; the leading `models/` segment is
+    /// stripped before returning, since that is the bare form callers pass
+    /// to `model`.
+    async fn fetch_live_models(&self) -> Result<Vec<String>, LlmError> {
+        let url = format!("{}/models", self.config.base_url);
+
+        let response = self.client.get(&url).send().await.map_err(|e| {
+            if e.is_timeout() {
+                LlmError::Timeout(format!(
+                    "Gemini model list request timed out after {} seconds",
+                    self.config.timeout_seconds
+                ))
+            } else {
+                LlmError::NetworkError(format!("Failed to fetch Gemini model list: {e}"))
+            }
+        })?;
+
+        let status = response.status().as_u16();
+        if !response.status().is_success() {
+            let body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(self.map_error(status, &body));
+        }
+
+        let body = response.text().await.map_err(|e| {
+            LlmError::NetworkError(format!("Failed to read Gemini model list body: {e}"))
+        })?;
+
+        let parsed: GeminiModelsResponse = serde_json::from_str(&body).map_err(|e| {
+            LlmError::ProcessingError(format!(
+                "Failed to parse Gemini model list (schema mismatch: {e}) — body excerpt: {}",
+                diagnostic_excerpt(&body, &self.config.api_key)
+            ))
+        })?;
+
+        Ok(parsed
+            .models
+            .into_iter()
+            .map(|entry| match entry.name.strip_prefix("models/") {
+                Some(stripped) => stripped.to_string(),
+                None => entry.name,
+            })
+            .collect())
+    }
+
+    /// Resolve the model list: live on first call, memoized for this
+    /// adapter's lifetime (D-13/D-14). Falls back to
+    /// [`GEMINI_FALLBACK_MODELS`] on any failure or an empty live response
+    /// — logged at `debug`, never `error`, since offline is a supported
+    /// state. `tokio::sync::OnceCell` ensures exactly one fetch even under
+    /// concurrent callers.
+    async fn available_models(&self) -> Vec<String> {
+        self.models_cache
+            .get_or_init(|| async {
+                match self.fetch_live_models().await {
+                    Ok(models) if !models.is_empty() => models,
+                    Ok(_) => {
+                        log::debug!(
+                            "Gemini live model list was empty; falling back to curated list \
+                             (not authoritative)"
+                        );
+                        GEMINI_FALLBACK_MODELS
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect()
+                    }
+                    Err(e) => {
+                        log::debug!(
+                            "Gemini live model list fetch failed ({e}); falling back to \
+                             curated list (not authoritative)"
+                        );
+                        GEMINI_FALLBACK_MODELS
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect()
+                    }
+                }
+            })
+            .await
+            .clone()
+    }
 }
 
 #[async_trait]
@@ -523,29 +616,64 @@ impl LlmPort for GeminiAdapter {
 
     async fn generate_stream(
         &self,
-        _request: LlmRequest,
+        request: LlmRequest,
     ) -> Result<Box<dyn Stream<Item = Result<StreamingResponse, LlmError>> + Send>, LlmError> {
-        // Streaming (`:streamGenerateContent?alt=sse`) is completed in Task
-        // 2 of this plan (D-13/D-14's model-list plumbing lands alongside
-        // it). Task 1 ships the non-streaming `generateContent` path.
-        Err(LlmError::ProcessingError(
-            "Gemini streaming is implemented in Task 2 of this plan".to_string(),
-        ))
+        let gemini_request = self.build_request(&request)?;
+        let url = format!(
+            "{}/models/{}:streamGenerateContent",
+            self.config.base_url, request.model
+        );
+
+        // `alt=sse` is mandatory — without it Gemini returns a raw JSON
+        // array rather than SSE framing, and the line-oriented parse loop
+        // below would silently produce nothing.
+        let response = self
+            .client
+            .post(&url)
+            .query(&[("alt", "sse")])
+            .json(&gemini_request)
+            .send()
+            .await
+            .map_err(|e| {
+                if e.is_timeout() {
+                    LlmError::Timeout(format!(
+                        "Gemini stream request timed out after {} seconds",
+                        self.config.timeout_seconds
+                    ))
+                } else {
+                    LlmError::NetworkError(format!("Gemini stream request failed: {e}"))
+                }
+            })?;
+
+        if !response.status().is_success() {
+            let status = response.status().as_u16();
+            let body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(self.map_error(status, &body));
+        }
+
+        let stream = response.bytes_stream().flat_map(|chunk_result| {
+            let items: Vec<Result<StreamingResponse, LlmError>> = match chunk_result {
+                Ok(bytes) => parse_sse_chunk(&bytes),
+                Err(e) => vec![Err(LlmError::NetworkError(format!(
+                    "Gemini stream error: {e}"
+                )))],
+            };
+
+            futures::stream::iter(items)
+        });
+
+        Ok(Box::new(stream))
     }
 
     async fn validate_model(&self, model: &str) -> Result<bool, LlmError> {
-        // Live-fetch-with-memoized-fallback (D-13/D-14) lands in Task 2;
-        // Task 1 validates against the curated fallback list only.
-        Ok(GEMINI_FALLBACK_MODELS.contains(&model))
+        Ok(self.available_models().await.iter().any(|m| m == model))
     }
 
     async fn get_available_models(&self) -> Result<Vec<String>, LlmError> {
-        // Live-fetch-with-memoized-fallback (D-13/D-14) lands in Task 2;
-        // Task 1 returns the curated fallback list directly.
-        Ok(GEMINI_FALLBACK_MODELS
-            .iter()
-            .map(|s| s.to_string())
-            .collect())
+        Ok(self.available_models().await)
     }
 
     fn get_provider_name(&self) -> &'static str {
@@ -675,6 +803,19 @@ struct GeminiErrorBody {
     status: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct GeminiModelsResponse {
+    #[serde(default)]
+    models: Vec<GeminiModelEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GeminiModelEntry {
+    /// Fully-qualified, e.g. `models/gemini-2.5-flash` — the leading
+    /// `models/` segment is stripped in [`GeminiAdapter::fetch_live_models`].
+    name: String,
+}
+
 // ── Free functions shared between the non-streaming and streaming paths ──
 
 /// Concatenate the text of every part in a candidate's content, in array
@@ -714,10 +855,60 @@ fn map_finish_reason(reason: Option<&str>) -> FinishReason {
     }
 }
 
+/// Parse one network chunk of Gemini's SSE stream into zero or more
+/// [`StreamingResponse`] items.
+///
+/// A single chunk can carry more than one complete `data: {...}` event —
+/// common when a mock transport (or a provider whose TCP framing does not
+/// align to event boundaries) writes the whole body at once — so every
+/// `data:`-prefixed line found is emitted as its own item, mirroring
+/// [`crate::compat::engine::CompatEngine::generate_stream`]'s `flat_map`
+/// discipline. There is no `[DONE]` sentinel in Gemini's SSE framing; the
+/// stream simply ends when the body ends. A frame with no `candidates` at
+/// all (e.g. a metadata-only frame) yields no item, not an error.
+fn parse_sse_chunk(bytes: &[u8]) -> Vec<Result<StreamingResponse, LlmError>> {
+    let text = String::from_utf8_lossy(bytes);
+    let mut items = Vec::new();
+
+    for line in text.lines() {
+        let Some(json_str) = line.strip_prefix("data: ") else {
+            continue;
+        };
+
+        // Gemini streams partial `GenerateContentResponse` objects — the
+        // same shape `GeminiResponse` already parses for the non-streaming
+        // path — rather than a distinct delta type.
+        match serde_json::from_str::<GeminiResponse>(json_str) {
+            Ok(parsed) => {
+                if let Some(candidate) = parsed.candidates.first() {
+                    let delta = candidate_text(candidate);
+                    let finish_reason = candidate
+                        .finish_reason
+                        .as_deref()
+                        .map(|r| map_finish_reason(Some(r)));
+
+                    items.push(Ok(StreamingResponse {
+                        id: Uuid::new_v4(),
+                        delta,
+                        finish_reason,
+                    }));
+                }
+            }
+            Err(e) => {
+                items.push(Err(LlmError::ProcessingError(format!(
+                    "Failed to parse Gemini stream frame: {e}"
+                ))));
+            }
+        }
+    }
+
+    items
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mockito::Server;
+    use mockito::{Matcher, Server};
     use paladin_core::platform::container::prompt::{
         FunctionPrompt, PromptItem, SystemPrompt, TextPrompt, UserPrompt,
     };
@@ -1249,32 +1440,25 @@ mod tests {
         assert!(matches!(result, Err(LlmError::RateLimitExceeded)));
     }
 
-    // ── Task 1 fallback-only model-list behaviour (superseded in Task 2) ──
+    // ── Streaming ──
 
     #[tokio::test]
-    async fn get_available_models_returns_the_curated_fallback_list() {
-        let adapter = test_adapter("https://example.invalid");
-        let models = adapter.get_available_models().await.unwrap();
-        assert_eq!(
-            models,
-            GEMINI_FALLBACK_MODELS
-                .iter()
-                .map(|s| s.to_string())
-                .collect::<Vec<_>>()
-        );
-    }
+    async fn generate_stream_posts_with_alt_sse_query_parameter() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", "/models/gemini-2.5-flash:streamGenerateContent")
+            .match_query(Matcher::UrlEncoded("alt".to_string(), "sse".to_string()))
+            .expect(1)
+            .with_status(200)
+            .with_header("content-type", "text/event-stream")
+            .with_body(concat!(
+                "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hi\"}]},",
+                "\"finishReason\":\"STOP\"}]}\n\n",
+            ))
+            .create_async()
+            .await;
 
-    #[tokio::test]
-    async fn validate_model_accepts_every_curated_fallback_entry() {
-        let adapter = test_adapter("https://example.invalid");
-        for model in GEMINI_FALLBACK_MODELS {
-            assert!(adapter.validate_model(model).await.unwrap());
-        }
-    }
-
-    #[tokio::test]
-    async fn generate_stream_is_not_yet_implemented_in_task_1() {
-        let adapter = test_adapter("https://example.invalid");
+        let adapter = test_adapter(&server.url());
         let request = build_request(
             "gemini-2.5-flash",
             PromptType::User(UserPrompt {
@@ -1283,7 +1467,214 @@ mod tests {
             }),
         );
 
-        let result = adapter.generate_stream(request).await;
-        assert!(matches!(result, Err(LlmError::ProcessingError(_))));
+        let stream = adapter.generate_stream(request).await.unwrap();
+        let mut stream = Box::into_pin(stream);
+        while stream.next().await.is_some() {}
+
+        // Proves the query parameter was actually sent — without it Google
+        // returns a raw JSON array, not SSE framing.
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn generate_stream_assembles_three_frames_in_wire_order() {
+        let sse_body = concat!(
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hel\"}]}}]}\n\n",
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"lo \"}]}}]}\n\n",
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"world\"}],\"role\":\"model\"},",
+            "\"finishReason\":\"STOP\"}]}\n\n",
+        );
+
+        let mut server = Server::new_async().await;
+        server
+            .mock("POST", "/models/gemini-2.5-flash:streamGenerateContent")
+            // Every `generate_stream()` call carries `?alt=sse`; this test
+            // doesn't care about the exact query string, only the frames —
+            // `generate_stream_posts_with_alt_sse_query_parameter` above
+            // asserts the parameter itself.
+            .match_query(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "text/event-stream")
+            .with_body(sse_body)
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+
+        let stream = adapter.generate_stream(request).await.unwrap();
+        let mut stream = Box::into_pin(stream);
+
+        let mut assembled = String::new();
+        let mut last_finish_reason = None;
+        let mut item_count = 0;
+        while let Some(item) = stream.next().await {
+            let chunk = item.unwrap();
+            item_count += 1;
+            assembled.push_str(&chunk.delta);
+            if chunk.finish_reason.is_some() {
+                last_finish_reason = chunk.finish_reason;
+            }
+        }
+
+        assert_eq!(item_count, 3);
+        assert_eq!(assembled, "Hello world");
+        assert!(matches!(last_finish_reason, Some(FinishReason::Stop)));
+    }
+
+    #[tokio::test]
+    async fn generate_stream_safety_blocked_frame_terminates_without_error() {
+        let sse_body = concat!("data: {\"candidates\":[{\"finishReason\":\"SAFETY\"}]}\n\n",);
+
+        let mut server = Server::new_async().await;
+        server
+            .mock("POST", "/models/gemini-2.5-flash:streamGenerateContent")
+            .match_query(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "text/event-stream")
+            .with_body(sse_body)
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+
+        let stream = adapter.generate_stream(request).await.unwrap();
+        let mut stream = Box::into_pin(stream);
+
+        let mut last_finish_reason = None;
+        while let Some(item) = stream.next().await {
+            let chunk = item.expect("a safety-blocked frame must not surface as a stream error");
+            if chunk.finish_reason.is_some() {
+                last_finish_reason = chunk.finish_reason;
+            }
+        }
+
+        assert!(matches!(
+            last_finish_reason,
+            Some(FinishReason::ContentFilter)
+        ));
+    }
+
+    // ── Model list: live catalog vs. curated fallback (D-13/D-14) ──
+
+    #[tokio::test]
+    async fn get_available_models_returns_two_live_entries_without_models_prefix() {
+        let mut server = Server::new_async().await;
+        server
+            .mock("GET", "/models")
+            .with_status(200)
+            .with_body(
+                json!({
+                    "models": [
+                        {"name": "models/gemini-2.5-flash"},
+                        {"name": "models/gemini-2.5-pro"}
+                    ]
+                })
+                .to_string(),
+            )
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let models = adapter.get_available_models().await.unwrap();
+        assert_eq!(
+            models,
+            vec!["gemini-2.5-flash".to_string(), "gemini-2.5-pro".to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn get_available_models_second_call_does_not_hit_the_mock_again() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("GET", "/models")
+            .expect(1)
+            .with_status(200)
+            .with_body(json!({"models": [{"name": "models/gemini-2.5-flash"}]}).to_string())
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let _first = adapter.get_available_models().await.unwrap();
+        let _second = adapter.get_available_models().await.unwrap();
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn get_available_models_two_concurrent_first_calls_hit_the_mock_exactly_once() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("GET", "/models")
+            .expect(1)
+            .with_status(200)
+            .with_body(json!({"models": [{"name": "models/gemini-2.5-flash"}]}).to_string())
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let (first, second) = tokio::join!(
+            adapter.get_available_models(),
+            adapter.get_available_models()
+        );
+        first.unwrap();
+        second.unwrap();
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn get_available_models_falls_back_to_curated_list_on_failure() {
+        let mut server = Server::new_async().await;
+        server
+            .mock("GET", "/models")
+            .with_status(500)
+            .with_body("internal error")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let models = adapter.get_available_models().await.unwrap();
+        assert_eq!(
+            models,
+            GEMINI_FALLBACK_MODELS
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+        );
+
+        assert!(adapter.validate_model("gemini-2.5-pro").await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn validate_model_accepts_a_model_present_only_in_the_live_list() {
+        let mut server = Server::new_async().await;
+        server
+            .mock("GET", "/models")
+            .with_status(200)
+            .with_body(json!({"models": [{"name": "models/gemini-3.1-flash-lite"}]}).to_string())
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        assert!(
+            adapter
+                .validate_model("gemini-3.1-flash-lite")
+                .await
+                .unwrap()
+        );
     }
 }
