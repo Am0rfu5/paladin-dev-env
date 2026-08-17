@@ -128,9 +128,13 @@ test-integration: ## Run integration tests (local mode)
 	@./scripts/run_integration_tests.sh -m local
 
 .PHONY: test-integration-docker
-test-integration-docker: ## Run integration tests with docker-compose
+test-integration-docker: ## Run integration tests with docker-compose (includes the Ollama Tier 2 suite, 17-07/D-15)
 	@echo "$(CYAN)Running integration tests with docker-compose...$(NC)"
 	@./scripts/run_integration_tests.sh -m docker -v
+	@echo "$(CYAN)Starting ollama-test for the Ollama Docker-gated Tier 2 suite (17-07)...$(NC)"
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_TEST_FILE) up -d ollama-test ollama-test-init
+	@OLLAMA_TEST_URL=http://localhost:11435/v1 $(CARGO) test --test ollama_docker --features integration-tests,llm-ollama -- --nocapture
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_TEST_FILE) down -v --remove-orphans || true
 
 .PHONY: test-integration-redis
 test-integration-redis: ## Run Redis integration tests only

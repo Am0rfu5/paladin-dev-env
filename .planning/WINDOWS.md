@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 10
+open_count: 13
 waived_count: 0
 fixed_count: 1
-total_count: 11
-last_updated: 2026-08-14T14:23:03.057Z
+total_count: 14
+last_updated: 2026-08-17T14:17:46.408Z
 ---
 
 # Broken Windows Ledger
@@ -26,6 +26,9 @@ last_updated: 2026-08-14T14:23:03.057Z
 | 9 | 15.1 | unrun-verify | .github/workflows/ci.yml |  | Task 1 acceptance criterion 'git diff \| grep -c "^[+-].*cargo "' returns 4 not 0 -- matches step *name* text ('Cache cargo registry' etc.) removed by the migration, not actual cargo invocations. Verified via 'run: cargo' scoped grep returning 0 changed invocations. | open |  | 2026-08-14T14:22:48.884Z |  |
 | 10 | 15.1 | unrun-verify | .github/workflows/integration-tests.yml |  | Task 2's first automated verify literally asserts survivors=={pre-commit.yml} after migration, but integration-tests.yml (3 hand-rolled cache blocks) is still present -- deletion is plan 15.1-05's job, not yet executed in this wave, exactly per this plan's own Recorded discretion resolutions section. Substituted an assertion expecting survivors=={pre-commit.yml, integration-tests.yml}, both counts matching (1 and 3 respectively). | open |  | 2026-08-14T14:22:56.039Z |  |
 | 11 | 15.1 | unrun-verify | .github/workflows/ci.yml |  | Task 2 acceptance criterion 'grep -rc restore-keys ci.yml feature-flags.yml release.yml' returns 0 for ci.yml -- returns 2, both from pre-existing prose comments in the examples job (added by plan 15.1-01, lines ~268/271) explaining why a restore-keys fallback alone is insufficient, not an actual YAML restore-keys: key. Verified via structural YAML walk: no step's with block contains a restore-keys key in any of the three files. | open |  | 2026-08-14T14:23:03.057Z |  |
+| 12 | 17 | unrun-verify | tests/integration/ollama_docker_test.rs |  | Ollama Docker-gated Tier 2 suite (17-07 Task 2) authored and proven to compile/clippy-clean/skip-gracefully, but never run against a real Ollama server -- no Docker daemon in the execution sandbox. Runtime behavior (generate/generate_stream/get_available_models/validate_model against real qwen2.5:0.5b) is unverified. | open |  | 2026-08-17T14:17:30.134Z |  |
+| 13 | 17 | unrun-verify | Makefile |  | 17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead. | open |  | 2026-08-17T14:17:37.112Z |  |
+| 14 | 17 | deviation | docker/docker-compose.test.yml |  | 17-07 Task 2: ollama-test healthcheck uses 'ollama list' (native /api/tags) instead of the plan's preferred curl-based /v1/models check, because curl/wget availability in the ollama/ollama:0.3.14 base image could not be verified without Docker in this sandbox. 'ollama list' is a well-precedented dependency-free healthcheck for this exact image. Compose file syntax validated via python yaml.safe_load only -- 'docker compose config' itself was never run. | open |  | 2026-08-17T14:17:46.408Z |  |
 
 ````json
 [
@@ -159,6 +162,42 @@ last_updated: 2026-08-14T14:23:03.057Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-14T14:23:03.057Z",
+    "resolved_at": null
+  },
+  {
+    "id": 12,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "tests/integration/ollama_docker_test.rs",
+    "line": null,
+    "description": "Ollama Docker-gated Tier 2 suite (17-07 Task 2) authored and proven to compile/clippy-clean/skip-gracefully, but never run against a real Ollama server -- no Docker daemon in the execution sandbox. Runtime behavior (generate/generate_stream/get_available_models/validate_model against real qwen2.5:0.5b) is unverified.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-17T14:17:30.134Z",
+    "resolved_at": null
+  },
+  {
+    "id": 13,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "Makefile",
+    "line": null,
+    "description": "17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-17T14:17:37.112Z",
+    "resolved_at": null
+  },
+  {
+    "id": 14,
+    "kind": "deviation",
+    "phase": "17",
+    "file": "docker/docker-compose.test.yml",
+    "line": null,
+    "description": "17-07 Task 2: ollama-test healthcheck uses 'ollama list' (native /api/tags) instead of the plan's preferred curl-based /v1/models check, because curl/wget availability in the ollama/ollama:0.3.14 base image could not be verified without Docker in this sandbox. 'ollama list' is a well-precedented dependency-free healthcheck for this exact image. Compose file syntax validated via python yaml.safe_load only -- 'docker compose config' itself was never run.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-17T14:17:46.408Z",
     "resolved_at": null
   }
 ]

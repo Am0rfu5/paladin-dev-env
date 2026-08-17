@@ -216,6 +216,11 @@ required-features = ["cli"]
 name = "cli_isolation"
 path = "tests/cli_isolation_test.rs"
 
+[[test]]
+name = "ollama_docker"
+path = "tests/integration/ollama_docker_test.rs"
+required-features = ["integration-tests", "llm-ollama"]
+
 [[example]]
 name = "vision_analysis"
 path = "examples/vision_analysis.rs"
