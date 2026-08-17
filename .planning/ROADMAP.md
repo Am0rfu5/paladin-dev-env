@@ -1163,7 +1163,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 17-05-PLAN.md — Gemini bespoke adapter (`generateContent`, `systemInstruction`, `alt=sse` streaming), text-only
+- [x] 17-05-PLAN.md — Gemini bespoke adapter (`generateContent`, `systemInstruction`, `alt=sse` streaming), text-only
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
