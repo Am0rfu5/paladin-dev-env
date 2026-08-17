@@ -61,6 +61,59 @@ services:
     networks:
       - paladin-test-network
 
+  # Ollama Tier 2 suite (17-07, D-15): the phase's only end-to-end exercise of
+  # the shared CompatEngine against a real implementation of the
+  # OpenAI-compatible protocol, requiring no credential. Mapped host port
+  # 11435 avoids colliding with a locally-running Ollama instance on the
+  # default 11434.
+  ollama-test:
+    image: ollama/ollama:0.3.14
+    container_name: paladin-ollama-test
+    ports:
+      - "11435:11434"
+    tmpfs:
+      - /root/.ollama
+    networks:
+      - paladin-test-network
+    healthcheck:
+      # `ollama list` calls the server's own local API internally and only
+      # succeeds once the server is actually serving requests, so it proves
+      # readiness without depending on curl/wget being present in the base
+      # image (unverified without Docker in this sandbox -- see
+      # 17-07-SUMMARY.md verification-debt note). It exercises the native
+      # /api/tags surface rather than the OpenAI-compat /v1/models surface
+      # that tests/integration/ollama_docker_test.rs itself calls; that is a
+      # deliberate, documented substitution, not an oversight.
+      test: [ "CMD", "ollama", "list" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  # Pulls one small model once ollama-test is healthy. qwen2.5:0.5b is the
+  # smallest instruction-tuned model in the qwen2.5 family (~397MB) capable
+  # of producing a real chat completion -- chosen over a base or
+  # embedding-only model so the suite's generate()/generate_stream() round
+  # trips exercise a genuine chat-completion response, not just a
+  # healthcheck ping. A future increase in model size is a visible edit
+  # here, not a silent drift in CI wall time (T-17-38).
+  ollama-test-init:
+    image: ollama/ollama:0.3.14
+    container_name: paladin-ollama-test-init
+    depends_on:
+      ollama-test:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: "http://ollama-test:11434"
+    entrypoint: |
+      /bin/sh -c "
+      echo 'Pulling qwen2.5:0.5b onto ollama-test...'
+      ollama pull qwen2.5:0.5b
+      echo 'Model pull complete'
+      "
+    networks:
+      - paladin-test-network
+
   # Service for running integration tests
   integration-tests:
     build:
