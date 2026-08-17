@@ -1677,4 +1677,248 @@ mod tests {
                 .unwrap()
         );
     }
+
+    // ── CR-01: a caller-supplied model identifier must never reach the wire
+    //    unescaped — regression tests proving the injection is live today.
+    //    See `.planning/phases/17-additional-llm-provider-adapters/17-REVIEW.md`
+    //    §CR-01 and `17-VERIFICATION.md`. This tree is intentionally red
+    //    until Task 2 wires `validate_model_identifier` into `generate()`
+    //    and `generate_stream()`. ──
+
+    #[tokio::test]
+    async fn generate_rejects_a_model_containing_a_path_separator_without_issuing_a_request() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .expect(0)
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash/../v1beta/models/other",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+        assert!(
+            matches!(&result, Err(LlmError::InvalidPrompt(_))),
+            "expected LlmError::InvalidPrompt, got {:?}",
+            result.err()
+        );
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn generate_stream_rejects_a_model_containing_a_query_delimiter_without_issuing_a_request()
+     {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .expect(0)
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash?alt=json",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate_stream(request).await;
+        assert!(
+            matches!(&result, Err(LlmError::InvalidPrompt(_))),
+            "expected LlmError::InvalidPrompt, got {:?}",
+            result.as_ref().err()
+        );
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn generate_rejects_a_model_containing_a_colon_operation_suffix() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .expect(0)
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash:streamGenerateContent",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+        assert!(
+            matches!(&result, Err(LlmError::InvalidPrompt(_))),
+            "expected LlmError::InvalidPrompt, got {:?}",
+            result.err()
+        );
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn generate_rejects_a_model_containing_a_fragment_delimiter() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .expect(0)
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash#anchor",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+        assert!(
+            matches!(&result, Err(LlmError::InvalidPrompt(_))),
+            "expected LlmError::InvalidPrompt, got {:?}",
+            result.err()
+        );
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn generate_rejects_an_empty_model() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .expect(0)
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+        assert!(
+            matches!(&result, Err(LlmError::InvalidPrompt(_))),
+            "expected LlmError::InvalidPrompt, got {:?}",
+            result.err()
+        );
+
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn generate_rejects_a_model_containing_a_non_ascii_homoglyph() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", Matcher::Any)
+            .match_query(Matcher::Any)
+            .expect(0)
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        // Cyrillic small letter A (U+0430) in place of the second ASCII `a`
+        // — written as an escape, not a raw glyph, so a reviewer can see
+        // which character is which.
+        let request = build_request(
+            "g\u{0430}mini-2.5-flash",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+        assert!(
+            matches!(&result, Err(LlmError::InvalidPrompt(_))),
+            "expected LlmError::InvalidPrompt, got {:?}",
+            result.err()
+        );
+
+        mock.assert_async().await;
+    }
+
+    /// Positive control: proves the guard does not over-reject a value whose
+    /// characters are all in the allowed set. Must pass both before and
+    /// after Task 2 wires the guard in.
+    #[tokio::test]
+    async fn generate_accepts_a_model_whose_characters_are_all_in_the_allowed_set() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock(
+                "POST",
+                "/models/gemini-2.5-flash_preview.01-x:generateContent",
+            )
+            .match_header("x-goog-api-key", "test-key-abc123")
+            .expect(1)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "candidates": [{
+                        "content": {"role": "model", "parts": [{"text": "Hi there"}]},
+                        "finishReason": "STOP"
+                    }],
+                    "usageMetadata": {
+                        "promptTokenCount": 2,
+                        "candidatesTokenCount": 2,
+                        "totalTokenCount": 4
+                    }
+                })
+                .to_string(),
+            )
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash_preview.01-x",
+            PromptType::Text(TextPrompt {
+                content: "Hello".to_string(),
+                role: PromptRole::User,
+            }),
+        );
+
+        let result = adapter.generate(request).await;
+        assert!(result.is_ok(), "expected Ok, got {:?}", result.err());
+
+        mock.assert_async().await;
+    }
 }
