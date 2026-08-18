@@ -4,11 +4,11 @@ milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
 current_phase: 17
 current_phase_name: additional-llm-provider-adapters
-status: executing
-stopped_at: Phase 17 planned — ready to execute
+status: awaiting_verification
+stopped_at: Phase 17 executed — awaiting human UAT before phase close
 last_updated: "2026-08-18T00:55:04.673Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 17 execution started
+last_activity_desc: Phase 17 gap-closure execution complete; verification human_needed
 progress:
   total_phases: 13
   completed_phases: 12
@@ -39,10 +39,14 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 17 (additional-llm-provider-adapters) — EXECUTING
-Plan: 1 of 17
-Status: Executing Phase 17
-Last activity: 2026-08-18 — Phase 17 execution started
+Phase: 17 (additional-llm-provider-adapters) — EXECUTED, AWAITING HUMAN VERIFICATION
+Plan: 17 of 17 complete
+Status: All plans executed and merged; verification returned `human_needed` (11/12 must-haves, 0 gaps).
+  5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
+  test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
+  2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
+  PROV-04 blocked on the unmeasured coverage floor.
+Last activity: 2026-08-18 — Phase 17 gap-closure execution complete (plans 17-12..17-17)
 
 ## Performance Metrics
 
