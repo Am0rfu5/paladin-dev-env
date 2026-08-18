@@ -270,3 +270,11 @@ None - no external service configuration required.
 ---
 *Phase: 17-additional-llm-provider-adapters*
 *Completed: 2026-08-18*
+
+## Self-Check: PASSED
+
+- FOUND: `crates/paladin-llm/src/openai_compatible/adapter.rs`
+- FOUND: `.planning/phases/17-additional-llm-provider-adapters/17-14-SUMMARY.md`
+- FOUND: commit `911a86c` (test(17-14): RED)
+- FOUND: commit `9146265` (fix(17-14): GREEN)
+- FOUND: commit `2a5a947` (docs(17-14): summary)
