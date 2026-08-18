@@ -780,6 +780,30 @@ impl LlmPort for GeminiAdapter {
         self.execute_with_retry(operation, 3).await
     }
 
+    /// Generate a streaming completion. POSTs with `alt=sse` and assembles
+    /// SSE frames via `parse_sse_chunk`.
+    ///
+    /// ## Retry (WR-04, `17-REVIEW.md`)
+    ///
+    /// Only the connection-opening POST is retried — through the same
+    /// `execute_with_retry` helper and the same `max_retries`
+    /// literal (`3`) [`generate`](Self::generate) passes — so a transient
+    /// failure opening the stream is retried exactly as many times as
+    /// `generate()` retries the identical failure. The same non-retryable
+    /// set applies: an authentication failure, an invalid prompt, an
+    /// already-empty completion or a usage-limit rejection is attempted
+    /// exactly once, never replaying a live `x-goog-api-key` credential to
+    /// an endpoint that has already rejected it.
+    ///
+    /// Once the response is opened, `.bytes_stream()` is consumed exactly
+    /// once, **outside** the retry loop: the byte stream itself is never
+    /// re-read or re-opened, so a caller can never observe a duplicated or
+    /// reordered delta as a result of this retry.
+    ///
+    /// **Cost:** each retried open re-sends the caller's entire prompt to
+    /// Gemini, so a transient failure can bill the prompt more than once.
+    /// The non-retryable set above exists precisely so a failure the
+    /// provider has already answered definitively is never retried.
     async fn generate_stream(
         &self,
         request: LlmRequest,
@@ -791,35 +815,46 @@ impl LlmPort for GeminiAdapter {
             self.config.base_url, request.model
         );
 
-        // `alt=sse` is mandatory — without it Gemini returns a raw JSON
-        // array rather than SSE framing, and the line-oriented parse loop
-        // below would silently produce nothing.
-        let response = self
-            .client
-            .post(&url)
-            .query(&[("alt", "sse")])
-            .json(&gemini_request)
-            .send()
-            .await
-            .map_err(|e| {
-                if e.is_timeout() {
-                    LlmError::Timeout(format!(
-                        "Gemini stream request timed out after {} seconds",
-                        self.config.timeout_seconds
-                    ))
-                } else {
-                    LlmError::NetworkError(format!("Gemini stream request failed: {e}"))
-                }
-            })?;
-
-        if !response.status().is_success() {
-            let status = response.status().as_u16();
-            let body = response
-                .text()
+        // Only the connection-opening POST is retried — the byte stream is
+        // deliberately consumed OUTSIDE this closure, once, after the retry
+        // loop returns below. Re-opening a stream whose first chunks a
+        // caller has already consumed would deliver the same tokens twice
+        // with no marker (WR-04, `17-REVIEW.md`; T-17-71).
+        let operation = || async {
+            // `alt=sse` is mandatory — without it Gemini returns a raw JSON
+            // array rather than SSE framing, and the line-oriented parse
+            // loop below would silently produce nothing.
+            let response = self
+                .client
+                .post(&url)
+                .query(&[("alt", "sse")])
+                .json(&gemini_request)
+                .send()
                 .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(self.map_error(status, &body));
-        }
+                .map_err(|e| {
+                    if e.is_timeout() {
+                        LlmError::Timeout(format!(
+                            "Gemini stream request timed out after {} seconds",
+                            self.config.timeout_seconds
+                        ))
+                    } else {
+                        LlmError::NetworkError(format!("Gemini stream request failed: {e}"))
+                    }
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status().as_u16();
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                return Err(self.map_error(status, &body));
+            }
+
+            Ok(response)
+        };
+
+        let response = self.execute_with_retry(operation, 3).await?;
 
         let stream = response.bytes_stream().flat_map(|chunk_result| {
             let items: Vec<Result<StreamingResponse, LlmError>> = match chunk_result {
@@ -1941,6 +1976,207 @@ mod tests {
             last_finish_reason,
             Some(FinishReason::ContentFilter)
         ));
+    }
+
+    // ── WR-04 (new): a transient stream-open failure retries like generate() does ──
+    //
+    // Resolved facts (recorded in 17-16-SUMMARY.md per D-00e), read before
+    // writing these tests:
+    //   1. `generate()` calls `self.execute_with_retry(operation, 3)` —
+    //      gemini/adapter.rs:780 — and `execute_with_retry`'s
+    //      `attempt >= max_retries` check (gemini/adapter.rs:625) means
+    //      exactly `max_retries` = 3 total attempts on a retryable error.
+    //   2. HTTP 500 is retryable: it falls through every named arm in
+    //      `map_error` (401/403, 400/INVALID_ARGUMENT, 404/NOT_FOUND, 429,
+    //      RESOURCE_EXHAUSTED, 300..=399) into the catch-all at
+    //      gemini/adapter.rs:575, which returns the retryable
+    //      `LlmError::ProcessingError` — and 500 is outside the
+    //      300..=399 refused-redirect range plan 17-10 added.
+    //   3. No existing streaming mock-transport scaffolding was reused for
+    //      this file — Gemini is a bespoke adapter (D-08), never built on
+    //      `CompatEngine`, so these tests are new.
+    //
+    // The "transient" test below derives the expected attempt count by
+    // running the same mock failure through `generate()` first, rather than
+    // hardcoding `3` — the assertion is "streaming retries like
+    // non-streaming", not "streaming retries three times", and does not
+    // silently rot if `execute_with_retry`'s cap ever changes.
+
+    // Not `start_paused = true`: this test exercises real network round
+    // -trips against a `mockito` server, and pausing the tokio clock races
+    // the retry backoff timer against `reqwest`'s own 60s request timeout —
+    // observed directly: the third attempt's response never arrived before
+    // the paused clock auto-advanced past the client timeout, so the call
+    // failed with `Timeout` instead of exercising all `max_retries`
+    // attempts. Real (unpaused) time makes each ~1-3s of backoff actually
+    // elapse, which is what the synthetic-closure retry tests above use
+    // `start_paused = true` to avoid paying.
+    #[tokio::test]
+    async fn generate_stream_retries_a_transient_open_failure_as_many_times_as_generate() {
+        let mut generate_server = Server::new_async().await;
+        let generate_calls = Arc::new(AtomicU32::new(0));
+        let generate_calls_clone = Arc::clone(&generate_calls);
+        generate_server
+            .mock("POST", "/models/gemini-2.5-flash:generateContent")
+            .match_query(Matcher::Any)
+            .with_status(500)
+            .with_body_from_request(move |_req| {
+                generate_calls_clone.fetch_add(1, Ordering::SeqCst);
+                br#"{"error":{"message":"transient failure"}}"#.to_vec()
+            })
+            .create_async()
+            .await;
+
+        let generate_adapter = test_adapter(&generate_server.url());
+        let generate_request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+        let generate_result = generate_adapter.generate(generate_request).await;
+        assert!(generate_result.is_err());
+        let generate_attempt_count = generate_calls.load(Ordering::SeqCst);
+
+        let mut stream_server = Server::new_async().await;
+        let stream_calls = Arc::new(AtomicU32::new(0));
+        let stream_calls_clone = Arc::clone(&stream_calls);
+        let stream_mock = stream_server
+            .mock("POST", "/models/gemini-2.5-flash:streamGenerateContent")
+            .match_query(Matcher::Any)
+            .with_status(500)
+            .with_body_from_request(move |_req| {
+                stream_calls_clone.fetch_add(1, Ordering::SeqCst);
+                br#"{"error":{"message":"transient failure"}}"#.to_vec()
+            })
+            // Load-bearing (D-00e): today `generate_stream` makes exactly
+            // ONE request on a transient failure, not
+            // `generate_attempt_count` — this `.expect()` is what fails in
+            // the RED state, not the `Result` assertion below.
+            .expect(generate_attempt_count as usize)
+            .create_async()
+            .await;
+
+        let stream_adapter = test_adapter(&stream_server.url());
+        let stream_request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+        let stream_result = stream_adapter.generate_stream(stream_request).await;
+
+        stream_mock.assert_async().await;
+        assert_eq!(
+            stream_calls.load(Ordering::SeqCst),
+            generate_attempt_count,
+            "generate_stream must retry the connection-opening POST exactly \
+             as many times as generate() does"
+        );
+        assert!(stream_result.is_err());
+    }
+
+    // Not `start_paused = true` — see the sibling transient test's comment
+    // above: a paused clock is unreliable against a real `mockito` network
+    // round trip in this suite.
+    #[tokio::test]
+    async fn generate_stream_does_not_retry_an_authentication_failure_on_open() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", "/models/gemini-2.5-flash:streamGenerateContent")
+            .match_query(Matcher::Any)
+            .with_status(401)
+            .with_body(
+                json!({
+                    "error": {
+                        "code": 401,
+                        "status": "UNAUTHENTICATED",
+                        "message": "Request had invalid authentication credentials."
+                    }
+                })
+                .to_string(),
+            )
+            // Load-bearing (D-00e): passes today (there is no retry at all)
+            // and must keep passing after the fix — this is the
+            // credential-replay guard, proving an authentication failure on
+            // stream open is attempted exactly once.
+            .expect(1)
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+
+        let result = adapter.generate_stream(request).await;
+
+        mock.assert_async().await;
+        // `result`'s `Ok` payload is a boxed `dyn Stream` with no `Debug`
+        // impl, so this is matched by hand rather than via a formatted
+        // `matches!` assertion.
+        match &result {
+            Err(LlmError::AuthenticationError(_)) => {}
+            Ok(_) => panic!("expected Err(AuthenticationError), got Ok(<stream>)"),
+            Err(other) => panic!("expected AuthenticationError, got: {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn generate_stream_opens_exactly_once_and_yields_its_deltas_in_order_on_success() {
+        let sse_body = concat!(
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hel\"}]}}]}\n\n",
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"lo \"}]}}]}\n\n",
+            "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"world\"}],\"role\":\"model\"},",
+            "\"finishReason\":\"STOP\"}]}\n\n",
+        );
+
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", "/models/gemini-2.5-flash:streamGenerateContent")
+            .match_query(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "text/event-stream")
+            .with_body(sse_body)
+            // Load-bearing (D-00e): proves the retried-open shape does not
+            // double-open a working connection.
+            .expect(1)
+            .create_async()
+            .await;
+
+        let adapter = test_adapter(&server.url());
+        let request = build_request(
+            "gemini-2.5-flash",
+            PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }),
+        );
+
+        let stream = adapter.generate_stream(request).await.unwrap();
+        let mut stream = Box::into_pin(stream);
+
+        let mut deltas = Vec::new();
+        while let Some(item) = stream.next().await {
+            let chunk = item.unwrap();
+            if !chunk.delta.is_empty() {
+                deltas.push(chunk.delta);
+            }
+        }
+
+        mock.assert_async().await;
+        // Exactly the three wire deltas, in order, none duplicated — a
+        // future change that retried the byte stream would double this.
+        assert_eq!(
+            deltas,
+            vec!["Hel".to_string(), "lo ".to_string(), "world".to_string()]
+        );
     }
 
     // ── Model list: live catalog vs. curated fallback (D-13/D-14) ──
