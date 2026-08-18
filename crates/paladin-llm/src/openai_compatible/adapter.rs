@@ -216,9 +216,20 @@ fn parse_u32_env_value(
 /// Parse the `OPENAI_COMPATIBLE_TEMPERATURE_MIN` / `_MAX` pair as
 /// `Option<(f32, f32)>`.
 ///
-/// Both unset yields `None` (ADR-0004's global range applies). Both set
-/// yields `Some((min, max))`. Exactly one set is a configuration error —
-/// a half-declared range is not a defensible partial state.
+/// Both unset yields `None` (ADR-0004's global range applies). Both set and
+/// both finite with `min <= max` yields `Some((min, max))` — equal bounds
+/// are accepted; pinning a provider to one temperature is a legitimate
+/// declaration. Exactly one set is a configuration error — a half-declared
+/// range is not a defensible partial state.
+///
+/// Both set, either non-finite (`NaN`, `inf`, `-inf`), or `min > max`, is
+/// also a configuration error naming the offending variable(s) and value(s)
+/// (WR-02). This function never repairs a bad declaration — it never swaps
+/// an inverted pair, clamps a non-finite bound, or falls back to a default.
+/// An operator whose configuration were silently corrected would never
+/// learn it was wrong, and the tuple this function emits must stay ordered
+/// `(min, max)` to match every curated preset's
+/// `ProviderCapabilities::temperature_range` in this crate.
 fn parse_temperature_range_env(
     min: Option<String>,
     max: Option<String>,
@@ -232,6 +243,29 @@ fn parse_temperature_range_env(
             let max: f32 = max_raw.trim().parse().map_err(|_| {
                 format!("Invalid OPENAI_COMPATIBLE_TEMPERATURE_MAX value {max_raw:?} — expected a number")
             })?;
+            // Finiteness must be checked before ordering: "NaN".parse::<f32>()
+            // succeeds, and every comparison against NaN is `false` in both
+            // directions, so an ordering guard placed first would pass
+            // (NaN, NaN) — and (NaN, x), (x, NaN) — straight through as a
+            // range no downstream comparison could ever resolve.
+            if !min.is_finite() {
+                return Err(format!(
+                    "Invalid OPENAI_COMPATIBLE_TEMPERATURE_MIN value {min} — must be a finite number"
+                ));
+            }
+            if !max.is_finite() {
+                return Err(format!(
+                    "Invalid OPENAI_COMPATIBLE_TEMPERATURE_MAX value {max} — must be a finite number"
+                ));
+            }
+            // Strictly-greater, never >=: equal bounds are a legitimate
+            // single-point declaration and must stay accepted.
+            if min > max {
+                return Err(format!(
+                    "OPENAI_COMPATIBLE_TEMPERATURE_MIN value {min} must not exceed \
+                     OPENAI_COMPATIBLE_TEMPERATURE_MAX value {max}"
+                ));
+            }
             Ok(Some((min, max)))
         }
         (Some(_), None) => Err(
@@ -721,6 +755,78 @@ mod tests {
         )
         .unwrap();
         assert_eq!(both.temperature_range, Some((0.0, 2.0)));
+    }
+
+    // ── WR-02: a declared temperature range must be a range ──
+
+    #[test]
+    fn parse_temperature_range_env_rejects_an_inverted_range() {
+        // The realistic operator mistake: a copy-paste transposition of MIN
+        // and MAX. Every curated preset in this crate declares its range
+        // ordered (min, max) — GrokConfig's Some((0.0, 2.0)), KimiConfig's
+        // Some((0.0, 1.0)) — and an inverted tuple silently accepted here
+        // would violate that crate-wide convention for every downstream
+        // consumer that clamps into range.0..=range.1.
+        let result = parse_temperature_range_env(Some("2.0".to_string()), Some("0.0".to_string()));
+        assert!(result.is_err(), "an inverted range must be rejected");
+        let message = result.unwrap_err();
+        assert!(message.contains("OPENAI_COMPATIBLE_TEMPERATURE_MIN"));
+        assert!(message.contains("OPENAI_COMPATIBLE_TEMPERATURE_MAX"));
+        assert!(message.contains('2'));
+        assert!(message.contains('0'));
+    }
+
+    #[test]
+    fn parse_temperature_range_env_accepts_equal_bounds() {
+        // The check is strictly-greater, not greater-or-equal: pinning a
+        // provider to one temperature is a legitimate operator declaration.
+        // Rejecting it would be a regression this test exists to prevent.
+        // This test passes today.
+        let result = parse_temperature_range_env(Some("1.0".to_string()), Some("1.0".to_string()));
+        assert_eq!(result, Ok(Some((1.0, 1.0))));
+    }
+
+    #[test]
+    fn parse_temperature_range_env_accepts_an_ordered_range() {
+        // Positive control: the ordinary case. Proves the new guards did not
+        // turn into a rejection of everything. This test passes today.
+        let result = parse_temperature_range_env(Some("0.0".to_string()), Some("2.0".to_string()));
+        assert_eq!(result, Ok(Some((0.0, 2.0))));
+    }
+
+    #[test]
+    fn parse_temperature_range_env_rejects_a_nan_bound() {
+        // `f32` parsing accepts "NaN", and every comparison against NaN is
+        // `false` in both directions — an ordering guard (`min > max`) alone
+        // would let (NaN, 1.0) pass straight through. This is why
+        // finiteness is checked separately from the ordering comparison.
+        let result = parse_temperature_range_env(Some("NaN".to_string()), Some("1.0".to_string()));
+        assert!(result.is_err(), "a NaN bound must be rejected");
+        let message = result.unwrap_err();
+        assert!(message.contains("OPENAI_COMPATIBLE_TEMPERATURE_MIN"));
+    }
+
+    #[test]
+    fn parse_temperature_range_env_rejects_an_infinite_bound() {
+        let result = parse_temperature_range_env(Some("0.0".to_string()), Some("inf".to_string()));
+        assert!(result.is_err(), "an infinite bound must be rejected");
+        let message = result.unwrap_err();
+        assert!(message.contains("OPENAI_COMPATIBLE_TEMPERATURE_MAX"));
+    }
+
+    #[test]
+    fn parse_temperature_range_env_half_set_diagnostics_are_unchanged() {
+        // Regression guard: the new ordering/finiteness arms must not
+        // reorder or reword the existing both-or-neither diagnostics.
+        let only_min = parse_temperature_range_env(Some("0.0".to_string()), None);
+        assert!(only_min.is_err());
+        let only_min_message = only_min.unwrap_err();
+        assert!(only_min_message.contains("both or neither"));
+
+        let only_max = parse_temperature_range_env(None, Some("0.0".to_string()));
+        assert!(only_max.is_err());
+        let only_max_message = only_max.unwrap_err();
+        assert!(only_max_message.contains("both or neither"));
     }
 
     // ── OpenAiCompatibleConfig::from_env() required fields ──
