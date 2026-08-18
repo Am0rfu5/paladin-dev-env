@@ -1207,7 +1207,7 @@ Plans:
 
 **Wave 14** *(blocked on Wave 13 — records what the run could not verify)*
 
-- [ ] 17-17-PLAN.md — Bookkeeping: the `WINDOWS.md` rows for 17-11's and this run's not-run Snyk scans plus IN-01 as carried-forward debt, and a CI job that finally runs the registry regression tests under `llm-all`
+- [x] 17-17-PLAN.md — Bookkeeping: the `WINDOWS.md` rows for 17-11's and this run's not-run Snyk scans plus IN-01 as carried-forward debt, and a CI job that finally runs the registry regression tests under `llm-all`
 
 *Scoped to CR-01 + WR-01/WR-02/WR-03(new)/WR-04(new) by developer decision in an interactive checkpoint, 2026-08-18. **IN-01 explicitly excluded** and carried forward as tracked, accepted debt (plan 17-17 files the row). The four `human_verification` items (Snyk scan, 82% coverage floor, Ollama live server, vendor smoke test) remain blocked on Docker / network egress / vendor credentials / an unavailable Snyk tool — none is closeable by planning. Note the finding-ID collision: `17-REVIEW.md` reused the labels WR-03 and WR-04 for findings distinct from the ones plans 17-11 and 17-10 closed; all four are closed once this wave completes.*
 
