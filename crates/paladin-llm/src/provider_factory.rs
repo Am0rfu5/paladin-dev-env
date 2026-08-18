@@ -363,16 +363,21 @@ impl LlmProviderFactory {
     }
 
     /// Return the name of the first available provider — the first table
-    /// row (in registry declaration order) whose credential env var is
-    /// present, or whose row requires no credential at all.
+    /// row (in registry declaration order) whose credential env var holds a
+    /// non-blank value, or whose row requires no credential at all.
+    ///
+    /// A variable set to an empty or whitespace-only string is treated as
+    /// unset: every preset's own `validate()` rejects such a value, so
+    /// reporting it as available here would name a provider `create()`
+    /// refuses to construct.
     ///
     /// Returns `None` when the table is empty (no provider feature
-    /// compiled in) or no row's credential is present.
+    /// compiled in) or no row's credential is present and non-blank.
     pub fn get_default_provider() -> Option<String> {
         provider_registry()
             .iter()
             .find(|row| match row.env_var {
-                Some(var) => std::env::var(var).is_ok(),
+                Some(var) => std::env::var(var).is_ok_and(|v| !v.trim().is_empty()),
                 None => true,
             })
             .map(|row| row.name.to_string())
@@ -383,11 +388,15 @@ impl LlmProviderFactory {
     ///
     /// A provider whose feature was not compiled in is structurally absent
     /// from this list regardless of whether its env var happens to be set.
+    /// A variable set to an empty or whitespace-only string is likewise
+    /// treated as not configured, so this list stays in agreement with
+    /// [`create`](Self::create): a name reported here is always one
+    /// `create()` can actually construct.
     pub fn list_available_providers() -> Vec<String> {
         provider_registry()
             .iter()
             .filter(|row| match row.env_var {
-                Some(var) => std::env::var(var).is_ok(),
+                Some(var) => std::env::var(var).is_ok_and(|v| !v.trim().is_empty()),
                 None => true,
             })
             .map(|row| row.name.to_string())
@@ -720,15 +729,15 @@ mod tests {
             let mut exercised = 0usize;
 
             for row in provider_registry() {
-                // Deliberately stricter than `get_default_provider()`'s own
-                // `.is_ok()` check: an env var set to an empty (or
-                // whitespace-only) string is *set* but is not a usable
-                // credential — every preset's own `validate()` rejects an
-                // empty key. Treating it as "present" here would panic on
-                // `construct()`'s resulting `AdapterCreationFailed`, which
-                // is a false alarm about this test's own invariant (every
-                // adapter that *does* construct round-trips its name), not
-                // a real violation of it.
+                // Uses the same non-blank check `get_default_provider()` and
+                // `list_available_providers()` use (CR-01): an env var set
+                // to an empty (or whitespace-only) string is *set* but is
+                // not a usable credential — every preset's own `validate()`
+                // rejects an empty key. Treating it as "present" here would
+                // panic on `construct()`'s resulting `AdapterCreationFailed`,
+                // which is a false alarm about this test's own invariant
+                // (every adapter that *does* construct round-trips its
+                // name), not a real violation of it.
                 let credential_present = match row.env_var {
                     Some(var) => std::env::var(var).is_ok_and(|v| !v.trim().is_empty()),
                     None => true,
