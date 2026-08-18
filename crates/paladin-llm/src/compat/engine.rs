@@ -658,6 +658,8 @@ impl CompatEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mockito::Server;
+    use paladin_core::platform::container::prompt::UserPrompt;
 
     fn test_config() -> CompatEngineConfig {
         CompatEngineConfig {
@@ -879,5 +881,199 @@ mod tests {
 
         assert!(result.is_err());
         assert_eq!(calls.load(Ordering::SeqCst), 4);
+    }
+
+    // ── WR-04 (new): a transient stream-open failure retries like generate() does ──
+    //
+    // Resolved facts (recorded in 17-16-SUMMARY.md per D-00e), read before
+    // writing these tests:
+    //   1. `test_config()`'s `max_retries` (this file, above) is `3`,
+    //      matching every shipped preset (e.g. `kimi/adapter.rs:157`), and
+    //      `call_api_with_retry`'s `for attempt in 0..=max_retries` loop
+    //      (compat/engine.rs:357) means `max_retries + 1` = 4 total
+    //      attempts on a retryable error — the `+1` semantics this file's
+    //      own `call_api_with_retry_retries_network_error_up_to_max_retries_plus_one`
+    //      test already pins.
+    //   2. HTTP 500 is retryable: it falls through every named arm in
+    //      `map_error` (401, 429, 404, 400, 300..=399) into the catch-all
+    //      at compat/engine.rs:335, which returns the retryable
+    //      `LlmError::ProcessingError`.
+    //   3. These tests exercise `CompatEngine` directly (not through the
+    //      `KimiAdapter` preset) — Kimi already has `generate_stream` mock
+    //      -transport scaffolding (`kimi/adapter.rs`
+    //      `generate_stream_assembles_deltas_in_wire_order_with_terminal_stop`),
+    //      whose shape (endpoint, SSE body, `[DONE]` sentinel) is reused
+    //      here directly against the shared engine, per the plan's "reuse
+    //      that scaffolding" instruction. `kimi/adapter.rs` itself is
+    //      untouched — this plan's `files_modified` names only this file
+    //      and `gemini/adapter.rs`.
+    //
+    // The "transient" test below derives the expected attempt count by
+    // running the same mock failure through `generate()` first, rather than
+    // hardcoding `4` — the assertion is "streaming retries like
+    // non-streaming", not "streaming retries four times", and does not
+    // silently rot if `call_api_with_retry`'s cap ever changes.
+
+    fn test_config_at(base_url: &str) -> CompatEngineConfig {
+        let mut config = test_config();
+        config.base_url = base_url.to_string();
+        config
+    }
+
+    fn build_request(model: &str) -> LlmRequest {
+        LlmRequest {
+            id: Uuid::new_v4(),
+            model: model.to_string(),
+            prompt: PromptItem::new(PromptType::User(UserPrompt {
+                query: "Hello".to_string(),
+                context: None,
+            }))
+            .unwrap(),
+            attachments: vec![],
+            stream: false,
+            metadata: HashMap::new(),
+        }
+    }
+
+    // Not `start_paused = true`: this test exercises real network round
+    // -trips against a `mockito` server, and pausing the tokio clock races
+    // the retry backoff timer against `reqwest`'s own request timeout —
+    // confirmed directly against the sibling Gemini test in
+    // `gemini/adapter.rs`, whose third attempt spuriously timed out under
+    // a paused clock instead of exercising all `max_retries` attempts. Real
+    // (unpaused) time makes the ~700ms of total backoff actually elapse,
+    // which is what the synthetic-closure retry tests above use
+    // `start_paused = true` to avoid paying.
+    #[tokio::test]
+    async fn generate_stream_retries_a_transient_open_failure_as_many_times_as_generate() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicU32, Ordering};
+
+        let mut generate_server = Server::new_async().await;
+        let generate_calls = Arc::new(AtomicU32::new(0));
+        let generate_calls_clone = Arc::clone(&generate_calls);
+        generate_server
+            .mock("POST", "/chat/completions")
+            .with_status(500)
+            .with_body_from_request(move |_req| {
+                generate_calls_clone.fetch_add(1, Ordering::SeqCst);
+                br#"{"error":"transient failure"}"#.to_vec()
+            })
+            .create_async()
+            .await;
+
+        let generate_engine = CompatEngine::new(test_config_at(&generate_server.url())).unwrap();
+        let generate_result = generate_engine.generate(build_request("test-model")).await;
+        assert!(generate_result.is_err());
+        let generate_attempt_count = generate_calls.load(Ordering::SeqCst);
+
+        let mut stream_server = Server::new_async().await;
+        let stream_calls = Arc::new(AtomicU32::new(0));
+        let stream_calls_clone = Arc::clone(&stream_calls);
+        let stream_mock = stream_server
+            .mock("POST", "/chat/completions")
+            .with_status(500)
+            .with_body_from_request(move |_req| {
+                stream_calls_clone.fetch_add(1, Ordering::SeqCst);
+                br#"{"error":"transient failure"}"#.to_vec()
+            })
+            // Load-bearing (D-00e): today `generate_stream` makes exactly
+            // ONE request on a transient failure, not
+            // `generate_attempt_count` — this `.expect()` is what fails in
+            // the RED state, not the `Result` assertion below.
+            .expect(generate_attempt_count as usize)
+            .create_async()
+            .await;
+
+        let stream_engine = CompatEngine::new(test_config_at(&stream_server.url())).unwrap();
+        let stream_result = stream_engine
+            .generate_stream(build_request("test-model"))
+            .await;
+
+        stream_mock.assert_async().await;
+        assert_eq!(
+            stream_calls.load(Ordering::SeqCst),
+            generate_attempt_count,
+            "generate_stream must retry the connection-opening POST exactly \
+             as many times as generate() does"
+        );
+        assert!(stream_result.is_err());
+    }
+
+    // Not `start_paused = true` — see the sibling transient test's comment
+    // above: a paused clock is unreliable against a real `mockito` network
+    // round trip in this suite.
+    #[tokio::test]
+    async fn generate_stream_does_not_retry_an_authentication_failure_on_open() {
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", "/chat/completions")
+            .with_status(401)
+            .with_body(r#"{"error":"invalid key"}"#)
+            // Load-bearing (D-00e): passes today (there is no retry at all)
+            // and must keep passing after the fix — this is the
+            // credential-replay guard, proving an authentication failure on
+            // stream open is attempted exactly once.
+            .expect(1)
+            .create_async()
+            .await;
+
+        let engine = CompatEngine::new(test_config_at(&server.url())).unwrap();
+        let result = engine.generate_stream(build_request("test-model")).await;
+
+        mock.assert_async().await;
+        // `result`'s `Ok` payload is a boxed `dyn Stream` with no `Debug`
+        // impl, so this is matched by hand rather than via a formatted
+        // `matches!` assertion.
+        match &result {
+            Err(LlmError::AuthenticationError(_)) => {}
+            Ok(_) => panic!("expected Err(AuthenticationError), got Ok(<stream>)"),
+            Err(other) => panic!("expected AuthenticationError, got: {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn generate_stream_opens_exactly_once_and_yields_its_deltas_in_order_on_success() {
+        let sse_body = concat!(
+            "data: {\"id\":\"1\",\"choices\":[{\"delta\":{\"content\":\"Hel\"},\"finish_reason\":null}]}\n\n",
+            "data: {\"id\":\"1\",\"choices\":[{\"delta\":{\"content\":\"lo \"},\"finish_reason\":null}]}\n\n",
+            "data: {\"id\":\"1\",\"choices\":[{\"delta\":{\"content\":\"world\"},\"finish_reason\":\"stop\"}]}\n\n",
+            "data: [DONE]\n\n",
+        );
+
+        let mut server = Server::new_async().await;
+        let mock = server
+            .mock("POST", "/chat/completions")
+            .with_status(200)
+            .with_header("content-type", "text/event-stream")
+            .with_body(sse_body)
+            // Load-bearing (D-00e): proves the retried-open shape does not
+            // double-open a working connection.
+            .expect(1)
+            .create_async()
+            .await;
+
+        let engine = CompatEngine::new(test_config_at(&server.url())).unwrap();
+        let stream = engine
+            .generate_stream(build_request("test-model"))
+            .await
+            .unwrap();
+        let mut stream = Box::into_pin(stream);
+
+        let mut deltas = Vec::new();
+        while let Some(item) = stream.next().await {
+            let chunk = item.unwrap();
+            if !chunk.delta.is_empty() {
+                deltas.push(chunk.delta);
+            }
+        }
+
+        mock.assert_async().await;
+        // Exactly the three wire deltas, in order, none duplicated — a
+        // future change that retried the byte stream would double this.
+        assert_eq!(
+            deltas,
+            vec!["Hel".to_string(), "lo ".to_string(), "world".to_string()]
+        );
     }
 }
