@@ -341,8 +341,12 @@ impl LlmProviderFactory {
     ///
     /// Configuration is loaded from environment variables (see each
     /// adapter's `*Config::from_env()` for the expected variable names).
-    /// The name is matched case-insensitively against
-    /// [`provider_names`].
+    /// The name is matched case-insensitively **and with underscores
+    /// normalised to hyphens** against [`provider_names`], so
+    /// `"openai-compatible"`, `"openai_compatible"` and
+    /// `"OpenAI_Compatible"` all resolve to the one generic-provider row.
+    /// `"openai-compatible"` remains the canonical spelling reported by
+    /// [`provider_names`] and by `get_provider_name()` (D-07, D-09).
     ///
     /// # Errors
     ///
@@ -350,7 +354,14 @@ impl LlmProviderFactory {
     /// required environment variable is absent, or the adapter fails to
     /// initialise.
     pub fn create(&self, provider_name: &str) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
-        let lower = provider_name.to_lowercase();
+        // Mirrors `config/llm.rs`'s `get_provider_config`, which accepts
+        // both the hyphenated and underscore spellings of
+        // "openai-compatible" — the two must stay aligned so a name the
+        // config layer blesses (WR-01) is always a name this factory
+        // resolves. No registry row contains an underscore, so this
+        // transform can only merge separator spellings of the same row;
+        // it cannot collide two distinct providers.
+        let lower = provider_name.to_lowercase().replace('_', "-");
         provider_registry()
             .iter()
             .find(|row| row.name == lower)
@@ -483,6 +494,134 @@ mod tests {
                  as available"
             );
         }
+    }
+
+    // ── WR-01: config-layer and factory-layer name acceptance agree ──
+    //
+    // `LlmConfig::get_provider_config` (config/llm.rs:153-166) matches
+    // `"openai-compatible" | "openai_compatible"` case-insensitively, and
+    // `is_recognised_provider_field_name` (config/llm.rs:174-193) accepts
+    // both spellings for `default_provider` too — so a config file naming
+    // the underscore spelling validates. These four tests pin that
+    // `create()` agrees: a name the config layer blesses must be a name
+    // this factory resolves (WR-01).
+
+    /// `create("openai_compatible")` must not return `UnknownProvider` — it
+    /// may return `ConfigurationMissing` if the three `OPENAI_COMPATIBLE_*`
+    /// env vars are unset (an acceptable outcome this assertion allows),
+    /// but never `UnknownProvider`, because `config/llm.rs:153-166`'s
+    /// `get_provider_config` already accepts this exact spelling.
+    #[cfg(feature = "openai-compatible")]
+    #[test]
+    fn create_accepts_the_underscore_spelling_of_openai_compatible() {
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("openai_compatible");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "openai_compatible must resolve through create() because config/llm.rs's \
+             get_provider_config already accepts this spelling; got {:?}",
+            result.as_ref().err()
+        );
+    }
+
+    /// Case-insensitivity composes with separator normalisation:
+    /// `"OpenAI_Compatible"` must resolve exactly like the lowercase
+    /// underscore spelling.
+    #[cfg(feature = "openai-compatible")]
+    #[test]
+    fn create_accepts_the_underscore_spelling_case_insensitively() {
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("OpenAI_Compatible");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "OpenAI_Compatible must resolve through create() case-insensitively; got {:?}",
+            result.as_ref().err()
+        );
+    }
+
+    /// Non-merge control: separator normalisation must merge spellings of
+    /// the *same* row, never widen `"openai"` into the `"openai-compatible"`
+    /// row. Guards against a normalisation broader than one separator
+    /// substitution (T-17-63).
+    #[cfg(feature = "openai")]
+    #[test]
+    fn create_does_not_absorb_openai_into_openai_compatible() {
+        let factory = LlmProviderFactory::new();
+        let result = factory.create("openai");
+        assert!(
+            !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+            "openai must still resolve to its own row; got {:?}",
+            result.as_ref().err()
+        );
+        if let Err(ProviderFactoryError::ConfigurationMissing(msg)) = &result {
+            assert!(
+                msg.contains("OPENAI_API_KEY"),
+                "openai's ConfigurationMissing message must name OPENAI_API_KEY: {msg}"
+            );
+            assert!(
+                !msg.contains("OPENAI_COMPATIBLE_API_KEY"),
+                "openai's ConfigurationMissing message must not name the generic provider's \
+                 OPENAI_COMPATIBLE_API_KEY — that would mean the normalisation resolved \
+                 \"openai\" to the openai-compatible row: {msg}"
+            );
+        }
+    }
+
+    /// Every provider-field-name spelling `LlmConfig`'s recogniser blesses
+    /// (`is_recognised_provider_field_name`, config/llm.rs:179-193) that is
+    /// also compiled into this build must resolve through `create()`. This
+    /// is the property WR-01 closes, checked directly rather than pinned to
+    /// one literal: a future divergence between the two hand-maintained
+    /// lists is exactly this defect class.
+    ///
+    /// `CONFIG_RECOGNISED_SPELLINGS` must track `config/llm.rs`'s
+    /// recogniser arm list; a divergence between the two is the defect
+    /// class WR-01 belongs to.
+    #[test]
+    fn every_config_recognised_and_compiled_provider_name_resolves_through_create() {
+        const CONFIG_RECOGNISED_SPELLINGS: [&str; 10] = [
+            "openai",
+            "deepseek",
+            "anthropic",
+            "kimi",
+            "qwen",
+            "grok",
+            "ollama",
+            "gemini",
+            "openai-compatible",
+            "openai_compatible",
+        ];
+
+        let factory = LlmProviderFactory::new();
+        let compiled: Vec<String> = provider_names()
+            .into_iter()
+            .map(|n| n.to_lowercase().replace('_', "-"))
+            .collect();
+
+        let mut exercised = 0usize;
+        for &name in &CONFIG_RECOGNISED_SPELLINGS {
+            let normalized = name.to_lowercase().replace('_', "-");
+            if !compiled.contains(&normalized) {
+                eprintln!(
+                    "skipping {name:?} — its provider feature is not compiled into this build"
+                );
+                continue;
+            }
+
+            let result = factory.create(name);
+            exercised += 1;
+            assert!(
+                !matches!(result, Err(ProviderFactoryError::UnknownProvider(_))),
+                "{name:?} is recognised by LlmConfig's config-layer recogniser and is compiled \
+                 into this build, so create() must not return UnknownProvider for it; got {:?}",
+                result.as_ref().err()
+            );
+        }
+
+        assert!(
+            exercised > 0,
+            "no compiled-in spelling was exercised — this test would pass vacuously"
+        );
     }
 
     // ── D-10 regression coverage: kimi-only build ──
