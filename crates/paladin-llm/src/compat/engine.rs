@@ -128,6 +128,24 @@ pub struct CompatEngineConfig {
 
 /// The shared OpenAI-compatible engine every preset built on this core
 /// delegates to.
+///
+/// ## A known, recorded asymmetry (D-06, WR-04)
+///
+/// This engine's [`generate_stream`](Self::generate_stream) and
+/// [`GeminiAdapter::generate_stream`](crate::gemini::GeminiAdapter) both
+/// retry their connection-opening request, matching their own `generate()`
+/// (17-16, closing the new WR-04 recorded in `17-REVIEW.md`). The shipped
+/// `openai/`, `anthropic/` and `deepseek/` adapters do **not** — their
+/// `generate_stream` implementations still send a single, unretried POST,
+/// exactly as `deepseek/adapter.rs` (the file this engine was extracted and
+/// generalized from) has always done. This is a **deliberate boundary, not
+/// an oversight**: D-06 keeps this phase additive against shipped, covered
+/// code, so those three adapters are read but never edited here. A reader
+/// comparing this engine's or Gemini's streaming retry behaviour against
+/// `openai`/`anthropic`/`deepseek` should read the difference as this
+/// recorded decision, not re-file it as a fresh finding. **Trigger to close
+/// it:** the next phase that has reason to touch those two adapters anyway
+/// (`17-CONTEXT.md` §Deferred Ideas).
 pub struct CompatEngine {
     client: Client,
     config: CompatEngineConfig,
