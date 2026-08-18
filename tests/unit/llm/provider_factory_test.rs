@@ -719,6 +719,130 @@ fn a_real_credential_env_var_is_a_configured_provider() {
     );
 }
 
+// ── declaration-order stability ──
+//
+// `list_available_providers()`'s output must be a subsequence of
+// `provider_names()` in the same relative registry declaration order —
+// never re-sorted, never grouped by credential state — and
+// `get_default_provider()`'s tie-break, when two or more rows qualify
+// simultaneously, must be exactly that declaration order and nothing else.
+// `build_provider_registry`'s three placement-rationale comments already
+// specify this; these two tests pin it as an executable contract so a
+// future reordering shows up as a failing assertion rather than a silent
+// behaviour change.
+
+#[test]
+fn list_available_providers_preserves_registry_declaration_order() {
+    let _env = CleanProviderEnv::acquire();
+    let compiled = provider_names();
+
+    let compiled_credentialed: Vec<(&str, &str)> = CREDENTIALED_PROVIDERS
+        .iter()
+        .copied()
+        .filter(|(name, _)| compiled.contains(name))
+        .collect();
+
+    if compiled_credentialed.len() < 2 {
+        eprintln!(
+            "skipping list_available_providers_preserves_registry_declaration_order — fewer \
+             than two credentialed providers are compiled into this build"
+        );
+        return;
+    }
+
+    for &(_, var) in &compiled_credentialed {
+        _env.set(var, "test-credential-value");
+    }
+    if compiled.contains(&"openai-compatible") {
+        _env.set("OPENAI_COMPATIBLE_BASE_URL", "http://localhost:8080");
+        _env.set("OPENAI_COMPATIBLE_MODEL", "test-model");
+    }
+
+    // Every credentialed row now holds a real credential and Ollama (if
+    // compiled in) needs none, so every compiled-in row qualifies — the
+    // returned list must equal provider_names() itself, element-for-element,
+    // in registry declaration order.
+    let expected: Vec<String> = compiled.iter().map(|s| s.to_string()).collect();
+    assert_eq!(
+        LlmProviderFactory::list_available_providers(),
+        expected,
+        "list_available_providers() must return exactly provider_names() filtered to \
+         compiled-in rows, element-for-element, in registry declaration order — this is what \
+         makes CR-01's fix a predicate change rather than a scan change"
+    );
+}
+
+#[test]
+fn get_default_provider_breaks_ties_by_declaration_order() {
+    let _env = CleanProviderEnv::acquire();
+    let compiled = provider_names();
+
+    let compiled_credentialed: Vec<(&str, &str)> = CREDENTIALED_PROVIDERS
+        .iter()
+        .copied()
+        .filter(|(name, _)| compiled.contains(name))
+        .collect();
+
+    if compiled_credentialed.len() < 2 {
+        eprintln!(
+            "skipping get_default_provider_breaks_ties_by_declaration_order — fewer than two \
+             credentialed providers are compiled into this build"
+        );
+        return;
+    }
+
+    for &(_, var) in &compiled_credentialed {
+        _env.set(var, "test-credential-value");
+    }
+    if compiled.contains(&"openai-compatible") {
+        _env.set("OPENAI_COMPATIBLE_BASE_URL", "http://localhost:8080");
+        _env.set("OPENAI_COMPATIBLE_MODEL", "test-model");
+    }
+
+    // With every credentialed row configured, the answer is the very first
+    // name in provider_names() — registry declaration order, and nothing
+    // else. Ollama's `env_var: None` row is declared last precisely so it
+    // can never pre-empt a configured named provider here (see the
+    // placement rationale on `build_provider_registry`).
+    assert_eq!(
+        LlmProviderFactory::get_default_provider(),
+        compiled.first().map(|s| s.to_string())
+    );
+    assert_eq!(
+        compiled.first().copied(),
+        compiled_credentialed.first().map(|&(name, _)| name),
+        "the first row in registry declaration order must be a credentialed row whenever at \
+         least one is compiled in — Ollama's credential-free row is always declared last"
+    );
+
+    // Clear the first compiled-in credentialed provider's variable; the
+    // answer must advance to the next compiled-in credentialed name in
+    // declaration order — never to Ollama's credential-free baseline row.
+    _env.set(compiled_credentialed[0].1, "");
+    assert_eq!(
+        LlmProviderFactory::get_default_provider(),
+        Some(compiled_credentialed[1].0.to_string()),
+        "clearing {}'s credential must advance get_default_provider() to the next compiled-in \
+         credentialed name in declaration order ({}), not to a credential-free baseline row",
+        compiled_credentialed[0].0,
+        compiled_credentialed[1].0
+    );
+
+    // Repeat the advance once more, proving a scan rather than a two-case
+    // lookup — only when a third credentialed row is compiled in.
+    if compiled_credentialed.len() >= 3 {
+        _env.set(compiled_credentialed[1].1, "");
+        assert_eq!(
+            LlmProviderFactory::get_default_provider(),
+            Some(compiled_credentialed[2].0.to_string()),
+            "clearing {}'s credential too must advance get_default_provider() again, to {}, \
+             proving a scan and not a two-case lookup",
+            compiled_credentialed[1].0,
+            compiled_credentialed[2].0
+        );
+    }
+}
+
 #[test]
 fn test_factory_zero_sized() {
     let factory = LlmProviderFactory::new();
