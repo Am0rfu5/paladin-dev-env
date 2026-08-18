@@ -1193,7 +1193,7 @@ Plans:
 
 **Wave 11** *(second gap closure — re-verification 2026-08-17 returned `gaps_found` on one new Critical; tracer)*
 
-- [ ] 17-12-PLAN.md — Tracer: close CR-01, the one blocking gap — a credential env var set to the empty string is no longer reported as a configured provider, with the test guard widened from three variables to all ten the nine-row registry reads
+- [x] 17-12-PLAN.md — Tracer: close CR-01, the one blocking gap — a credential env var set to the empty string is no longer reported as a configured provider, with the test guard widened from three variables to all ten the nine-row registry reads
 
 **Wave 12** *(blocked on Wave 11 — the tracer is proven before the Warnings expand on it)*
 
