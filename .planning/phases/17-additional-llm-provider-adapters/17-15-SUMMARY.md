@@ -347,6 +347,14 @@ None - no external service configuration required.
 - `gemini/adapter.rs` now carries the truncated-empty guard alongside plans 17-09/17-10/17-11's prior gap-closure work, all confirmed surviving together.
 - Plan 17-17 still owns: the whole-run Snyk-not-run `WINDOWS.md` row, the 18-row edge reconciliation table, and the four `human_verification` items from `17-VERIFICATION.md` frontmatter (none closeable in this environment).
 
+## Self-Check: PASSED
+
+- `crates/paladin-llm/src/gemini/adapter.rs` — FOUND
+- `.planning/phases/17-additional-llm-provider-adapters/17-15-SUMMARY.md` — FOUND
+- Commit `4f0e732` (test, RED) — FOUND in `git log --oneline --all`
+- Commit `26028f8` (fix, GREEN) — FOUND in `git log --oneline --all`
+- Commit `53eb630` (docs, this SUMMARY) — FOUND in `git log --oneline --all`
+
 ---
 *Phase: 17-additional-llm-provider-adapters*
 *Completed: 2026-08-18*
