@@ -1145,7 +1145,7 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
   4. **The adapters are tested to the standard already in force**, not exempted from it: mock-transport unit tests for request shaping, response parsing, streaming chunk assembly, and error mapping into `LlmError`; the workspace stays above the 82% line-coverage floor with the new code included; every public item carries rustdoc, and any live-API test is gated behind a credential-requiring feature so CI stays green without secrets.
   5. **The advertised surface matches the shipped one.** `paladin-llm`'s `Cargo.toml` description/keywords, the crate README, and the configuration documentation name exactly the providers that exist — so this phase does not create the same documentation-currency debt Phase 16 is closing.
 
-**Plans**: 11 plans *(8 executed; 3 added 2026-08-17 by `/gsd-plan-phase 17 --gaps` to close the blocking verification gap and two security-adjacent review findings)*
+**Plans**: 17 plans *(11 executed; 6 added 2026-08-18 by a second `/gsd-plan-phase 17 --gaps` run to close the one remaining blocking gap, the four review Warnings the developer put in scope, and two bookkeeping gaps)*
 
 Plans:
 **Wave 1**
@@ -1190,6 +1190,26 @@ Plans:
 - [x] 17-11-PLAN.md — WR-03: every Gemini 401/403 and every credential-shaped 400 classifies as an auth failure, so a doomed request is attempted once rather than four times while holding a live key
 
 *Scoped to CR-01 + the two security-adjacent findings by developer decision, 2026-08-17. WR-01, WR-02, WR-05, WR-06, WR-07, IN-01 and IN-02 remain open, developer-accepted review debt; the three `human_verification` items (coverage floor, Ollama live server, vendor smoke test) remain blocked on Docker / network egress / vendor credentials.*
+
+**Wave 11** *(second gap closure — re-verification 2026-08-17 returned `gaps_found` on one new Critical; tracer)*
+
+- [ ] 17-12-PLAN.md — Tracer: close CR-01, the one blocking gap — a credential env var set to the empty string is no longer reported as a configured provider, with the test guard widened from three variables to all ten the nine-row registry reads
+
+**Wave 12** *(blocked on Wave 11 — the tracer is proven before the Warnings expand on it)*
+
+- [ ] 17-13-PLAN.md — WR-01: `create()` accepts the `openai_compatible` underscore spelling `LlmConfig` already blesses, so a validated config cannot fail at the point of use on spelling alone
+- [ ] 17-14-PLAN.md — WR-02: an inverted or non-finite `OPENAI_COMPATIBLE_TEMPERATURE_MIN`/`_MAX` pair is a configuration error rather than a silently-accepted inverted range
+- [ ] 17-15-PLAN.md — WR-03 *(new — distinct from the closed auth-classification WR-03)*: Gemini reports a truncated-to-empty completion as `EmptyCompletion`, the same signal every compat preset gives
+
+**Wave 13** *(blocked on Wave 12 — shares `gemini/adapter.rs` with 17-15)*
+
+- [ ] 17-16-PLAN.md — WR-04 *(new — distinct from the closed redirect-replay WR-04)*: both `generate_stream` implementations retry a transient connection-open failure exactly as their own `generate()` does, and attempt an auth failure exactly once
+
+**Wave 14** *(blocked on Wave 13 — records what the run could not verify)*
+
+- [ ] 17-17-PLAN.md — Bookkeeping: the `WINDOWS.md` rows for 17-11's and this run's not-run Snyk scans plus IN-01 as carried-forward debt, and a CI job that finally runs the registry regression tests under `llm-all`
+
+*Scoped to CR-01 + WR-01/WR-02/WR-03(new)/WR-04(new) by developer decision in an interactive checkpoint, 2026-08-18. **IN-01 explicitly excluded** and carried forward as tracked, accepted debt (plan 17-17 files the row). The four `human_verification` items (Snyk scan, 82% coverage floor, Ollama live server, vendor smoke test) remain blocked on Docker / network egress / vendor credentials / an unavailable Snyk tool — none is closeable by planning. Note the finding-ID collision: `17-REVIEW.md` reused the labels WR-03 and WR-04 for findings distinct from the ones plans 17-11 and 17-10 closed; all four are closed once this wave completes.*
 
 ## Progress
 
