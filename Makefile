@@ -338,12 +338,14 @@ snyk-code: ## Snyk static analysis (SAST) over first-party source — see snyk_r
 	@bash -c '. .devcontainer/snyk-env.sh; snyk code test --severity-threshold=medium'
 
 .PHONY: snyk-deps
-snyk-deps: ## Snyk dependency (SCA) scan over the Cargo workspace
-	@echo "$(CYAN)Running Snyk dependency scan...$(NC)"
-	@bash -c '. .devcontainer/snyk-env.sh; snyk test --all-projects --severity-threshold=medium'
+snyk-deps: ## Rust dependency scanning — delegates to cargo-audit + cargo-deny (Snyk has no Cargo support)
+	@echo "$(YELLOW)Snyk Open Source ('snyk test') does not support Cargo — it exits$(NC)"
+	@echo "$(YELLOW)SNYK-CLI-0008 'no supported target files' on this workspace.$(NC)"
+	@echo "$(CYAN)Delegating to the Rust-native equivalents instead...$(NC)"
+	@$(MAKE) --no-print-directory audit deny
 
 .PHONY: snyk
-snyk: snyk-code snyk-deps ## Run the full Snyk suite (code + dependencies)
+snyk: snyk-code ## Run Snyk SAST over first-party code (for deps use 'make security')
 
 .PHONY: security
 security: audit deny ## Run all dependency security & license checks

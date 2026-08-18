@@ -1,0 +1,13 @@
+# Snyk policy file. See https://docs.snyk.io/snyk-cli/commands/policy
+version: v1.0.0
+
+# Paths excluded from `snyk code test` (SAST).
+# These are vendored third-party tooling, not first-party Paladin code, so their
+# findings are not actionable here and would otherwise drown out real results.
+# The mandate in .github/instructions/snyk_rules.instructions.md is scoped to
+# "new first party code".
+exclude:
+  code:
+    - .claude/**
+    - node_modules/**
+    - target/**

@@ -83,15 +83,39 @@ they are set there. An empty or placeholder key file is ignored silently.
 
 ```bash
 make snyk-status   # version + whether credentials resolved (never prints the key)
-make snyk-code     # static analysis (SAST) over first-party source
-make snyk-deps     # dependency (SCA) scan of the Cargo workspace
-make snyk          # both
+make snyk-code     # static analysis (SAST) over first-party Rust — this is the useful one
+make snyk          # alias for snyk-code
+make snyk-deps     # explains why Snyk can't do this, then runs cargo-audit + cargo-deny
 
 snyk-status        # same check, available in any interactive shell
 ```
 
 `make snyk-code` is the CLI equivalent of the `snyk_code_scan` step required by
 `.github/instructions/snyk_rules.instructions.md` for new or modified first-party code.
+
+### Snyk does NOT scan Cargo dependencies
+
+`snyk test` (Snyk Open Source / SCA) has **no Cargo support**. Run in this workspace it
+fails with `SNYK-CLI-0008 — no supported target files`, even though `Cargo.toml` is right
+there. This is a product limitation, not a misconfiguration; there is nothing to fix.
+
+Rust dependency scanning is covered by the Rust-native tools already in the image:
+
+| concern | tool | target |
+|---|---|---|
+| Vulnerable dependencies | `cargo-audit` (RustSec advisory DB) | `make audit` |
+| Licenses, bans, sources, advisories | `cargo-deny` | `make deny` |
+| Both | — | `make security` |
+
+`snyk code test` (SAST) **does** analyze Rust — verified: a scan of the workspace uploads
+exactly the 556 tracked `.rs` files.
+
+### Scan exclusions
+
+The repo-root `.snyk` policy file excludes `.claude/**`, `node_modules/**` and `target/**`
+from Snyk Code. Without it the scan reports ~27 path-traversal findings in GSD's vendored
+`.cjs` tooling under `.claude/gsd-core/`, which is third-party code and not actionable
+here — it would drown out genuine first-party findings.
 
 ## Quick Start
 
