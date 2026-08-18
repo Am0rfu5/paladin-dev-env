@@ -86,38 +86,6 @@ else
     echo "  ⚠️  .env file missing (use .env.example as template)"
 fi
 
-# Wire the Snyk credential loader into interactive shells.
-# snyk-env.sh maps SNYK_API_KEY -> SNYK_TOKEN (the variable the CLI actually reads)
-# and falls back to the host-mounted ~/.config/paladin/snyk_api_key file.
-SNYK_LOADER_LINE='[ -f /workspace/.devcontainer/snyk-env.sh ] && . /workspace/.devcontainer/snyk-env.sh'
-if ! grep -Fq "$SNYK_LOADER_LINE" /home/vscode/.bashrc; then
-    {
-        echo ""
-        echo "# Load Snyk credentials (see .devcontainer/snyk-env.sh)"
-        echo "$SNYK_LOADER_LINE"
-    } >> /home/vscode/.bashrc
-    echo "  ✅ Added Snyk credential loader to ~/.bashrc"
-fi
-
-# Report Snyk readiness without ever printing the secret. Non-fatal: an
-# unauthenticated container is still perfectly usable for everything else.
-if command -v snyk >/dev/null 2>&1; then
-    # shellcheck source=snyk-env.sh
-    . /workspace/.devcontainer/snyk-env.sh
-    if [ -n "${SNYK_TOKEN:-}" ]; then
-        echo "  ✅ Snyk CLI authenticated ($(snyk --version 2>/dev/null))"
-    else
-        echo "  ⚠️  Snyk CLI present but no credentials"
-        echo "     Add your key on the HOST, then reopen the container:"
-        echo "       mkdir -p ~/.config/paladin"
-        echo "       printf '%s' '<your-snyk-token>' > ~/.config/paladin/snyk_api_key"
-        echo "       chmod 600 ~/.config/paladin/snyk_api_key"
-        echo "     Check anytime with: snyk-status"
-    fi
-else
-    echo "  ⚠️  Snyk CLI not installed — rebuild the devcontainer"
-fi
-
 echo ""
 echo -e "${GREEN}✨ Ready to code!${NC}"
 echo ""
