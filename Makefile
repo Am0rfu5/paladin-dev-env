@@ -300,6 +300,15 @@ check: ## Check code without building
 .PHONY: audit
 audit: ## Run security audit (vulnerability advisories)
 	@echo "$(CYAN)Running security audit...$(NC)"
+	@# Self-heal the advisory-db clone before auditing.
+	@# cargo-audit updates its clone with fetch+reset, which never deletes UNTRACKED
+	@# files. When RustSec renames or moves an advisory upstream (e.g. #3128 moved
+	@# RUSTSEC-2026-0244 from gettext-sys to gettext-rs), the old path survives locally
+	@# and collides with its own replacement, so the DB fails to load with
+	@# "duplicate advisory ID" and the whole security gate dies. Dropping untracked
+	@# files restores the clone to exactly what upstream tracks. Never fatal: a missing
+	@# clone (first run) or absent git just falls through to cargo audit's own fetch.
+	@git -C "$${CARGO_HOME:-$$HOME/.cargo}/advisory-db" clean -qfd 2>/dev/null || true
 	@# Exceptions are sourced from .cargo/audit.toml (single source of truth).
 	@$(CARGO) audit
 
