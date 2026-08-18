@@ -483,6 +483,28 @@ impl CompatEngine {
     /// Generate a streaming completion. POSTs with `stream: true` and
     /// assembles SSE `data: {...}` chunks, terminating on the literal
     /// `[DONE]` sentinel.
+    ///
+    /// ## Retry (WR-04, `17-REVIEW.md`)
+    ///
+    /// Only the connection-opening POST is retried — through the same
+    /// `call_api_with_retry` helper and the same `self.config.max_retries`
+    /// [`generate`](Self::generate) passes — so a transient failure opening
+    /// the stream is retried exactly as many times as `generate()` retries
+    /// the identical failure. The same non-retryable set applies: an
+    /// authentication failure, an invalid prompt, an already-empty
+    /// completion or a usage-limit rejection is attempted exactly once,
+    /// never replaying a live `Authorization` credential to an endpoint
+    /// that has already rejected it.
+    ///
+    /// Once the response is opened, `.bytes_stream()` is consumed exactly
+    /// once, **outside** the retry loop: the byte stream itself is never
+    /// re-read or re-opened, so a caller can never observe a duplicated or
+    /// reordered delta as a result of this retry.
+    ///
+    /// **Cost:** each retried open re-sends the caller's entire prompt to
+    /// the provider, so a transient failure can bill the prompt more than
+    /// once. The non-retryable set above exists precisely so a failure the
+    /// provider has already answered definitively is never retried.
     pub async fn generate_stream(
         &self,
         request: LlmRequest,
@@ -492,31 +514,44 @@ impl CompatEngine {
 
         let url = format!("{}/chat/completions", self.config.base_url);
 
-        let response = self
-            .client
-            .post(&url)
-            .json(&api_request)
-            .send()
-            .await
-            .map_err(|e| {
-                if e.is_timeout() {
-                    LlmError::Timeout(format!(
-                        "API request timed out after {} seconds",
-                        self.config.timeout_seconds
-                    ))
-                } else {
-                    LlmError::NetworkError(format!("Failed to send streaming request: {}", e))
-                }
-            })?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let error_text = response
-                .text()
+        // Only the connection-opening POST is retried — the byte stream is
+        // deliberately consumed OUTSIDE this closure, once, after the retry
+        // loop returns below. Re-opening a stream whose first chunks a
+        // caller has already consumed would deliver the same tokens twice
+        // with no marker (WR-04, `17-REVIEW.md`; T-17-71).
+        let operation = || async {
+            let response = self
+                .client
+                .post(&url)
+                .json(&api_request)
+                .send()
                 .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(self.map_error(status.as_u16(), &self.diagnostic_excerpt(&error_text)));
-        }
+                .map_err(|e| {
+                    if e.is_timeout() {
+                        LlmError::Timeout(format!(
+                            "API request timed out after {} seconds",
+                            self.config.timeout_seconds
+                        ))
+                    } else {
+                        LlmError::NetworkError(format!("Failed to send streaming request: {}", e))
+                    }
+                })?;
+
+            let status = response.status();
+            if !status.is_success() {
+                let error_text = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                return Err(self.map_error(status.as_u16(), &self.diagnostic_excerpt(&error_text)));
+            }
+
+            Ok(response)
+        };
+
+        let response = self
+            .call_api_with_retry(operation, self.config.max_retries)
+            .await?;
 
         let stream = response.bytes_stream();
 

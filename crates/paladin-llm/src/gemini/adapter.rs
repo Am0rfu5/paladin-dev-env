@@ -780,6 +780,30 @@ impl LlmPort for GeminiAdapter {
         self.execute_with_retry(operation, 3).await
     }
 
+    /// Generate a streaming completion. POSTs with `alt=sse` and assembles
+    /// SSE frames via `parse_sse_chunk`.
+    ///
+    /// ## Retry (WR-04, `17-REVIEW.md`)
+    ///
+    /// Only the connection-opening POST is retried — through the same
+    /// `execute_with_retry` helper and the same `max_retries`
+    /// literal (`3`) [`generate`](Self::generate) passes — so a transient
+    /// failure opening the stream is retried exactly as many times as
+    /// `generate()` retries the identical failure. The same non-retryable
+    /// set applies: an authentication failure, an invalid prompt, an
+    /// already-empty completion or a usage-limit rejection is attempted
+    /// exactly once, never replaying a live `x-goog-api-key` credential to
+    /// an endpoint that has already rejected it.
+    ///
+    /// Once the response is opened, `.bytes_stream()` is consumed exactly
+    /// once, **outside** the retry loop: the byte stream itself is never
+    /// re-read or re-opened, so a caller can never observe a duplicated or
+    /// reordered delta as a result of this retry.
+    ///
+    /// **Cost:** each retried open re-sends the caller's entire prompt to
+    /// Gemini, so a transient failure can bill the prompt more than once.
+    /// The non-retryable set above exists precisely so a failure the
+    /// provider has already answered definitively is never retried.
     async fn generate_stream(
         &self,
         request: LlmRequest,
@@ -791,35 +815,46 @@ impl LlmPort for GeminiAdapter {
             self.config.base_url, request.model
         );
 
-        // `alt=sse` is mandatory — without it Gemini returns a raw JSON
-        // array rather than SSE framing, and the line-oriented parse loop
-        // below would silently produce nothing.
-        let response = self
-            .client
-            .post(&url)
-            .query(&[("alt", "sse")])
-            .json(&gemini_request)
-            .send()
-            .await
-            .map_err(|e| {
-                if e.is_timeout() {
-                    LlmError::Timeout(format!(
-                        "Gemini stream request timed out after {} seconds",
-                        self.config.timeout_seconds
-                    ))
-                } else {
-                    LlmError::NetworkError(format!("Gemini stream request failed: {e}"))
-                }
-            })?;
-
-        if !response.status().is_success() {
-            let status = response.status().as_u16();
-            let body = response
-                .text()
+        // Only the connection-opening POST is retried — the byte stream is
+        // deliberately consumed OUTSIDE this closure, once, after the retry
+        // loop returns below. Re-opening a stream whose first chunks a
+        // caller has already consumed would deliver the same tokens twice
+        // with no marker (WR-04, `17-REVIEW.md`; T-17-71).
+        let operation = || async {
+            // `alt=sse` is mandatory — without it Gemini returns a raw JSON
+            // array rather than SSE framing, and the line-oriented parse
+            // loop below would silently produce nothing.
+            let response = self
+                .client
+                .post(&url)
+                .query(&[("alt", "sse")])
+                .json(&gemini_request)
+                .send()
                 .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            return Err(self.map_error(status, &body));
-        }
+                .map_err(|e| {
+                    if e.is_timeout() {
+                        LlmError::Timeout(format!(
+                            "Gemini stream request timed out after {} seconds",
+                            self.config.timeout_seconds
+                        ))
+                    } else {
+                        LlmError::NetworkError(format!("Gemini stream request failed: {e}"))
+                    }
+                })?;
+
+            if !response.status().is_success() {
+                let status = response.status().as_u16();
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                return Err(self.map_error(status, &body));
+            }
+
+            Ok(response)
+        };
+
+        let response = self.execute_with_retry(operation, 3).await?;
 
         let stream = response.bytes_stream().flat_map(|chunk_result| {
             let items: Vec<Result<StreamingResponse, LlmError>> = match chunk_result {
