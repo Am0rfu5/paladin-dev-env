@@ -1197,9 +1197,9 @@ Plans:
 
 **Wave 12** *(blocked on Wave 11 — the tracer is proven before the Warnings expand on it)*
 
-- [ ] 17-13-PLAN.md — WR-01: `create()` accepts the `openai_compatible` underscore spelling `LlmConfig` already blesses, so a validated config cannot fail at the point of use on spelling alone
-- [ ] 17-14-PLAN.md — WR-02: an inverted or non-finite `OPENAI_COMPATIBLE_TEMPERATURE_MIN`/`_MAX` pair is a configuration error rather than a silently-accepted inverted range
-- [ ] 17-15-PLAN.md — WR-03 *(new — distinct from the closed auth-classification WR-03)*: Gemini reports a truncated-to-empty completion as `EmptyCompletion`, the same signal every compat preset gives
+- [x] 17-13-PLAN.md — WR-01: `create()` accepts the `openai_compatible` underscore spelling `LlmConfig` already blesses, so a validated config cannot fail at the point of use on spelling alone
+- [x] 17-14-PLAN.md — WR-02: an inverted or non-finite `OPENAI_COMPATIBLE_TEMPERATURE_MIN`/`_MAX` pair is a configuration error rather than a silently-accepted inverted range
+- [x] 17-15-PLAN.md — WR-03 *(new — distinct from the closed auth-classification WR-03)*: Gemini reports a truncated-to-empty completion as `EmptyCompletion`, the same signal every compat preset gives
 
 **Wave 13** *(blocked on Wave 12 — shares `gemini/adapter.rs` with 17-15)*
 
