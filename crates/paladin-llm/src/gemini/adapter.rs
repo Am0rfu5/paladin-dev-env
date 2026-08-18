@@ -393,10 +393,17 @@ impl GeminiAdapter {
     /// Parse a well-formed Gemini `generateContent` response into an
     /// [`LlmResponse`].
     ///
-    /// Fails with [`LlmError::EmptyCompletion`] when `candidates` is empty
-    /// rather than ever returning `Ok` with empty content — an
-    /// empty-string success is indistinguishable from a valid empty answer
-    /// to every downstream caller.
+    /// Fails with [`LlmError::EmptyCompletion`] under two named conditions
+    /// rather than ever returning `Ok` with empty content — an empty-string
+    /// success is indistinguishable from a valid empty answer to every
+    /// downstream caller:
+    ///
+    /// 1. `candidates` is empty.
+    /// 2. The mapped finish reason is [`FinishReason::Length`] (Gemini's
+    ///    `MAX_TOKENS`) and the extracted content trims to empty — the
+    ///    reasoning-model truncation signature also detected by
+    ///    [`crate::compat::engine::CompatEngine::detect_empty_completion`]
+    ///    for every compat-preset adapter in this crate.
     fn parse_response(
         &self,
         request_id: Uuid,
@@ -409,6 +416,26 @@ impl GeminiAdapter {
 
         let content = candidate_text(candidate);
         let finish_reason = map_finish_reason(candidate.finish_reason.as_deref());
+
+        // Mirrors `crate::compat::engine::CompatEngine::detect_empty_completion` —
+        // the two must stay in step by hand (D-08 keeps Gemini bespoke, so
+        // this parity is not structural; a divergence between the two is a
+        // defect). The predicate is deliberately two conditions, not one: an
+        // empty response under a normal `STOP` finish is a legal empty
+        // answer, the same case every compat preset also lets through. The
+        // finish reason is the discriminator specifically so a `SAFETY` or
+        // `RECITATION` refusal is never misreported as a token-budget
+        // problem — the model declined to answer, and a larger max_tokens
+        // will produce the same refusal.
+        if matches!(finish_reason, FinishReason::Length) && content.trim().is_empty() {
+            return Err(LlmError::EmptyCompletion(format!(
+                "Gemini response finished with MAX_TOKENS and produced no text ({} raw chars) — \
+                 reasoning likely consumed the entire max_tokens budget; retry with a larger \
+                 max_tokens",
+                content.len()
+            )));
+        }
+
         let usage = response.usage_metadata.unwrap_or_default();
 
         Ok(LlmResponse {
