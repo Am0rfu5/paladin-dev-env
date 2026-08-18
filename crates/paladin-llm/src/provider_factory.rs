@@ -341,8 +341,12 @@ impl LlmProviderFactory {
     ///
     /// Configuration is loaded from environment variables (see each
     /// adapter's `*Config::from_env()` for the expected variable names).
-    /// The name is matched case-insensitively against
-    /// [`provider_names`].
+    /// The name is matched case-insensitively **and with underscores
+    /// normalised to hyphens** against [`provider_names`], so
+    /// `"openai-compatible"`, `"openai_compatible"` and
+    /// `"OpenAI_Compatible"` all resolve to the one generic-provider row.
+    /// `"openai-compatible"` remains the canonical spelling reported by
+    /// [`provider_names`] and by `get_provider_name()` (D-07, D-09).
     ///
     /// # Errors
     ///
@@ -350,7 +354,14 @@ impl LlmProviderFactory {
     /// required environment variable is absent, or the adapter fails to
     /// initialise.
     pub fn create(&self, provider_name: &str) -> Result<Arc<dyn LlmPort>, ProviderFactoryError> {
-        let lower = provider_name.to_lowercase();
+        // Mirrors `config/llm.rs`'s `get_provider_config`, which accepts
+        // both the hyphenated and underscore spellings of
+        // "openai-compatible" — the two must stay aligned so a name the
+        // config layer blesses (WR-01) is always a name this factory
+        // resolves. No registry row contains an underscore, so this
+        // transform can only merge separator spellings of the same row;
+        // it cannot collide two distinct providers.
+        let lower = provider_name.to_lowercase().replace('_', "-");
         provider_registry()
             .iter()
             .find(|row| row.name == lower)
@@ -530,8 +541,8 @@ mod tests {
 
     /// Non-merge control: separator normalisation must merge spellings of
     /// the *same* row, never widen `"openai"` into the `"openai-compatible"`
-    /// row. Guards against a normalisation broader than `replace('_', "-")`
-    /// (T-17-63).
+    /// row. Guards against a normalisation broader than one separator
+    /// substitution (T-17-63).
     #[cfg(feature = "openai")]
     #[test]
     fn create_does_not_absorb_openai_into_openai_compatible() {
