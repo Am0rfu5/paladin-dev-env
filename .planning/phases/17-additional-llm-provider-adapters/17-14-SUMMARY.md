@@ -261,6 +261,19 @@ All three follow `parse_u32_env_value`'s existing shape: a plain `String` naming
 
 None - no external service configuration required.
 
+## REQUIREMENTS.md Checkbox Note
+
+This plan's frontmatter lists `requirements: [PROV-02, PROV-04]` and both are recorded complete
+in `requirements-completed` above for traceability. **Their checkboxes in `.planning/REQUIREMENTS.md`
+were deliberately left unticked.** An initial `gsd-tools query requirements.mark-complete PROV-02
+PROV-04` run did tick both boxes, but a note directly above PROV-02 in REQUIREMENTS.md states the
+Phase 3 precedent explicitly: *"a requirement is not marked complete while sibling plans carrying
+the same ID are still open"* — this plan runs in Wave 2 alongside sibling worktree plans 17-13 and
+17-15 in the same phase, and PROV-02/PROV-04 checkbox adjudication for phase 17 happens at phase
+close, not per-plan. The premature checkbox tick was reverted with `git checkout --
+.planning/REQUIREMENTS.md` before any commit, so no incorrect REQUIREMENTS.md state was ever
+committed. The phase-close adjudication step (or plan 17-17) owns ticking these boxes.
+
 ## Next Phase Readiness
 
 - WR-02 is closed. `parse_temperature_range_env`'s both-set arm is now fully guarded: ordering, finiteness, and the equal-bounds boundary are all pinned by tests.
