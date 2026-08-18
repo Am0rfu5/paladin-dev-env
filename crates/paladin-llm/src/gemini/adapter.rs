@@ -1383,6 +1383,132 @@ mod tests {
         assert_eq!(llm_response.usage.total_tokens, 8);
     }
 
+    // ── WR-03 (new): a truncated-to-empty completion is an error, not a success ──
+    //
+    // Wire-level facts resolved by reading (not assuming) the code, both recorded
+    // in 17-15-SUMMARY.md per D-00e:
+    //   1. `MAX_TOKENS` maps to `FinishReason::Length` — `map_finish_reason`,
+    //      crates/paladin-llm/src/gemini/adapter.rs:1074.
+    //   2. `SAFETY` maps to `FinishReason::ContentFilter`, not `Length` —
+    //      `map_finish_reason`, crates/paladin-llm/src/gemini/adapter.rs:1075 —
+    //      so it is the non-truncation reason used for the refusal control below.
+
+    #[test]
+    fn parse_response_maps_max_tokens_with_no_parts_to_empty_completion() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "candidates": [{
+                "content": {"role": "model", "parts": []},
+                "finishReason": "MAX_TOKENS"
+            }]
+        });
+        let response: GeminiResponse = serde_json::from_value(body).unwrap();
+
+        let result = adapter.parse_response(Uuid::new_v4(), "gemini-2.5-flash", response);
+
+        assert!(
+            matches!(result, Err(LlmError::EmptyCompletion(_))),
+            "expected Err(EmptyCompletion(_)) for a MAX_TOKENS finish with no parts, got {result:?}"
+        );
+        if let Err(LlmError::EmptyCompletion(message)) = result {
+            assert!(
+                message.contains("max_tokens"),
+                "EmptyCompletion message should name the remedy (a larger max_tokens), got: {message}"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_response_maps_max_tokens_with_whitespace_only_text_to_empty_completion() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "candidates": [{
+                "content": {"role": "model", "parts": [{"text": "   \n  "}]},
+                "finishReason": "MAX_TOKENS"
+            }]
+        });
+        let response: GeminiResponse = serde_json::from_value(body).unwrap();
+
+        let result = adapter.parse_response(Uuid::new_v4(), "gemini-2.5-flash", response);
+
+        assert!(
+            matches!(result, Err(LlmError::EmptyCompletion(_))),
+            "expected Err(EmptyCompletion(_)) for a MAX_TOKENS finish with whitespace-only text, got {result:?}"
+        );
+    }
+
+    /// Adjacency control: the guard is two conditions, not one. A truncated
+    /// response that still produced real text is a success. **Passes today** —
+    /// this pins the boundary so the fix in Task 2 cannot widen into a
+    /// catch-all on `finish_reason` alone.
+    #[test]
+    fn parse_response_keeps_a_truncated_response_that_produced_text() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "candidates": [{
+                "content": {"role": "model", "parts": [{"text": "partial answer"}]},
+                "finishReason": "MAX_TOKENS"
+            }]
+        });
+        let response: GeminiResponse = serde_json::from_value(body).unwrap();
+
+        let llm_response = adapter
+            .parse_response(Uuid::new_v4(), "gemini-2.5-flash", response)
+            .expect("a truncated response with real text must still be Ok");
+
+        assert_eq!(llm_response.content, "partial answer");
+        assert!(matches!(llm_response.finish_reason, FinishReason::Length));
+    }
+
+    /// Adjacency control: exact parity with
+    /// `crate::compat::engine::CompatEngine::detect_empty_completion`, which
+    /// also lets a `STOP`-finished empty response through as `Ok`. **Passes
+    /// today.** Widening the guard to fire on empty content under any finish
+    /// reason would make Gemini stricter than every other adapter in this
+    /// crate — a different inconsistency, not a fix.
+    #[test]
+    fn parse_response_keeps_an_empty_response_that_finished_normally() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "candidates": [{
+                "content": {"role": "model", "parts": []},
+                "finishReason": "STOP"
+            }]
+        });
+        let response: GeminiResponse = serde_json::from_value(body).unwrap();
+
+        let llm_response = adapter
+            .parse_response(Uuid::new_v4(), "gemini-2.5-flash", response)
+            .expect("an empty response that finished normally must still be Ok");
+
+        assert!(llm_response.content.is_empty());
+    }
+
+    /// Refusal control: a `SAFETY` finish (content-policy refusal, mapped to
+    /// `FinishReason::ContentFilter`, never `Length`) with no text must not be
+    /// reported as a token-budget problem. **Passes today**, and is the test
+    /// that keeps the truncation-only prohibition honest: a refusal reported
+    /// as a budget problem sends the operator to buy a larger budget that
+    /// will produce the same refusal.
+    #[test]
+    fn parse_response_does_not_blame_the_token_budget_for_a_refusal() {
+        let adapter = test_adapter("https://example.invalid");
+        let body = json!({
+            "candidates": [{
+                "content": {"role": "model", "parts": []},
+                "finishReason": "SAFETY"
+            }]
+        });
+        let response: GeminiResponse = serde_json::from_value(body).unwrap();
+
+        let result = adapter.parse_response(Uuid::new_v4(), "gemini-2.5-flash", response);
+
+        assert!(
+            !matches!(result, Err(LlmError::EmptyCompletion(_))),
+            "a SAFETY refusal must not be reported as EmptyCompletion (token-budget problem), got {result:?}"
+        );
+    }
+
     // ── Error mapping ──
 
     #[test]
