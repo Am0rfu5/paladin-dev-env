@@ -314,6 +314,37 @@ openapi: ## Regenerate the committed OpenAPI baseline (crates/paladin-web/openap
 	@UPDATE_OPENAPI=1 $(CARGO) test -p paladin-web --lib openapi_matches_committed_baseline -- --quiet
 	@echo "Wrote crates/paladin-web/openapi.json"
 
+.PHONY: snyk-status
+snyk-status: ## Show Snyk CLI version and whether credentials resolved (never prints the key)
+	@command -v snyk >/dev/null 2>&1 || { \
+		echo "$(RED)snyk not found. Rebuild the devcontainer (.devcontainer/Dockerfile.dev).$(NC)"; \
+		exit 1; \
+	}
+	@echo "$(CYAN)snyk $$(snyk --version)$(NC)"
+	@# snyk-env.sh is a bash script; make's default shell is dash, so invoke bash.
+	@bash -c '. .devcontainer/snyk-env.sh; \
+	if [ -n "$${SNYK_TOKEN:-}" ]; then \
+		echo -e "$(GREEN)✅ Snyk credentials resolved$(NC)"; \
+	else \
+		echo -e "$(RED)❌ No Snyk credentials.$(NC)"; \
+		echo "   On the HOST: mkdir -p ~/.config/paladin"; \
+		echo "   printf %s \"<your-snyk-token>\" > ~/.config/paladin/snyk_api_key"; \
+		exit 1; \
+	fi'
+
+.PHONY: snyk-code
+snyk-code: ## Snyk static analysis (SAST) over first-party source — see snyk_rules.instructions.md
+	@echo "$(CYAN)Running Snyk Code scan...$(NC)"
+	@bash -c '. .devcontainer/snyk-env.sh; snyk code test --severity-threshold=medium'
+
+.PHONY: snyk-deps
+snyk-deps: ## Snyk dependency (SCA) scan over the Cargo workspace
+	@echo "$(CYAN)Running Snyk dependency scan...$(NC)"
+	@bash -c '. .devcontainer/snyk-env.sh; snyk test --all-projects --severity-threshold=medium'
+
+.PHONY: snyk
+snyk: snyk-code snyk-deps ## Run the full Snyk suite (code + dependencies)
+
 .PHONY: security
 security: audit deny ## Run all dependency security & license checks
 

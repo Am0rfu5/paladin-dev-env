@@ -91,6 +91,17 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Install the Snyk CLI (pinned) — drives `make snyk-code` / `make snyk-test` and the
+# mandatory code scan in .github/instructions/snyk_rules.instructions.md.
+# Installed via the npm global prefix (/usr) so the binary lands on /usr/bin/snyk,
+# available to the non-root user without a per-user install. Node 22 is provisioned
+# above, so this must stay after the NodeSource block.
+# Auth: the CLI reads SNYK_TOKEN (and SNYK_API for a custom endpoint) — NOT
+# SNYK_API_KEY. .devcontainer/snyk-env.sh maps SNYK_API_KEY -> SNYK_TOKEN so the
+# stored secret keeps the project's name while the CLI still authenticates.
+RUN npm install -g snyk@1.1306.4 \
+    && snyk --version
+
 # Install pipx + pre-commit (commit/push quality gates) system-wide so the tool
 # is available to the non-root user without a per-user install.
 ENV PIPX_HOME=/usr/local/pipx \

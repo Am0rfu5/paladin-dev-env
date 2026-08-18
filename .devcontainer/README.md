@@ -11,6 +11,7 @@ Professional development container configuration for the Paladin multi-agent orc
 - **Debugging Tools**: gdb, lldb, valgrind, strace
 - **Database Clients**: sqlite3, mysql-client, redis-tools
 - **Modern CLI Tools**: bat, exa, ripgrep, fd, tokei
+- **Security Scanning**: cargo-audit, cargo-deny, cargo-cyclonedx, and the [Snyk CLI](#snyk-credentials)
 
 ### 🔌 VS Code Extensions
 
@@ -36,6 +37,61 @@ The DevContainer includes Docker Compose configuration for:
 - **Testing**: Integrated test explorer
 - **Debugging**: Full LLDB debugging support
 - **Git Hooks**: Pre-commit checks for format and lint
+
+## Snyk credentials
+
+The Snyk CLI is baked into the image (pinned in `Dockerfile.dev`), so it is present
+on every rebuild. Credentials are **not** baked in — they come from the host.
+
+### One-time host setup
+
+The container's `/home/vscode` is part of the container filesystem and is destroyed
+on every rebuild, so the key cannot live there. `docker-compose.yml` bind-mounts the
+host's `~/.config/paladin` read-only at `/home/vscode/.config/paladin` instead, which
+survives rebuilds and is shared with any other project using the same convention.
+
+Run this **on the host**, before first launch:
+
+```bash
+mkdir -p ~/.config/paladin
+printf '%s' '<your-snyk-token>' > ~/.config/paladin/snyk_api_key
+chmod 600 ~/.config/paladin/snyk_api_key
+```
+
+Create the directory *before* starting the container — otherwise the Docker daemon
+creates it for you, owned by root.
+
+> **Note on the variable name.** The Snyk CLI authenticates from `SNYK_TOKEN` (and
+> reads `SNYK_API` for a self-hosted or regional endpoint). It does **not** read
+> `SNYK_API_KEY`. Paladin stores the secret under the name `SNYK_API_KEY`, and
+> `.devcontainer/snyk-env.sh` is the single place that maps one to the other.
+
+### How the key is resolved
+
+`.devcontainer/snyk-env.sh` is sourced from `~/.bashrc` (wired up by `post-start.sh`)
+and resolves the first of:
+
+1. `SNYK_TOKEN` already exported — used as-is
+2. `SNYK_API_KEY` already exported — mirrored into `SNYK_TOKEN`
+3. `~/.config/paladin/snyk_api_key` — read, trimmed, exported as both
+
+So an explicit environment variable always beats the file. `docker-compose.yml` also
+passes `SNYK_API_KEY` / `SNYK_TOKEN` / `SNYK_API` through from the host shell when
+they are set there. An empty or placeholder key file is ignored silently.
+
+### Usage
+
+```bash
+make snyk-status   # version + whether credentials resolved (never prints the key)
+make snyk-code     # static analysis (SAST) over first-party source
+make snyk-deps     # dependency (SCA) scan of the Cargo workspace
+make snyk          # both
+
+snyk-status        # same check, available in any interactive shell
+```
+
+`make snyk-code` is the CLI equivalent of the `snyk_code_scan` step required by
+`.github/instructions/snyk_rules.instructions.md` for new or modified first-party code.
 
 ## Quick Start
 

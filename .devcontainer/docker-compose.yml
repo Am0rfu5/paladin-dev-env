@@ -10,6 +10,12 @@ services:
       - ..:/workspace:cached
       - paladin-cargo-cache:/usr/local/cargo/registry
       - paladin-target-cache:/workspace/target
+      # Snyk (and future Paladin) credentials, read-only from the host.
+      # /home/vscode is part of the container filesystem and is DESTROYED on every
+      # rebuild, so the key must live on the host to survive one. Create the host
+      # directory before first launch, otherwise the Docker daemon creates it
+      # root-owned:  mkdir -p ~/.config/paladin
+      - ${HOME}/.config/paladin:/home/vscode/.config/paladin:ro
     command: /bin/sh -c "while sleep 1000; do :; done"
     cap_add:
       - SYS_PTRACE
@@ -22,6 +28,14 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
+      # Snyk auth. Bare names (no "=") pass through from the host shell only when
+      # set there, and are left UNSET in the container otherwise — an empty
+      # SNYK_API would otherwise override the CLI's default endpoint.
+      # When unset, .devcontainer/snyk-env.sh falls back to the key file above.
+      # The CLI reads SNYK_TOKEN, not SNYK_API_KEY; snyk-env.sh maps between them.
+      - SNYK_API_KEY
+      - SNYK_TOKEN
+      - SNYK_API
     depends_on:
       - redis
       - minio
