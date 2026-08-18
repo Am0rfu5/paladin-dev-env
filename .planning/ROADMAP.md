@@ -1203,7 +1203,7 @@ Plans:
 
 **Wave 13** *(blocked on Wave 12 — shares `gemini/adapter.rs` with 17-15)*
 
-- [ ] 17-16-PLAN.md — WR-04 *(new — distinct from the closed redirect-replay WR-04)*: both `generate_stream` implementations retry a transient connection-open failure exactly as their own `generate()` does, and attempt an auth failure exactly once
+- [x] 17-16-PLAN.md — WR-04 *(new — distinct from the closed redirect-replay WR-04)*: both `generate_stream` implementations retry a transient connection-open failure exactly as their own `generate()` does, and attempt an auth failure exactly once
 
 **Wave 14** *(blocked on Wave 13 — records what the run could not verify)*
 
