@@ -216,9 +216,20 @@ fn parse_u32_env_value(
 /// Parse the `OPENAI_COMPATIBLE_TEMPERATURE_MIN` / `_MAX` pair as
 /// `Option<(f32, f32)>`.
 ///
-/// Both unset yields `None` (ADR-0004's global range applies). Both set
-/// yields `Some((min, max))`. Exactly one set is a configuration error —
-/// a half-declared range is not a defensible partial state.
+/// Both unset yields `None` (ADR-0004's global range applies). Both set and
+/// both finite with `min <= max` yields `Some((min, max))` — equal bounds
+/// are accepted; pinning a provider to one temperature is a legitimate
+/// declaration. Exactly one set is a configuration error — a half-declared
+/// range is not a defensible partial state.
+///
+/// Both set, either non-finite (`NaN`, `inf`, `-inf`), or `min > max`, is
+/// also a configuration error naming the offending variable(s) and value(s)
+/// (WR-02). This function never repairs a bad declaration — it never swaps
+/// an inverted pair, clamps a non-finite bound, or falls back to a default.
+/// An operator whose configuration were silently corrected would never
+/// learn it was wrong, and the tuple this function emits must stay ordered
+/// `(min, max)` to match every curated preset's
+/// `ProviderCapabilities::temperature_range` in this crate.
 fn parse_temperature_range_env(
     min: Option<String>,
     max: Option<String>,
@@ -232,6 +243,29 @@ fn parse_temperature_range_env(
             let max: f32 = max_raw.trim().parse().map_err(|_| {
                 format!("Invalid OPENAI_COMPATIBLE_TEMPERATURE_MAX value {max_raw:?} — expected a number")
             })?;
+            // Finiteness must be checked before ordering: "NaN".parse::<f32>()
+            // succeeds, and every comparison against NaN is `false` in both
+            // directions, so an ordering guard placed first would pass
+            // (NaN, NaN) — and (NaN, x), (x, NaN) — straight through as a
+            // range no downstream comparison could ever resolve.
+            if !min.is_finite() {
+                return Err(format!(
+                    "Invalid OPENAI_COMPATIBLE_TEMPERATURE_MIN value {min} — must be a finite number"
+                ));
+            }
+            if !max.is_finite() {
+                return Err(format!(
+                    "Invalid OPENAI_COMPATIBLE_TEMPERATURE_MAX value {max} — must be a finite number"
+                ));
+            }
+            // Strictly-greater, never >=: equal bounds are a legitimate
+            // single-point declaration and must stay accepted.
+            if min > max {
+                return Err(format!(
+                    "OPENAI_COMPATIBLE_TEMPERATURE_MIN value {min} must not exceed \
+                     OPENAI_COMPATIBLE_TEMPERATURE_MAX value {max}"
+                ));
+            }
             Ok(Some((min, max)))
         }
         (Some(_), None) => Err(
