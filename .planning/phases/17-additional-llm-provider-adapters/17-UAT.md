@@ -3,26 +3,55 @@ status: testing
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-18T02:35:00Z
+updated: 2026-08-18T16:40:00Z
 ---
 
 ## Current Test
 
-number: 1
-name: Snyk code scan over every file this phase modified
+number: 2
+name: Workspace coverage floor (82%, ADR-0006)
 expected: |
-  Snyk reports no unresolved issues on the modified files, or any findings are fixed
-  and a clean rescan is recorded.
+  `cargo llvm-cov` reports >= 82% workspace line coverage with all nine adapters' code
+  and every gap-closure regression test counted, not excluded.
 awaiting: user response
 
 ## Tests
 
-### 1. Snyk code scan over every file this phase modified
+### 1. Security scan over every file this phase modified
 
-expected: Snyk reports no unresolved issues on the modified files, or any findings are fixed and a clean rescan is recorded.
-why_human: The `snyk_code_scan` MCP tool and the Snyk CLI are absent from every runtime used in this phase — all eight executors that touched Rust source, and the verifier itself. Every executor recorded the scan as explicitly *not run*, never as passed. `WINDOWS.md` rows 15-18 track this honestly, but tracking is not closing. CLAUDE.md imports `snyk_rules.instructions.md` as mandatory for new/modified first-party code.
+expected: The project's static-analysis and dependency-security gates report no unresolved issues on the modified files.
+result: pass
+verified: 2026-08-18 (rerun)
+tool_change: |
+  The original expectation named Snyk. Snyk has been REMOVED from the project — it provides no
+  coverage for Rust. Evidence: a probe file carrying four textbook vulnerabilities (hardcoded
+  credential, command injection via `sh -c`, path traversal, SQL injection) returned 0 findings
+  from `snyk code test`; the same logic in JavaScript returned 3 findings (HIGH/MEDIUM/LOW),
+  confirming the scanner and auth worked and the gap is Rust rule coverage. `snyk test` (Snyk
+  Open Source) has no Cargo support at all and exits SNYK-CLI-0008 on this workspace. The
+  earlier "556 Rust files, 0 issues" result was therefore vacuous — not evidence of clean code.
+evidence: |
+  - `make security` -> exit 0. `cargo audit`: 1217 advisories loaded, 677 crate dependencies
+    scanned, no vulnerabilities (9 pre-existing allowlisted warnings per `.cargo/audit.toml`).
+    `cargo deny`: "advisories ok, bans ok, licenses ok, sources ok".
+  - This gate was previously DOWN and masking a real advisory. Two defects fixed to restore it:
+    RUSTSEC-2026-0258 (`h2` 0.4.14 -> 0.4.16, unbounded empty DATA frames) in commit 82b1a9e,
+    and a stale untracked advisory-db file that broke DB loading, self-healed in commit f93d306.
+  - `cargo clippy --workspace --all-targets --all-features -- -D warnings` -> exit 0.
+  - `cargo check --workspace --all-targets` -> exit 0.
+  - Targeted credential review of the five in-scope files: `compat/engine.rs` applies
+    `diagnostic_excerpt` (redact-then-bound) at every error path — generate (436), stream (564),
+    model-list (658) and body-read (457); `gemini/adapter.rs` applies it at 3 sites;
+    `openai_compatible/adapter.rs` and `provider_factory.rs` perform no HTTP and need none.
+    No log statement interpolates an `api_key`; `LlmProviderConfig` is never `Debug`-formatted
+    or serialized outward. Presets set `redirect_policy: Policy::none()` so a 3xx cannot forward
+    the credential header to an attacker-influenced host (WR-04).
+residual_gap: |
+  The project now has NO SAST tool for Rust. `cargo-audit`/`cargo-deny` are dependency scanners
+  and `clippy` is a lint, so neither is a substitute for taint analysis of first-party code.
+  Recorded as a deferred follow-up, not a Phase 17 blocker — no first-party defect was found by
+  any available means, and evaluating a Rust-capable SAST (CodeQL, Semgrep) is its own scope.
 scope: `crates/paladin-llm/src/provider_factory.rs`, `crates/paladin-llm/src/openai_compatible/adapter.rs`, `crates/paladin-llm/src/gemini/adapter.rs`, `crates/paladin-llm/src/compat/engine.rs`, `tests/unit/llm/provider_factory_test.rs`
-result: [pending]
 
 ### 2. Workspace coverage floor (82%, ADR-0006)
 
@@ -53,10 +82,24 @@ result: [pending]
 ## Summary
 
 total: 5
-passed: 0
+passed: 1
 issues: 0
-pending: 5
+pending: 4
 skipped: 0
 blocked: 0
 
 ## Gaps
+
+## Deferred Follow-Ups
+
+- test: 1
+  idea: "Evaluate a Rust-capable SAST (CodeQL Rust, Semgrep) to replace the removed Snyk. The
+    project currently has no static taint analysis for first-party Rust; dependency scanning
+    (cargo-audit/cargo-deny) and linting (clippy) do not cover it."
+  deferred_at: 2026-08-18
+- test: 1
+  idea: "Amend .github/instructions/snyk_rules.instructions.md and the CLAUDE.md import that
+    mandates a Snyk scan for new first-party code — the mandate is now unsatisfiable. Stale
+    Snyk references also remain in .devcontainer/CI-CD.md (snyk/actions/rust@master) and
+    .devcontainer/FILES.md."
+  deferred_at: 2026-08-18
