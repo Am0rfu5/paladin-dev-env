@@ -224,7 +224,7 @@ Build and run tasks.
 Editor settings (existing, maintained).
 
 **Settings:**
-- Snyk integration
+- Editor/formatting preferences
 - Auto-approval for common commands
 
 ## Additional Files

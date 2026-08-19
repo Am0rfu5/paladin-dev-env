@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 18
-waived_count: 0
+open_count: 14
+waived_count: 4
 fixed_count: 1
 total_count: 19
-last_updated: 2026-08-18T02:11:05.490Z
+last_updated: 2026-08-19T13:55:50.375Z
 ---
 
 # Broken Windows Ledger
@@ -29,10 +29,10 @@ last_updated: 2026-08-18T02:11:05.490Z
 | 12 | 17 | unrun-verify | tests/integration/ollama_docker_test.rs |  | Ollama Docker-gated Tier 2 suite (17-07 Task 2) authored and proven to compile/clippy-clean/skip-gracefully, but never run against a real Ollama server -- no Docker daemon in the execution sandbox. Runtime behavior (generate/generate_stream/get_available_models/validate_model against real qwen2.5:0.5b) is unverified. | open |  | 2026-08-17T14:17:30.134Z |  |
 | 13 | 17 | unrun-verify | Makefile |  | 17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead. | open |  | 2026-08-17T14:17:37.112Z |  |
 | 14 | 17 | deviation | docker/docker-compose.test.yml |  | 17-07 Task 2: ollama-test healthcheck uses 'ollama list' (native /api/tags) instead of the plan's preferred curl-based /v1/models check, because curl/wget availability in the ollama/ollama:0.3.14 base image could not be verified without Docker in this sandbox. 'ollama list' is a well-precedented dependency-free healthcheck for this exact image. Compose file syntax validated via python yaml.safe_load only -- 'docker compose config' itself was never run. | open |  | 2026-08-17T14:17:46.408Z |  |
-| 15 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Snyk code scan (per snyk_rules.instructions.md) could not be run — no Snyk MCP tool or CLI available in this worktree's runtime (no network egress); recorded as not-run, never as passed | open |  | 2026-08-17T19:33:52.477Z |  |
-| 16 | 17 | unrun-verify | crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime | open |  | 2026-08-17T20:01:16.281Z |  |
-| 17 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-11's verification step 7 (Snyk code scan over crates/paladin-llm/src/gemini/adapter.rs) was not run -- no snyk_code_scan MCP tool and no Snyk CLI were available in the executor's runtime (no network egress). 17-11's own SUMMARY.md recorded this as not-run, never as passed. This row is the sibling of ids 15 and 16, filed 2026-08-18 by plan 17-17 after 17-VERIFICATION.md flagged 17-11's row as missing. | open |  | 2026-08-18T02:10:42.462Z |  |
-| 18 | 17 | unrun-verify | crates/paladin-llm/src/provider_factory.rs,tests/unit/llm/provider_factory_test.rs,crates/paladin-llm/src/openai_compatible/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs,crates/paladin-llm/src/compat/engine.rs |  | Plans 17-12 through 17-16 each attempted the mandated Snyk code scan (per snyk_rules.instructions.md, imported into CLAUDE.md) over the files they modified; none could run -- no snyk_code_scan MCP tool and no Snyk CLI in this environment. All five SUMMARYs (17-12-SUMMARY.md, 17-13-SUMMARY.md, 17-14-SUMMARY.md, 17-15-SUMMARY.md, 17-16-SUMMARY.md) record their scans as not-run, never as passed. Filed 2026-08-18 by plan 17-17. | open |  | 2026-08-18T02:10:55.983Z |  |
+| 15 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Snyk code scan (per snyk_rules.instructions.md) could not be run — no Snyk MCP tool or CLI available in this worktree's runtime (no network egress); recorded as not-run, never as passed | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-17T19:33:52.477Z | 2026-08-19T13:55:48.872Z |
+| 16 | 17 | unrun-verify | crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-17T20:01:16.281Z | 2026-08-19T13:55:49.213Z |
+| 17 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-11's verification step 7 (Snyk code scan over crates/paladin-llm/src/gemini/adapter.rs) was not run -- no snyk_code_scan MCP tool and no Snyk CLI were available in the executor's runtime (no network egress). 17-11's own SUMMARY.md recorded this as not-run, never as passed. This row is the sibling of ids 15 and 16, filed 2026-08-18 by plan 17-17 after 17-VERIFICATION.md flagged 17-11's row as missing. | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-18T02:10:42.462Z | 2026-08-19T13:55:49.665Z |
+| 18 | 17 | unrun-verify | crates/paladin-llm/src/provider_factory.rs,tests/unit/llm/provider_factory_test.rs,crates/paladin-llm/src/openai_compatible/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs,crates/paladin-llm/src/compat/engine.rs |  | Plans 17-12 through 17-16 each attempted the mandated Snyk code scan (per snyk_rules.instructions.md, imported into CLAUDE.md) over the files they modified; none could run -- no snyk_code_scan MCP tool and no Snyk CLI in this environment. All five SUMMARYs (17-12-SUMMARY.md, 17-13-SUMMARY.md, 17-14-SUMMARY.md, 17-15-SUMMARY.md, 17-16-SUMMARY.md) record their scans as not-run, never as passed. Filed 2026-08-18 by plan 17-17. | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-18T02:10:55.983Z | 2026-08-19T13:55:50.375Z |
 | 19 | 17 | deviation | .project/current-exports.txt |  | The public-API surface snapshot .project/current-exports.txt was regenerated under default features only, so KimiAdapter, QwenAdapter, GrokAdapter, OllamaAdapter, GeminiAdapter and OpenAiCompatibleAdapter do not appear in it and cannot be checked for public-API drift. This is consistent with D-11's unchanged default feature set and is not itself wrong. 17-REVIEW.md records it as IN-01, non-blocking, with the suggested follow-up of generating an --features llm-all variant or documenting its absence. It was excluded from the 2026-08-18 gap-closure scope by explicit developer decision, taken in an interactive AskUserQuestion checkpoint in the orchestrating /gsd-plan-phase 17 --gaps session -- a recorded human choice, not an --auto inference -- and is therefore carried forward as accepted debt (IN-01) rather than dropped. Filed 2026-08-18 by plan 17-17. | open |  | 2026-08-18T02:11:05.490Z |  |
 
 ````json
@@ -212,10 +212,10 @@ last_updated: 2026-08-18T02:11:05.490Z
     "file": "crates/paladin-llm/src/gemini/adapter.rs",
     "line": null,
     "description": "Snyk code scan (per snyk_rules.instructions.md) could not be run — no Snyk MCP tool or CLI available in this worktree's runtime (no network egress); recorded as not-run, never as passed",
-    "status": "open",
-    "reason": "",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
     "recorded_at": "2026-08-17T19:33:52.477Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-19T13:55:48.872Z"
   },
   {
     "id": 16,
@@ -224,10 +224,10 @@ last_updated: 2026-08-18T02:11:05.490Z
     "file": "crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs",
     "line": null,
     "description": "Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime",
-    "status": "open",
-    "reason": "",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
     "recorded_at": "2026-08-17T20:01:16.281Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-19T13:55:49.213Z"
   },
   {
     "id": 17,
@@ -236,10 +236,10 @@ last_updated: 2026-08-18T02:11:05.490Z
     "file": "crates/paladin-llm/src/gemini/adapter.rs",
     "line": null,
     "description": "Plan 17-11's verification step 7 (Snyk code scan over crates/paladin-llm/src/gemini/adapter.rs) was not run -- no snyk_code_scan MCP tool and no Snyk CLI were available in the executor's runtime (no network egress). 17-11's own SUMMARY.md recorded this as not-run, never as passed. This row is the sibling of ids 15 and 16, filed 2026-08-18 by plan 17-17 after 17-VERIFICATION.md flagged 17-11's row as missing.",
-    "status": "open",
-    "reason": "",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
     "recorded_at": "2026-08-18T02:10:42.462Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-19T13:55:49.665Z"
   },
   {
     "id": 18,
@@ -248,10 +248,10 @@ last_updated: 2026-08-18T02:11:05.490Z
     "file": "crates/paladin-llm/src/provider_factory.rs,tests/unit/llm/provider_factory_test.rs,crates/paladin-llm/src/openai_compatible/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs,crates/paladin-llm/src/compat/engine.rs",
     "line": null,
     "description": "Plans 17-12 through 17-16 each attempted the mandated Snyk code scan (per snyk_rules.instructions.md, imported into CLAUDE.md) over the files they modified; none could run -- no snyk_code_scan MCP tool and no Snyk CLI in this environment. All five SUMMARYs (17-12-SUMMARY.md, 17-13-SUMMARY.md, 17-14-SUMMARY.md, 17-15-SUMMARY.md, 17-16-SUMMARY.md) record their scans as not-run, never as passed. Filed 2026-08-18 by plan 17-17.",
-    "status": "open",
-    "reason": "",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
     "recorded_at": "2026-08-18T02:10:55.983Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-19T13:55:50.375Z"
   },
   {
     "id": 19,

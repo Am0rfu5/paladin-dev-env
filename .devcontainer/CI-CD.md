@@ -444,16 +444,14 @@ cargo check --all-features
 
 ## Security Scanning
 
-### Using Snyk
+### Snyk — evaluated and rejected (2026-08-18)
 
-```yaml
-- name: Run Snyk
-  uses: snyk/actions/rust@master
-  env:
-    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-  with:
-    command: test
-```
+Do not add `snyk/actions/rust`. Snyk has no useful coverage for this workspace and
+was removed; see `.github/instructions/security.instructions.md` for the evidence.
+In short: `snyk test` (SCA) has no Cargo support and exits `SNYK-CLI-0008`, and
+Snyk Code (SAST) ingests `.rs` files but found 0 of 4 deliberately planted
+vulnerabilities that it caught in the equivalent JavaScript. A green Snyk run here
+means nothing was analysed. Use the Rust-native tools below.
 
 ### Using cargo-audit
 
