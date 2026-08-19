@@ -3,12 +3,12 @@ status: partial
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-19T00:00:00Z
+updated: 2026-08-19T15:40:00Z
 ---
 
 ## Current Test
 
-[testing complete — 2 passed, 3 blocked on unavailable infrastructure]
+[testing complete — 4 passed; only test 4 blocked, on vendor API credentials]
 
 ## Tests
 
@@ -76,14 +76,37 @@ finding: |
   `llm-all` 85.01% over 54326 lines (+5117) with all nine present. The gate therefore passes
   while ignoring the phase's entire deliverable, and would not catch a regression in any new
   adapter. Coverage itself is NOT the problem — the new code is the best-covered in the crate.
-  Tracked as a follow-up below.
+  Tracked as a follow-up below. RESOLVED 2026-08-19: both `make coverage` and CI's `coverage`
+  job now call `scripts/coverage.sh` with `--features integration-tests,llm-all`. CI evidence
+  (run 32269584177): "Lines: 46100/54326 = 84.86%" — the 54326 denominator matches the local
+  llm-all measurement exactly and is +5117 over the pre-fix 49209, i.e. the six new adapters
+  are now counted. A second defect surfaced on the first CI attempt: the script probed Redis
+  with `redis-cli`, which GitHub runners do not ship, so it reported "Redis unreachable" while
+  Redis was healthy as a service container. Probes now fall back to a TCP connect via
+  bash /dev/tcp. Note CI's own pre-existing readiness loop hits the same missing binary
+  ("redis-cli: command not found" x30) but is best-effort, so it silently spins instead.
 
 ### 3. Ollama integration test against a real container
 
 expected: All 4 tests (generate round-trip, streaming, `get_available_models`, `validate_model`) exercise the real server and pass with real token-usage and model-list data, not the SKIP path.
-result: blocked
-blocked_by: server
-reason: "No Docker daemon: no docker CLI, no /var/run/docker.sock, and nothing answering on :11434 (checked ollama-test and localhost). Confirmed 2026-08-19, not assumed."
+result: pass
+verified: 2026-08-19 on a GitHub Actions runner (ci.yml run 32269584177, job 96122463095)
+evidence: |
+  CI never ran this suite before: the `docker-integration` job starts only redis-test and
+  minio-test, and no workflow referenced ollama-test. A new `ollama-integration` job was added
+  to close that gap (commit ca21164 / earlier).
+  - Live model list from the real server: `{"object":"list","data":[{"id":"qwen2.5:0.5b",...}]}`
+  - `running 4 tests` ... `test result: ok. 4 passed; 0 failed` in 1.79s:
+      validate_model_distinguishes_pulled_from_unpulled
+      get_available_models_returns_the_pulled_model
+      generate_round_trip_returns_nonempty_content_and_real_token_usage
+      generate_stream_produces_multiple_chunks_with_nonempty_concatenation
+  - Guard output: "All ollama_docker tests exercised the live server."
+not_a_vacuous_pass: |
+  The suite SKIPS-and-PASSES when the server is unreachable, by design, so a plain green job
+  would prove nothing. The job therefore asserts qwen2.5:0.5b is in the live model list and
+  FAILS if any `SKIP:` appears in the output. Both guards held, so the four tests ran against
+  a real Ollama server rather than short-circuiting.
 
 ### 4. Live vendor smoke test — Kimi, Qwen, Grok, Gemini
 
@@ -95,30 +118,30 @@ reason: "No vendor credentials. Every API key in .env is empty (OPENAI, ANTHROPI
 ### 5. New CI job behaviour on a real GitHub Actions runner
 
 expected: The `llm-registry-unit-tests` job runs `cargo test --test unit --features llm-all`, passes (428 tests, matching the local reproduction), and a deliberate failure in it correctly fails `feature-matrix-summary`.
-result: blocked
-blocked_by: third-party
-reason: "No GitHub Actions runner. Runner behaviour deliberately left unverified per operator decision 2026-08-19 (verify locally only, do not push)."
-locally_verified: |
-  Everything provable without a runner now is:
-  - `cargo test --test unit --features llm-all` -> 428 passed, 0 failed, 11 ignored, exit 0 —
-    matching the expected count exactly.
-  - `.github/workflows/feature-flags.yml:172` defines `llm-registry-unit-tests`, whose run step
-    is exactly `cargo test --test unit --features llm-all`.
-  - `feature-matrix-summary` (line 194) declares
-    `needs: [feature-matrix, cli-isolation, llm-registry-unit-tests]` — the dependency edge exists.
-  - Failure propagation is structurally sound: `if: always()` plus a conjunction requiring all
-    three results to equal "success", else `exit 1`. A deliberate failure in the job therefore
-    does fail the summary.
-  Unverified: the job's actual execution on a hosted runner.
+result: pass
+verified: 2026-08-19 on a GitHub Actions runner (feature-flags.yml run 32269584207, also 32262069917)
+evidence: |
+  - Job "LLM Registry Unit Tests (llm-all)" -> success on ubuntu-latest, twice (two pushes).
+  - Its run step is exactly `cargo test --test unit --features llm-all`
+    (`.github/workflows/feature-flags.yml:172`).
+  - Local reproduction of the same command: 428 passed, 0 failed, 11 ignored, exit 0.
+  - `feature-matrix-summary` declares `needs: [feature-matrix, cli-isolation,
+    llm-registry-unit-tests]` and succeeded alongside it.
+scope_note: |
+  The failure-propagation half is verified STRUCTURALLY, not empirically: the summary job is
+  `if: always()` with a conjunction requiring all three `needs.*.result` values to equal
+  "success", else `exit 1` (feature-flags.yml:194-210). A deliberate failure was NOT injected —
+  doing so would mean pushing a knowingly broken commit. The logic admits no other outcome, but
+  recording the distinction rather than implying it was observed.
 
 ## Summary
 
 total: 5
-passed: 2
+passed: 4
 issues: 0
 pending: 0
 skipped: 0
-blocked: 3
+blocked: 1
 
 ## Gaps
 
@@ -130,12 +153,14 @@ blocked: 3
     (cargo-audit/cargo-deny) and linting (clippy) do not cover it."
   deferred_at: 2026-08-18
 - test: 1
+  status: RESOLVED 2026-08-19 (tracked .github/instructions/security.instructions.md; WINDOWS.md 15-18 waived)
   idea: "Amend .github/instructions/snyk_rules.instructions.md and the CLAUDE.md import that
     mandates a Snyk scan for new first-party code — the mandate is now unsatisfiable. Stale
     Snyk references also remain in .devcontainer/CI-CD.md (snyk/actions/rust@master) and
     .devcontainer/FILES.md."
   deferred_at: 2026-08-18
 - test: 2
+  status: RESOLVED 2026-08-19 (scripts/coverage.sh; CI run 32269584177 measures 54326 lines)
   idea: "Fix the coverage gate to measure all nine adapters. `make coverage` and CI's `coverage`
     job run `--features integration-tests`, which only enables the three default adapters, so the
     six added by Phase 17 contribute zero instrumented lines. Change to
