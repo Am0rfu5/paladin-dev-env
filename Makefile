@@ -260,9 +260,11 @@ test-facade: ## Run tests for paladin facade crate
 .PHONY: coverage
 coverage: ## Measure workspace coverage (mirrors CI's `coverage` job — requires make services-up)
 	@echo "$(CYAN)Measuring coverage...$(NC)"
-	@nc -z localhost 6380 || { echo "$(RED)Redis not reachable on port 6380 — start services first with 'make services-up'.$(NC)"; exit 1; }
-	@nc -z localhost 9010 || { echo "$(RED)MinIO not reachable on port 9010 — start services first with 'make services-up'.$(NC)"; exit 1; }
-	@$(CARGO) llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info --fail-under-lines 82 -- --test-threads=1
+	@# Delegates to scripts/coverage.sh — shared with CI's `coverage` job so the
+	@# feature list cannot drift. The script auto-detects service endpoints, so this
+	@# works both on the host (localhost:6380/9010) and inside the devcontainer
+	@# (redis:6379 / minio:9000), which the old hardcoded preflight could not.
+	@bash scripts/coverage.sh
 
 .PHONY: coverage-html
 coverage-html: ## Generate an HTML coverage report at target/coverage
@@ -322,6 +324,12 @@ openapi: ## Regenerate the committed OpenAPI baseline (crates/paladin-web/openap
 	@echo "$(CYAN)Regenerating OpenAPI baseline...$(NC)"
 	@UPDATE_OPENAPI=1 $(CARGO) test -p paladin-web --lib openapi_matches_committed_baseline -- --quiet
 	@echo "Wrote crates/paladin-web/openapi.json"
+
+.PHONY: keys
+keys: ## Show which LLM API credentials are available (never prints values)
+	@# paladin-env.sh is bash; make's default shell is dash, so invoke bash.
+	@# Status query: never fail the build just because no keys are present yet.
+	@bash -c '. .devcontainer/paladin-env.sh; paladin-keys' || true
 
 .PHONY: security
 security: audit deny ## Run all dependency security & license checks

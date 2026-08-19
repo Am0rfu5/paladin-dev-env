@@ -560,6 +560,69 @@ jobs:
         run: |
           docker compose -f docker/docker-compose.test.yml down -v
 
+  # Ollama live-server integration (PROV-03). The `ollama_docker` target needs a
+  # real Ollama server, so no authoring environment can run it — every attempt was
+  # recorded as unverified. This job is the only place it actually executes.
+  #
+  # The suite SKIPS (and therefore PASSES) when the server is unreachable, by
+  # design, so that a developer without Docker is not blocked. That makes a naive
+  # job worthless: it would report green having exercised nothing. The explicit
+  # reachability assertion and the SKIP-detection step below are what give this job
+  # its meaning — do not remove them.
+  ollama-integration:
+    name: Ollama Integration Tests (live server)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ollama-integration
+
+      - name: Start ollama-test and pull the model
+        run: |
+          docker compose -f docker/docker-compose.test.yml up -d ollama-test
+          echo "Waiting for ollama-test to report healthy..."
+          timeout 300 sh -c 'until [ "$(docker inspect paladin-ollama-test --format={{.State.Health.Status}} 2>/dev/null)" = "healthy" ]; do sleep 3; done'
+          # ollama-test-init pulls qwen2.5:0.5b and exits; run it in the foreground
+          # so the model is present before any test starts.
+          docker compose -f docker/docker-compose.test.yml up --exit-code-from ollama-test-init ollama-test-init
+
+      - name: Assert the live server and model are present
+        run: |
+          set -o pipefail
+          curl -fsS http://localhost:11435/v1/models | tee /tmp/ollama-models.json
+          grep -q 'qwen2.5:0.5b' /tmp/ollama-models.json \
+            || { echo "::error::qwen2.5:0.5b missing from the live model list"; exit 1; }
+
+      - name: Run Ollama integration tests
+        run: |
+          set -o pipefail
+          cargo test --features integration-tests,llm-ollama --test ollama_docker \
+            -- --nocapture 2>&1 | tee /tmp/ollama-test.log
+
+      - name: Fail if the suite took the SKIP path
+        run: |
+          if grep -q 'SKIP:' /tmp/ollama-test.log; then
+            echo "::error::ollama_docker took the SKIP path — the live server was NOT exercised."
+            grep 'SKIP:' /tmp/ollama-test.log
+            exit 1
+          fi
+          echo "All ollama_docker tests exercised the live server."
+
+      - name: Collect logs on failure
+        if: failure()
+        run: docker compose -f docker/docker-compose.test.yml logs ollama-test ollama-test-init
+
+      - name: Stop services
+        if: always()
+        run: docker compose -f docker/docker-compose.test.yml down -v
+
   # Coverage measurement (PIPE-02) — MEASURE-ONLY as of this commit: no minimum-
   # threshold flag. D-04 requires the figure to be measured before the floor
   # derived from it can be set; plan 15-03 adds the threshold once this job has
@@ -661,7 +724,12 @@ jobs:
           TEST_MINIO_ENDPOINT: localhost:9010
           TEST_MINIO_ACCESS_KEY: testuser
           TEST_MINIO_SECRET_KEY: testpass123
-        run: cargo llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info --fail-under-lines 82 -- --test-threads=1
+        # Delegates to scripts/coverage.sh — shared with `make coverage`. The script
+        # adds llm-all: without it the default feature set compiles only the three
+        # pre-Phase-17 adapters, so the six newer ones contributed zero instrumented
+        # lines and this gate could not catch a regression in any of them.
+        # The TEST_* vars above are pre-set and always win over the script's probing.
+        run: bash scripts/coverage.sh
 
       # `--lcov --output-path` writes a file and prints NOTHING, so the measured
       # percentage never reaches the run log. Plan 15-03 has to read that figure
