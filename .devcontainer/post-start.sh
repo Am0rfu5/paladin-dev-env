@@ -86,6 +86,29 @@ else
     echo "  ⚠️  .env file missing (use .env.example as template)"
 fi
 
+# Wire the host-credential loader into interactive shells. It must be sourced AFTER
+# the .env loader above: .env declares the LLM key names with empty values, and
+# paladin-env.sh fills any that are unset-or-empty from ~/.config/paladin.
+PALADIN_ENV_LINE='[ -f /workspace/.devcontainer/paladin-env.sh ] && . /workspace/.devcontainer/paladin-env.sh'
+if ! grep -Fq "$PALADIN_ENV_LINE" /home/vscode/.bashrc; then
+    {
+        echo ""
+        echo "# Load host-provided credentials (see .devcontainer/paladin-env.sh)"
+        echo "$PALADIN_ENV_LINE"
+    } >> /home/vscode/.bashrc
+    echo "  ✅ Added host-credential loader to ~/.bashrc"
+fi
+
+if [ -d /home/vscode/.config/paladin ]; then
+    # shellcheck source=paladin-env.sh
+    . /workspace/.devcontainer/paladin-env.sh
+    echo "  ✅ Host credential mount active ($(ls -1 /home/vscode/.config/paladin 2>/dev/null | wc -l) file(s)) — run 'paladin-keys' to list"
+else
+    echo "  ⚠️  No host credential mount at ~/.config/paladin"
+    echo "     On the HOST:  mkdir -p ~/.config/paladin"
+    echo "     Then one file per key, e.g. ~/.config/paladin/gemini_api_key"
+fi
+
 echo ""
 echo -e "${GREEN}✨ Ready to code!${NC}"
 echo ""

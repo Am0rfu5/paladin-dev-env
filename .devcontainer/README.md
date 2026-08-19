@@ -37,6 +37,70 @@ The DevContainer includes Docker Compose configuration for:
 - **Debugging**: Full LLDB debugging support
 - **Git Hooks**: Pre-commit checks for format and lint
 
+## LLM API credentials
+
+Live-vendor tests need real provider keys. They are supplied from the **host**, never
+baked into the image or committed.
+
+### One-time host setup
+
+`/home/vscode` is part of the container filesystem and is destroyed on every rebuild,
+so keys cannot live there. `docker-compose.yml` bind-mounts the host's
+`~/.config/paladin` read-only at `/home/vscode/.config/paladin`, which survives
+rebuilds and is shared with any other project using the same convention.
+
+**One file per secret; the filename is the variable name, lowercased.**
+
+```bash
+mkdir -p ~/.config/paladin
+chmod 700 ~/.config/paladin
+
+printf '%s' '<key>' > ~/.config/paladin/gemini_api_key       # -> GEMINI_API_KEY
+printf '%s' '<key>' > ~/.config/paladin/xai_api_key          # -> XAI_API_KEY        (Grok)
+printf '%s' '<key>' > ~/.config/paladin/moonshot_api_key     # -> MOONSHOT_API_KEY   (Kimi)
+printf '%s' '<key>' > ~/.config/paladin/dashscope_api_key    # -> DASHSCOPE_API_KEY  (Qwen)
+chmod 600 ~/.config/paladin/*
+```
+
+Create the directory *before* starting the container, or the Docker daemon creates it
+root-owned. Then reopen the container and check with `make keys`.
+
+The mapping is generic — no hardcoded provider list — so a new provider needs a new
+file, not a code change. Recognised today:
+
+| file | variable | provider |
+|---|---|---|
+| `openai_api_key` | `OPENAI_API_KEY` | OpenAI |
+| `anthropic_api_key` | `ANTHROPIC_API_KEY` | Anthropic |
+| `deepseek_api_key` | `DEEPSEEK_API_KEY` | DeepSeek |
+| `gemini_api_key` | `GEMINI_API_KEY` | Google Gemini |
+| `xai_api_key` | `XAI_API_KEY` | Grok (xAI) |
+| `moonshot_api_key` | `MOONSHOT_API_KEY` | Kimi (Moonshot) |
+| `dashscope_api_key` | `DASHSCOPE_API_KEY` | Qwen (DashScope) |
+| `openai_compatible_api_key` | `OPENAI_COMPATIBLE_API_KEY` | generic provider |
+
+### Precedence
+
+`.devcontainer/paladin-env.sh` applies a file when the variable is **unset or empty**:
+
+1. An exported non-empty value wins (host shell passthrough, or a one-off override).
+2. Otherwise the key file is used.
+
+The empty-check matters: the repo `.env` is auto-sourced into every shell and declares
+these names with **empty** values. Without it, those blanks would mask real keys.
+
+Values are trimmed of trailing newlines — a key written with `echo` would otherwise
+carry `\n` into the auth header. Empty and placeholder files (`<...>`, `REPLACE_ME`,
+`your...`) are ignored silently.
+
+### Checking
+
+```bash
+make keys      # or `paladin-keys` in any interactive shell
+```
+
+Neither ever prints a key — only the variable name, provider, and character count.
+
 ## Quick Start
 
 ### Prerequisites
