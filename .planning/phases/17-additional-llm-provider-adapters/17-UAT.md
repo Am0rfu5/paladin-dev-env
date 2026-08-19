@@ -1,19 +1,14 @@
 ---
-status: testing
+status: partial
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-18T16:40:00Z
+updated: 2026-08-19T00:00:00Z
 ---
 
 ## Current Test
 
-number: 2
-name: Workspace coverage floor (82%, ADR-0006)
-expected: |
-  `cargo llvm-cov` reports >= 82% workspace line coverage with all nine adapters' code
-  and every gap-closure regression test counted, not excluded.
-awaiting: user response
+[testing complete — 2 passed, 3 blocked on unavailable infrastructure]
 
 ## Tests
 
@@ -56,37 +51,74 @@ scope: `crates/paladin-llm/src/provider_factory.rs`, `crates/paladin-llm/src/ope
 ### 2. Workspace coverage floor (82%, ADR-0006)
 
 expected: `cargo llvm-cov` reports >= 82% workspace line coverage with all nine adapters' code and every gap-closure regression test counted, not excluded.
-command: `make coverage` (or `cargo llvm-cov --workspace --features integration-tests --fail-under-lines 82`) with Redis + MinIO reachable via Docker and all nine provider features compiled in.
-why_human: No Docker daemon in the verification sandbox; `make coverage`'s preflight fails fast on unreachable Redis (6380) and MinIO (9010). Genuinely UNMEASURED, not failing. Tracked as `WINDOWS.md` id 13. This is the item blocking PROV-04, whose own text names the 82% floor explicitly.
-result: [pending]
+result: pass
+verified: 2026-08-19
+measured: |
+  85.01% workspace line coverage (46180/54326 lines), 3055 tests passed, 0 failed,
+  `cargo llvm-cov --workspace --features integration-tests,llm-all --fail-under-lines 82` exit 0.
+  All nine adapters instrumented: gemini 93.4%, grok 95.7%, kimi 98.3%, qwen 95.7%,
+  ollama 95.7%, openai-compatible 96.2%, compat core 85.4%, provider_factory 81.6%
+  (pre-existing: anthropic 81.7%, deepseek 83.5%, openai 32.3%).
+was_not_actually_blocked: |
+  Recorded as "genuinely UNMEASURED — no Docker daemon". That was a misdiagnosis. Redis, MinIO
+  and MySQL are all running and reachable from inside the devcontainer as compose peers
+  (redis:6379 -> PONG, minio:9000 -> HTTP 200, mysql:3306 open). What fails is `make coverage`'s
+  preflight, which probes localhost:6380/9010 — the HOST-mapped ports of the separate `docker/`
+  services stack, unreachable from inside this container. Pointing REDIS_HOST/MINIO_ENDPOINT at
+  the real peers lets the CI coverage command run verbatim.
+finding: |
+  DEFECT FOUND — the coverage gate measures the wrong codebase. `make coverage` and CI's
+  `coverage` job both run `--features integration-tests`, which resolves to
+  `default = ["llm-openai","llm-anthropic","llm-deepseek"]` — the three adapters that existed
+  BEFORE this phase. The six built by Phase 17 are behind non-default flags, so they are never
+  compiled, never instrumented, and contribute zero lines. Measured both ways to prove it:
+  default features 84.32% over 49209 lines with those six showing 0 instrumented files;
+  `llm-all` 85.01% over 54326 lines (+5117) with all nine present. The gate therefore passes
+  while ignoring the phase's entire deliverable, and would not catch a regression in any new
+  adapter. Coverage itself is NOT the problem — the new code is the best-covered in the crate.
+  Tracked as a follow-up below.
 
 ### 3. Ollama integration test against a real container
 
 expected: All 4 tests (generate round-trip, streaming, `get_available_models`, `validate_model`) exercise the real server and pass with real token-usage and model-list data, not the SKIP path.
-command: `docker compose -f docker/docker-compose.test.yml up ollama-test ollama-test-init`, then `cargo test -p paladin-ai --no-default-features --features integration-tests,llm-ollama --test ollama_docker`
-why_human: No Docker daemon in the sandbox. The suite gracefully SKIPs with a named `SKIP:` message rather than failing or silently passing. Tracked as `WINDOWS.md` id 12.
-result: [pending]
+result: blocked
+blocked_by: server
+reason: "No Docker daemon: no docker CLI, no /var/run/docker.sock, and nothing answering on :11434 (checked ollama-test and localhost). Confirmed 2026-08-19, not assumed."
 
 ### 4. Live vendor smoke test — Kimi, Qwen, Grok, Gemini
 
 expected: Each vendor's documented `base_url` resolves, the default model ID exists, and `get_available_models()`'s live-fetch path (not just the curated fallback) returns a real, well-formed model list.
-why_human: No network egress and no vendor API keys in the sandbox. `README.md`, `config.example.yml` and `docs/src/getting-started/configuration.md` all carry an explicit "not verified against a live endpoint" caveat — these facts are taken from vendor documentation and have never been confirmed live.
-result: [pending]
+result: blocked
+blocked_by: third-party
+reason: "No vendor credentials. Every API key in .env is empty (OPENAI, ANTHROPIC, DEEPSEEK, XAI, GEMINI) and LLM_API_KEY is a placeholder; Kimi and Qwen have no entry at all. Network egress IS available, so this unblocks the moment real keys are supplied."
 
 ### 5. New CI job behaviour on a real GitHub Actions runner
 
 expected: The `llm-registry-unit-tests` job runs `cargo test --test unit --features llm-all`, passes (428 tests, matching the local reproduction), and a deliberate failure in it correctly fails `feature-matrix-summary`.
-why_human: No GitHub Actions runner in the sandbox. Only the YAML's structural validity, the `needs:` dependency edge, and the underlying test command's local result were confirmed — the job's actual behaviour on a runner is unobserved.
-result: [pending]
+result: blocked
+blocked_by: third-party
+reason: "No GitHub Actions runner. Runner behaviour deliberately left unverified per operator decision 2026-08-19 (verify locally only, do not push)."
+locally_verified: |
+  Everything provable without a runner now is:
+  - `cargo test --test unit --features llm-all` -> 428 passed, 0 failed, 11 ignored, exit 0 —
+    matching the expected count exactly.
+  - `.github/workflows/feature-flags.yml:172` defines `llm-registry-unit-tests`, whose run step
+    is exactly `cargo test --test unit --features llm-all`.
+  - `feature-matrix-summary` (line 194) declares
+    `needs: [feature-matrix, cli-isolation, llm-registry-unit-tests]` — the dependency edge exists.
+  - Failure propagation is structurally sound: `if: always()` plus a conjunction requiring all
+    three results to equal "success", else `exit 1`. A deliberate failure in the job therefore
+    does fail the summary.
+  Unverified: the job's actual execution on a hosted runner.
 
 ## Summary
 
 total: 5
-passed: 1
+passed: 2
 issues: 0
-pending: 4
+pending: 0
 skipped: 0
-blocked: 0
+blocked: 3
 
 ## Gaps
 
@@ -103,3 +135,10 @@ blocked: 0
     Snyk references also remain in .devcontainer/CI-CD.md (snyk/actions/rust@master) and
     .devcontainer/FILES.md."
   deferred_at: 2026-08-18
+- test: 2
+  idea: "Fix the coverage gate to measure all nine adapters. `make coverage` and CI's `coverage`
+    job run `--features integration-tests`, which only enables the three default adapters, so the
+    six added by Phase 17 contribute zero instrumented lines. Change to
+    `--features integration-tests,llm-all`. Also fix the preflight, which probes localhost:6380/9010
+    and cannot succeed from inside the devcontainer where the services are redis:6379 / minio:9000."
+  deferred_at: 2026-08-19
