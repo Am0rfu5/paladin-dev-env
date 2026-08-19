@@ -588,7 +588,10 @@ jobs:
         run: |
           docker compose -f docker/docker-compose.test.yml up -d ollama-test
           echo "Waiting for ollama-test to report healthy..."
-          timeout 300 sh -c 'until [ "$(docker inspect paladin-ollama-test --format={{.State.Health.Status}} 2>/dev/null)" = "healthy" ]; do sleep 3; done'
+          # Matches the house style used by docker-integration above: pipe into grep
+          # rather than command-substituting inside single quotes (shellcheck SC2016).
+          # -x is load-bearing: a plain `grep -q healthy` also matches "unhealthy".
+          timeout 300 sh -c 'until docker inspect paladin-ollama-test --format="{{.State.Health.Status}}" 2>/dev/null | grep -qx healthy; do sleep 3; done'
           # ollama-test-init pulls qwen2.5:0.5b and exits; run it in the foreground
           # so the model is present before any test starts.
           docker compose -f docker/docker-compose.test.yml up --exit-code-from ollama-test-init ollama-test-init

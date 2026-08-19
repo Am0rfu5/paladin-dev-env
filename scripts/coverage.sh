@@ -34,8 +34,29 @@ cd "$(dirname "$0")/.."
 
 FLOOR="${COVERAGE_FLOOR:-82}"
 
-probe_redis() { redis-cli -h "$1" -p "$2" ping >/dev/null 2>&1; }
-probe_minio() { curl -sf -o /dev/null "http://$1/minio/health/live" 2>/dev/null; }
+# Probes must not assume a client binary exists. GitHub runners do not ship
+# redis-cli, and CI's old wait loop only tolerated that because it was best-effort
+# (a failed probe there just spun until timeout without failing the step). This
+# script HARD-FAILS on an unreachable service, so a missing redis-cli would turn
+# into "Redis unreachable" on a runner where Redis is in fact up. Fall back to a
+# bare TCP connect via bash's /dev/tcp, which needs no external tool.
+probe_tcp() { (exec 3<>"/dev/tcp/$1/$2") 2>/dev/null; }
+
+probe_redis() {
+    if command -v redis-cli >/dev/null 2>&1; then
+        redis-cli -h "$1" -p "$2" ping >/dev/null 2>&1
+    else
+        probe_tcp "$1" "$2"
+    fi
+}
+
+probe_minio() {
+    if command -v curl >/dev/null 2>&1; then
+        curl -sf -o /dev/null "http://$1/minio/health/live" 2>/dev/null
+    else
+        probe_tcp "${1%%:*}" "${1##*:}"
+    fi
+}
 
 # --- Redis -----------------------------------------------------------------
 if [ -n "${TEST_REDIS_HOST:-}" ] \
