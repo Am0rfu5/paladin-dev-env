@@ -1,9 +1,10 @@
 ---
-status: diagnosed
+status: partially_resolved
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-22T03:05:00Z
+updated: 2026-08-22T22:40:00Z
+blocked_on: "WINDOWS.md id 21 (G-17-4d generate probe) — Alibaba Model Studio invocation entitlement"
 ---
 
 ## Current Test
@@ -211,7 +212,16 @@ blocked: 0
 
 - gap_id: G-17-4a
   truth: "Grok's adapter can complete a generate call against a current xAI model with default parameters"
-  status: failed
+  status: resolved
+  resolved_by: "plan 17-18 (live-verified 2026-08-22)"
+  resolved_at: 2026-08-22
+  resolution: |
+    CompatRequestParameters added to CompatEngineConfig -- a per-preset, Default-less
+    declaration of which of the five optional sampling parameters a preset's request path
+    carries. build_request gates each field on that declaration, with no vendor identity in
+    the shared engine. Grok declares frequency_penalty: false and presence_penalty: false,
+    each measured INDIVIDUALLY against live api.x.ai. GROK_DEFAULT_MODEL refreshed
+    grok-4 -> grok-4.6 from the live list. Grok now PASSES both live probes.
   reason: "Live run 2026-08-22: every current model (grok-4, grok-4.6, grok-4.5, grok-4.3) rejects the request with 'does not support parameter presencePenalty'. The adapter is non-functional out of the box."
   severity: blocker
   test: 4
@@ -229,7 +239,18 @@ blocked: 0
 
 - gap_id: G-17-4b
   truth: "Kimi's adapter can complete a generate call using its default model and default parameters"
-  status: failed
+  status: resolved
+  resolved_by: "plan 17-19 (live-verified 2026-08-22)"
+  resolved_at: 2026-08-22
+  resolution: |
+    KIMI_DEFAULT_MODEL refreshed to kimi-k3; the retired moonshot-v1-* family appears
+    nowhere in the shipped constants. Temperature handled by option (a) -- the preset
+    declares it as a parameter its request path does not carry, so Moonshot's only legal
+    value applies and no value is silently substituted (not the clamping ADR-0004
+    rejected). The builder's ADR-0004 gate narrowed to fire only on an EXPRESSED
+    temperature. A second, unforeseen constraint surfaced during execution: Moonshot also
+    rejects the default top_p of 1.0 ('only 0.95 is allowed', measured on kimi-k3 and
+    kimi-k2.6); closed with the same mechanism and no engine change. Kimi PASSES both probes.
   reason: "Live run 2026-08-22: default model moonshot-v1-8k returns resource_not_found_error; a live-listed model (kimi-k2.6) rejects the default temperature with 'only 1 is allowed for this model'."
   severity: blocker
   test: 4
@@ -279,7 +300,26 @@ blocked: 0
 
 - gap_id: G-17-4d
   truth: "An operator whose Alibaba Model Studio workspace is in any region other than Singapore can use the Qwen adapter's shipped defaults and reach their own account"
-  status: failed
+  status: partially_resolved
+  resolved_by: "plans 17-21, 17-20, 17-22 (2026-08-22) -- region and diagnosability halves"
+  resolved_at: 2026-08-22
+  blocked_on: "WINDOWS.md id 21 -- Alibaba Model Studio invocation entitlement"
+  resolution: |
+    RESOLVED: the region half. QWEN_DEFAULT_BASE_URL now names the US (Virginia)
+    compatible-mode endpoint. Same credential, same binary, endpoint the only variable:
+    invalid_api_key at dashscope-intl (Singapore) versus 92 models with qwen-plus present
+    at Virginia. The falsified prohibition is reversed on the record with the reasoning that
+    killed it, the region-scoped-credential rule sits in the rustdoc an operator reads
+    before setting DASHSCOPE_BASE_URL, and CHANGELOG.md announces the changed default.
+    RESOLVED: the diagnosability half (17-22). available_models() now classifies LlmError
+    totally -- no wildcard arm -- and warns on a misconfiguration while a supported offline
+    state stays at debug. Vendor-agnostic, so all six compat-backed adapters gain it.
+    STILL OPEN: Qwen's generate() probe. HTTP 403 Model.AccessDenied on every model at the
+    now-correct endpoint -- an account entitlement gap, not a code defect and not a stale
+    identifier (ruled out across 78 qwen-prefixed IDs, their -us variants, two unrelated
+    model families on the same workspace, and both invocation endpoints). Plan 17-21's
+    Task 2 is blocked on it, as is 17-22's 'four vendors PASS' clause. Clearing it requires
+    activating model invocation for the Virginia workspace in the Model Studio console.
   reason: "Discovered 2026-08-22 while resolving G-17-4c. QWEN_DEFAULT_BASE_URL hardcodes the Singapore/intl endpoint, but DashScope API keys are region-scoped and are rejected 401 by every other region's endpoint. Any operator on US (Virginia), Tokyo, Hong Kong or mainland gets a silent failure with the shipped defaults."
   severity: major
   test: 4
