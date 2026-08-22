@@ -53,3 +53,9 @@ mockito = "1.7.0"
 [[bench]]
 name = "llm_serialization_benchmarks"
 harness = false
+
+# Phase 17 UAT test 4: live smoke test against the real vendor endpoints.
+# Requires real credentials in the environment; never run in CI.
+[[example]]
+name = "live_vendor_smoke"
+required-features = ["kimi", "qwen", "grok", "gemini"]

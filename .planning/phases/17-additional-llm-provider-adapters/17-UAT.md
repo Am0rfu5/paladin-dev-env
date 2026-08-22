@@ -1,14 +1,14 @@
 ---
-status: partial
+status: diagnosed
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-19T15:40:00Z
+updated: 2026-08-22T02:10:00Z
 ---
 
 ## Current Test
 
-[testing complete — 4 passed; only test 4 blocked, on vendor API credentials]
+[testing complete — 4 passed, 1 issue (test 4, blocker)]
 
 ## Tests
 
@@ -111,9 +111,67 @@ not_a_vacuous_pass: |
 ### 4. Live vendor smoke test — Kimi, Qwen, Grok, Gemini
 
 expected: Each vendor's documented `base_url` resolves, the default model ID exists, and `get_available_models()`'s live-fetch path (not just the curated fallback) returns a real, well-formed model list.
-result: blocked
-blocked_by: third-party
-reason: "No vendor credentials. Every API key in .env is empty (OPENAI, ANTHROPIC, DEEPSEEK, XAI, GEMINI) and LLM_API_KEY is a placeholder; Kimi and Qwen have no entry at all. Network egress IS available, so this unblocks the moment real keys are supplied."
+result: issue
+verified: 2026-08-22 against the real vendor endpoints
+reported: "Ran the live smoke test with real credentials. 1 of 4 vendors passed. Grok cannot generate against any current model; Kimi's default model is retired and current models reject the default temperature; Qwen's credential is rejected 401 by both endpoints."
+severity: blocker
+harness: |
+  `crates/paladin-llm/examples/live_vendor_smoke.rs` (new, gated behind
+  `required-features = ["kimi","qwen","grok","gemini"]`, never run in CI). Run with:
+      cargo run -p paladin-llm --example live_vendor_smoke --features kimi,qwen,grok,gemini
+  It does NOT accept a non-empty model list as proof of a live fetch. `available_models()`
+  swallows every failure and returns the curated `*_FALLBACK_MODELS` constant (engine.rs:682),
+  so a plausible list is not evidence the network path worked — exactly the vacuous-pass trap
+  flagged for test 3. The harness discriminates by comparing the result byte-for-byte against
+  that constant, then asserts the adapter's default model ID appears in the live list.
+credentials: |
+  Host-mounted keys resolved for all four vendors via the devcontainer import
+  (`~/.config/paladin` bind-mount -> `.devcontainer/paladin-env.sh`): GEMINI_API_KEY,
+  XAI_API_KEY, MOONSHOT_API_KEY, DASHSCOPE_API_KEY. `paladin-keys` reports 4 of 8 available.
+  Note the loader only reaches INTERACTIVE shells (`~/.bashrc` returns early when
+  non-interactive), so non-interactive runners must source `.devcontainer/paladin-env.sh`
+  explicitly. No credential value was printed at any point.
+measured: |
+  Gemini  PASS    50 models live, differs from fallback, default `gemini-2.5-flash` present.
+  Kimi    FAIL     4 models live (kimi-k2.6, kimi-k2.7-code, kimi-k2.7-code-highspeed, kimi-k3);
+                   default `moonshot-v1-8k` ABSENT.
+  Grok    FAIL    12 models live (grok-4.3, grok-4.5, grok-4.6, grok-4.20-*, ...);
+                   default `grok-4` ABSENT.
+  Qwen    FAIL     result byte-identical to QWEN_FALLBACK_MODELS -> live fetch silently failed.
+findings: |
+  G-17-4a GROK IS NON-FUNCTIONAL OUT OF THE BOX (blocker). Not a stale-model-ID problem.
+    `CompatEngine::build_request` (engine.rs:207) unconditionally serialises `presence_penalty`,
+    and the default prompt parameters set it to `Some(0.0)` (paladin-core prompt.rs:154), so it
+    is always on the wire. xAI rejects the PARAMETER, for every current model tested:
+      grok-4   -> {"code":"invalid-argument","error":"Model grok-4 does not support parameter presencePenalty."}
+      grok-4.6 -> same    grok-4.5 -> same    grok-4.3 -> same
+    Correcting `GROK_DEFAULT_MODEL` alone does NOT fix this — all four models fail identically.
+    The adapter cannot complete a single generate call with default parameters.
+  G-17-4b KIMI IS NON-FUNCTIONAL OUT OF THE BOX (blocker). Two independent causes:
+    1. `KIMI_DEFAULT_MODEL = "moonshot-v1-8k"` is retired ->
+       {"message":"Not found the model moonshot-v1-8k or Permission denied","type":"resource_not_found_error"}
+    2. Even against a live-listed model, the default temperature is rejected:
+       kimi-k2.6 -> {"message":"invalid temperature: only 1 is allowed for this model"}
+       Default prompt parameters send temperature 0.7 (prompt.rs:151).
+    So the model-ID fix is necessary but not sufficient; the temperature constraint must also
+    be honoured (the preset carries `temperature_range`, engine.rs:64, but it is not enforced).
+  G-17-4c QWEN LIVE PATH UNVERIFIED — credential rejected, not a proven code defect (major).
+    Both endpoints return 401 `invalid_api_key` with the documented Alibaba error envelope:
+      https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models  -> 401 invalid_api_key
+      https://dashscope.aliyuncs.com/compatible-mode/v1/models       -> 401 invalid_api_key
+    The base_url is therefore CONFIRMED CORRECT (it resolves, TLS-terminates and returns the
+    vendor's documented OpenAI-compatible error schema); what fails is authentication. The
+    stored `dashscope_api_key` is a single 117-char token with no `=`, whitespace or newline,
+    so the loader is not corrupting it — it is structurally clean but not accepted. DashScope
+    keys are conventionally `sk-` + 32 hex (~35 chars), so 117 chars suggests the wrong secret
+    is in the file. Needs a valid key before Qwen's default model ID can be verified at all.
+observation: |
+  The silent-fallback design (D-13/D-14) hid Qwen's 401 completely: `get_available_models()`
+  returned a plausible 3-model list with no error surfaced at any level above `debug`. This is
+  documented intentional behaviour, not a defect, but it is why the original UAT expectation
+  demanded the live-fetch path specifically. Worth considering whether `available_models()`
+  should expose which path produced the result.
+scope: `crates/paladin-llm/src/compat/engine.rs`, `crates/paladin-llm/src/grok/adapter.rs`, `crates/paladin-llm/src/kimi/adapter.rs`, `crates/paladin-llm/src/qwen/adapter.rs`, `crates/paladin-llm/examples/live_vendor_smoke.rs`
 
 ### 5. New CI job behaviour on a real GitHub Actions runner
 
@@ -138,12 +196,63 @@ scope_note: |
 
 total: 5
 passed: 4
-issues: 0
+issues: 1
 pending: 0
 skipped: 0
-blocked: 1
+blocked: 0
 
 ## Gaps
+
+- gap_id: G-17-4a
+  truth: "Grok's adapter can complete a generate call against a current xAI model with default parameters"
+  status: failed
+  reason: "Live run 2026-08-22: every current model (grok-4, grok-4.6, grok-4.5, grok-4.3) rejects the request with 'does not support parameter presencePenalty'. The adapter is non-functional out of the box."
+  severity: blocker
+  test: 4
+  root_cause: "CompatEngine::build_request unconditionally serialises presence_penalty (compat/engine.rs:207) from default prompt parameters (paladin-core prompt.rs:154, Some(0.0)). xAI rejects the parameter's presence for all grok-4.x models. GROK_DEFAULT_MODEL='grok-4' is additionally absent from the live model list."
+  artifacts:
+    - path: "crates/paladin-llm/src/compat/engine.rs"
+      issue: "presence_penalty / frequency_penalty serialised unconditionally; no per-preset parameter-support gate"
+    - path: "crates/paladin-llm/src/grok/adapter.rs"
+      issue: "GROK_DEFAULT_MODEL 'grok-4' and GROK_FALLBACK_MODELS ['grok-4','grok-3'] are both stale vs the live list"
+  missing:
+    - "Suppress presence_penalty (and verify frequency_penalty) for the xAI preset, or make unsupported-parameter omission a preset capability"
+    - "Refresh GROK_DEFAULT_MODEL and GROK_FALLBACK_MODELS against the live list (grok-4.6 / grok-4.5 / grok-4.3)"
+    - "A regression test asserting the xAI wire body omits presencePenalty"
+  debug_session: ""
+
+- gap_id: G-17-4b
+  truth: "Kimi's adapter can complete a generate call using its default model and default parameters"
+  status: failed
+  reason: "Live run 2026-08-22: default model moonshot-v1-8k returns resource_not_found_error; a live-listed model (kimi-k2.6) rejects the default temperature with 'only 1 is allowed for this model'."
+  severity: blocker
+  test: 4
+  root_cause: "Two independent causes. (1) KIMI_DEFAULT_MODEL='moonshot-v1-8k' is retired by Moonshot. (2) Current Kimi models accept only temperature=1, but default prompt parameters send 0.7 (paladin-core prompt.rs:151); the preset's temperature_range (compat/engine.rs:64) is declared but never enforced against the outgoing request."
+  artifacts:
+    - path: "crates/paladin-llm/src/kimi/adapter.rs"
+      issue: "KIMI_DEFAULT_MODEL and KIMI_FALLBACK_MODELS reference the retired moonshot-v1-* family"
+    - path: "crates/paladin-llm/src/compat/engine.rs"
+      issue: "temperature_range is carried on the preset but never applied when building the request"
+  missing:
+    - "Refresh KIMI_DEFAULT_MODEL and KIMI_FALLBACK_MODELS against the live list (kimi-k2.6, kimi-k2.7-code, kimi-k2.7-code-highspeed, kimi-k3)"
+    - "Enforce or clamp temperature to the preset's temperature_range before sending"
+    - "A regression test covering the fixed-temperature constraint"
+  debug_session: ""
+
+- gap_id: G-17-4c
+  truth: "Qwen's live get_available_models path returns a real model list containing the default model"
+  status: failed
+  reason: "Live run 2026-08-22: both the intl and mainland DashScope endpoints return 401 invalid_api_key, so the live path silently fell back to QWEN_FALLBACK_MODELS. Qwen's base_url is confirmed correct; the stored credential is rejected."
+  severity: major
+  test: 4
+  root_cause: "Credential, not code. The stored dashscope_api_key is a structurally clean single 117-char token (no '=', whitespace or newline, so the loader is not corrupting it) but is rejected by both endpoints with the documented Alibaba invalid_api_key envelope. DashScope keys are conventionally 'sk-' + 32 hex, so the file most likely holds the wrong secret."
+  artifacts:
+    - path: "~/.config/paladin/dashscope_api_key"
+      issue: "117-char token rejected 401 by both dashscope-intl and dashscope endpoints"
+  missing:
+    - "A valid DashScope API key on the host"
+    - "Re-run the live smoke test to verify QWEN_DEFAULT_MODEL 'qwen-plus' exists in the live list"
+  debug_session: ""
 
 ## Deferred Follow-Ups
 
