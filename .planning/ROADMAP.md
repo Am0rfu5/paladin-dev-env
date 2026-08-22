@@ -1145,7 +1145,7 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
   4. **The adapters are tested to the standard already in force**, not exempted from it: mock-transport unit tests for request shaping, response parsing, streaming chunk assembly, and error mapping into `LlmError`; the workspace stays above the 82% line-coverage floor with the new code included; every public item carries rustdoc, and any live-API test is gated behind a credential-requiring feature so CI stays green without secrets.
   5. **The advertised surface matches the shipped one.** `paladin-llm`'s `Cargo.toml` description/keywords, the crate README, and the configuration documentation name exactly the providers that exist — so this phase does not create the same documentation-currency debt Phase 16 is closing.
 
-**Plans**: 21 plans *(11 executed; 6 added 2026-08-18 by a second `/gsd-plan-phase 17 --gaps` run to close the one remaining blocking gap, the four review Warnings the developer put in scope, and two bookkeeping gaps; 4 added 2026-08-22 by a third `--gaps` run after UAT test 4 ran live against the real vendor endpoints and returned two blockers and one credential gap)*
+**Plans**: 22 plans *(11 executed; 6 added 2026-08-18 by a second `/gsd-plan-phase 17 --gaps` run to close the one remaining blocking gap, the four review Warnings the developer put in scope, and two bookkeeping gaps; 4 added 2026-08-22 by a third `--gaps` run after UAT test 4 ran live against the real vendor endpoints and returned two blockers and one credential gap; **amended later the same day** — G-17-4c was resolved by live verification rather than planned around, its replacement G-17-4d added plan 17-22, and 17-20/17-21 swapped wave order so the documentation quotes the shipped constant instead of predicting it)*
 
 Plans:
 **Wave 1**
@@ -1215,19 +1215,25 @@ Plans:
 
 - [ ] 17-18-PLAN.md — Tracer (G-17-4a): a preset declares which sampling parameters its request path carries, the shared engine honours the declaration, and Grok completes a live `generate()` call against a refreshed, live-listed xAI model
 
-**Wave 16** *(blocked on Wave 15 — shares `compat/engine.rs`; blocking decision checkpoint)*
+**Wave 16** *(blocked on Wave 15 — shares `compat/engine.rs`)*
 
-- [ ] 17-19-PLAN.md — G-17-4b: Kimi's retired default model refreshed against the live Moonshot catalog and its fixed-temperature constraint honoured *(blocking decision checkpoint: ADR-0004 rejects adapter-level clamping by name, so how the constraint is honoured is the developer's call)*
+- [ ] 17-19-PLAN.md — G-17-4b: Kimi's retired default model refreshed against the live Moonshot catalog, its fixed-temperature constraint honoured by option (a), and the builder's ADR-0004 gate narrowed to temperatures a caller actually expressed so a truthful degenerate range is not a build-time outage *(the blocking decision checkpoint is **answered** — the developer selected option (a) on 2026-08-22, so this plan is now autonomous)*
 
-**Wave 17** *(blocked on Wave 16 — the refreshed identifiers must exist before they can be advertised)*
+**Wave 17** *(blocked on Wave 16 — shares `compat/engine.rs`)*
 
-- [ ] 17-20-PLAN.md — PROV-04's advertised surface brought back in line: every operator-facing default model matches the shipped constant, and one blanket unverified-endpoint caveat becomes a per-vendor, dated verification status
+- [ ] 17-21-PLAN.md — G-17-4d, part 1: Qwen's shipped default region becomes US (Virginia) by developer decision, the region-scoped-credential rule and the known regional endpoints are documented where `DASHSCOPE_BASE_URL` is described, and Qwen is live-verified at the endpoint it now ships with *(**re-ordered ahead of 17-20**: the constant must change before the documentation can quote it; the human-action checkpoint is gone — the credential was valid all along)*
 
-**Wave 18** *(blocked on Wave 17 — shares the config example, the configuration guide, the crate README and COVERAGE.md)*
+**Wave 18** *(blocked on Wave 17 — the refreshed identifiers and the new Qwen endpoint must exist before they can be advertised)*
 
-- [ ] 17-21-PLAN.md — G-17-4c: Qwen held to the same live bar as Grok and Kimi, or closed as a developer-accepted deferral with the evidence that the base URL is confirmed and only the credential is rejected *(blocking human-action checkpoint: a valid DashScope key can only come from a human)*
+- [ ] 17-20-PLAN.md — PROV-04's advertised surface brought back in line: every operator-facing default model and base URL matches the shipped constant, one blanket unverified-endpoint caveat becomes a per-vendor dated verification status, and the DashScope region constraint reaches the operator-facing documents
 
-*Third gap-closure run, planned 2026-08-22 from `17-UAT.md` test 4's three diagnosed gaps. **Two of the three are code defects and one is not:** G-17-4a and G-17-4b are blockers — Grok cannot complete any `generate()` call because the shared engine unconditionally serialises a parameter xAI rejects, and Kimi's default model is retired while its current models accept only `temperature: 1`. G-17-4c is a **credential** problem, not a code problem: both DashScope endpoints return `401 invalid_api_key` in Alibaba's documented envelope, which confirms `QWEN_DEFAULT_BASE_URL` rather than implicating it, so no base-URL change is planned. Gemini passes and is the regression control across all four plans. The other four UAT tests passed on 2026-08-18/19 and are untouched here.*
+**Wave 19** *(blocked on Wave 18 — shares `compat/engine.rs` and the configuration guide; carries the run's final regression record)*
+
+- [ ] 17-22-PLAN.md — G-17-4d, part 2: the shared engine stops describing an authentication failure the way it describes being offline, so a region/credential mismatch is audible instead of returning a plausible curated list — vendor-agnostic, so all six compat-backed adapters gain it, and the D-13/D-14 fallback contract is deliberately unchanged
+
+*Third gap-closure run, planned 2026-08-22 from `17-UAT.md` test 4's diagnosed gaps. G-17-4a and G-17-4b are blockers — Grok cannot complete any `generate()` call because the shared engine unconditionally serialises a parameter xAI rejects, and Kimi's default model is retired while its current models accept only `temperature: 1`. Gemini passes and is the regression control across every plan in the run. The other four UAT tests passed on 2026-08-18/19 and are untouched here.*
+
+*(**Amended in place 2026-08-22, per D-00d.** The paragraph above previously continued: "G-17-4c is a **credential** problem, not a code problem: both DashScope endpoints return `401 invalid_api_key` in Alibaba's documented envelope, which confirms `QWEN_DEFAULT_BASE_URL` rather than implicating it, so no base-URL change is planned." **That conclusion was falsified the same day and is superseded.** Alibaba documents that API keys are region-scoped and cannot be used across regions, so a region-scoped key returns a well-formed 401 from every endpoint except its own — the envelope proves nothing about the URL. Measured with one credential and one binary, differing only in the endpoint: the shipped Singapore default returned a list byte-identical to the curated fallback, i.e. a silently failed fetch, while the US Virginia endpoint returned 92 live models with the default model present. **G-17-4c is resolved**; the real defect is G-17-4d — the adapter models DashScope as a single global endpoint, and the mismatch is silent. The developer's binding call is that the default becomes US (Virginia), which moves the problem to Singapore and mainland operators rather than eliminating it, hence the documentation half. The run grows from four plans to five.)*
 
 ## Progress
 
