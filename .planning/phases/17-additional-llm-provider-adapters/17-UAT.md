@@ -295,6 +295,44 @@ blocked: 0
     - "Consider distinguishing an auth failure (misconfiguration, warrants `warn`) from an offline failure (supported state, `debug`) in available_models()"
   debug_session: ""
 
+## Decisions
+
+Recorded 2026-08-22. Both were blocking checkpoints in the gap-closure plans; answering them
+removed the only human gates, so plans 17-18 … 17-22 now run unattended.
+
+- id: D-17-01
+  question: "ADR-0004 rejects adapter-level clamping by name, but Kimi's live models accept only temperature=1 while the framework's defaults send 0.7. How is the constraint honoured?"
+  decision: "Option (a) — the preset declares `temperature` as a parameter its request path does not carry, reusing the CompatRequestParameters mechanism from plan 17-18."
+  rationale: |
+    Not the clamping ADR-0004 rejected: no legal value is substituted for another, so a caller
+    is never silently given a different temperature than they asked for. Option (b) (engine
+    rejects out-of-range) would leave Kimi not working with default parameters, closing the gap
+    narrower than the UAT requires. Option (c) (stop fabricating sampling defaults in
+    `PromptParameters::default()`) is the true root cause of BOTH blockers, but changes what all
+    nine adapters send and drops `max_tokens: Some(1000)` — deferred with a trigger, not dropped.
+  consequence: |
+    Declaring Kimi's truthful (1.0, 1.0) range would break every Kimi-backed Paladin, because
+    `paladin_builder.rs` validate() checks temperature unconditionally and `PaladinData::default()`
+    is 0.7. Plan 17-19 task 2 therefore narrows the ADR-0004 gate to temperatures the caller
+    actually expressed, via the builder's existing `manual_temperature_override` flag. That is an
+    ADR-0004 REFINEMENT (the ADR validates what the caller supplied; a fabricated default is not
+    supplied) and is flagged for an ADR amendment at phase close rather than made silently.
+  plans: [17-19]
+
+- id: D-17-02
+  question: "Qwen's shipped default base_url points at Singapore, but DashScope keys are region-scoped. Which region should the default be?"
+  decision: "US (Virginia) — QWEN_DEFAULT_BASE_URL becomes https://dashscope-us.aliyuncs.com/compatible-mode/v1."
+  rationale: "The operator's Alibaba Model Studio workspace is US (Virginia), and the live run proves that endpoint returns 92 models with qwen-plus present using the existing credential."
+  consequence: |
+    This FLIPS the problem rather than eliminating it: Singapore and mainland operators now hit
+    the same silent 401 this phase just diagnosed. Some region must be the default, so the real
+    mitigation is the diagnosability half of G-17-4d (plan 17-22) — an auth failure must surface
+    instead of being masked by the curated fallback. Plan 17-21 records a new accepted threat
+    (T-17-89): a Singapore/mainland key is now presented to a US Alibaba host by default.
+    It also REVERSES 17-21's earlier prohibition against changing QWEN_DEFAULT_BASE_URL, which
+    rested on the falsified inference recorded in G-17-4c's `correction:` block.
+  plans: [17-21, 17-20, 17-22]
+
 ## Deferred Follow-Ups
 
 - test: 1
