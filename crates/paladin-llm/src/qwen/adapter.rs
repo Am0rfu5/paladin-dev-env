@@ -11,13 +11,61 @@
 //! ## Region default
 //!
 //! DashScope publishes at least five regional base URLs. The default here is
-//! the international compatible-mode endpoint
-//! (`https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), chosen as the
-//! most broadly reachable default; an operator in any other region reaches
-//! their endpoint with `DASHSCOPE_BASE_URL` and no code change — the
-//! identical override pattern `DEEPSEEK_BASE_URL` and `ANTHROPIC_BASE_URL`
-//! already establish (17-CONTEXT.md D-12; 17-03-PLAN.md "Decisions resolved
-//! in this plan").
+//! the US (Virginia) compatible-mode endpoint
+//! (`https://dashscope-us.aliyuncs.com/compatible-mode/v1`), per the
+//! developer's binding decision of 2026-08-22 (D-17-02, gap G-17-4d) — see
+//! "Reversal record" below for why this replaced the original Singapore
+//! default. An operator in any other region reaches their endpoint with
+//! `DASHSCOPE_BASE_URL` and no code change — the identical override pattern
+//! `DEEPSEEK_BASE_URL` and `ANTHROPIC_BASE_URL` already establish
+//! (17-CONTEXT.md D-12; 17-03-PLAN.md "Decisions resolved in this plan").
+//!
+//! **The override is not optional tuning for every operator — for some it is
+//! mandatory.** Alibaba documents that a Base URL must be used together with
+//! an API key from the same billing plan, and that **API keys are
+//! independent across regions and cannot be used across regions**
+//! (alibabacloud.com/help/en/model-studio, Base URL / error-code docs). The
+//! three known compatible-mode regional endpoints:
+//!
+//! | Region | Compatible-mode base URL |
+//! |---|---|
+//! | US (Virginia) — shipped default | `https://dashscope-us.aliyuncs.com/compatible-mode/v1` |
+//! | Singapore | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+//! | China (mainland) | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+//!
+//! **If your Alibaba Model Studio workspace is in Singapore or on the
+//! mainland, you MUST set `DASHSCOPE_BASE_URL` to the matching row above.**
+//! Presenting a Singapore- or mainland-scoped key to the US endpoint (or vice
+//! versa) is not tuning, it is a required step for that credential to reach
+//! its own account.
+//!
+//! What a region mismatch looks like **today**: not an error, but a
+//! plausible three-entry curated model list, because
+//! [`crate::compat::engine::CompatEngine::available_models`] reports an auth
+//! failure exactly as it reports being offline — it swallows the error and
+//! returns [`QWEN_FALLBACK_MODELS`]. Plan 17-22 changes that symptom; this
+//! paragraph describes the behaviour as it exists at the time this default
+//! changed, and should be amended, not deleted, when 17-22 lands.
+//!
+//! ### Reversal record — read before touching `QWEN_DEFAULT_BASE_URL` again
+//!
+//! This constant's default was Singapore until 2026-08-22, defended by a
+//! prohibition against changing it. **That prohibition was wrong and MUST
+//! NOT be reinstated or re-derived.** The argument was: a live probe against
+//! both the Singapore and mainland endpoints returned `401` carrying
+//! Alibaba's documented `invalid_api_key` error envelope, which was read as
+//! proof the URL resolved correctly and only the credential was bad. That
+//! inference does not hold, because a region-scoped key produces that exact
+//! well-formed `401` from *every* endpoint except its own — the signature is
+//! identical for a right URL with a wrong key and a wrong URL with a right
+//! key. What settled it: two runs of the same binary with the same
+//! credential, differing only in the endpoint (2026-08-22) —
+//! `dashscope-intl` (Singapore, the then-shipped default) returned 3 models
+//! byte-identical to [`QWEN_FALLBACK_MODELS`] (the live fetch silently
+//! failed), while `dashscope-us` (Virginia) returned 92 live models
+//! including [`QWEN_DEFAULT_MODEL`]. The credential was valid the whole
+//! time; the URL was the defect. A later reader who re-derives "a
+//! well-formed 401 proves the URL" meets this paragraph first.
 
 use async_trait::async_trait;
 use futures::Stream;
@@ -32,13 +80,14 @@ use crate::compat::{
 };
 
 /// Default Qwen (Alibaba DashScope) compatible-mode API base URL — the
-/// international endpoint.
+/// US (Virginia) endpoint.
 ///
-/// `[CITED: alibabacloud.com/help/en/model-studio/compatibility-of-openai-with-dashscope]`
-/// — not live-verified at plan-authoring time (17-RESEARCH.md Assumptions
-/// Log A2/A3; this execution environment has no network egress, see the
-/// plan's SUMMARY.md for the confirmation status, per D-00e).
-pub const QWEN_DEFAULT_BASE_URL: &str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
+/// Live-verified 2026-08-22 (D-17-02, gap G-17-4d, 17-21-PLAN.md): this
+/// endpoint returned 92 live models to this project's credential, including
+/// [`QWEN_DEFAULT_MODEL`]. See the module-level "Region default" and
+/// "Reversal record" docs above for why this replaced the earlier Singapore
+/// default, and what an operator in another region must do.
+pub const QWEN_DEFAULT_BASE_URL: &str = "https://dashscope-us.aliyuncs.com/compatible-mode/v1";
 
 /// Default Qwen model requested when `DASHSCOPE_MODEL` is unset.
 pub const QWEN_DEFAULT_MODEL: &str = "qwen-plus";
@@ -277,6 +326,24 @@ mod tests {
         assert_eq!(config.base_url, QWEN_DEFAULT_BASE_URL);
         assert_eq!(config.model, QWEN_DEFAULT_MODEL);
         assert_eq!(config.timeout_seconds, 60);
+    }
+
+    /// Pins the shipped default to the literal US (Virginia) compatible-mode
+    /// endpoint, per the developer's binding decision of 2026-08-22
+    /// (D-17-02, gap G-17-4d). Asserted against the literal rather than the
+    /// constant, so this test fails against the pre-reversal Singapore
+    /// default and only passes once the constant is actually changed —
+    /// unlike `qwen_config_defaults_base_url_and_model_when_only_key_is_set`
+    /// above, which follows the constant and would pass regardless of its
+    /// value.
+    #[test]
+    fn qwen_config_defaults_to_the_us_virginia_endpoint_by_literal() {
+        let config = QwenConfig::from_parts(Some("test-key".to_string()), None, None, None)
+            .expect("key alone must be sufficient to build a valid config");
+        assert_eq!(
+            config.base_url,
+            "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
+        );
     }
 
     #[test]
