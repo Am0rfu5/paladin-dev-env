@@ -141,6 +141,35 @@ above carry their own dated status:
 | Qwen (DashScope) | Live-verified 2026-08-22 (plan 17-21) for the model list only (92 live models at the shipped US endpoint) — the `generate()` round trip is blocked on an Alibaba Model Studio account entitlement gap, not a code defect or a stale endpoint (`.planning/WINDOWS.md` id 21). See the region-scoping note above `qwen:` for the mandatory override outside the US region. |
 | Ollama | Not applicable — self-hosted, no vendor endpoint to verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), passed on a GitHub Actions runner 2026-08-19. |
 
+### A rejected credential now announces itself
+
+Every provider above except Ollama shares one underlying protocol engine
+(`CompatEngine`), so this applies uniformly to all of them — an operator debugging a
+self-hosted OpenAI-compatible endpoint gets the same signal as one debugging DashScope,
+Moonshot or xAI (2026-08-22, plan 17-22, closing G-17-4d).
+
+Before this change, a rejected credential and an offline vendor looked identical: the
+model-list fetch silently fell back to a curated list with nothing above a `debug` log
+line, in either case. This is what let a genuine credential/region mismatch go
+undiagnosed for five days during this phase's own live verification (`.planning/WINDOWS.md`
+gap history). Now, when the configured endpoint rejects the request (an authentication
+failure), a `warn`-level line is emitted naming the endpoint and stating that the
+returned list is the curated fallback, not the vendor's own catalog — for example:
+
+```text
+[WARN] configured endpoint https://dashscope-intl.aliyuncs.com/compatible-mode/v1 rejected
+the request while listing models (Authentication failed: ...); the returned model list is
+the curated fallback, not this vendor's own catalog — a credential scoped to a different
+account or region is the usual cause
+```
+
+An endpoint that is simply unreachable — a self-hosted Ollama that has not started yet,
+a network blip, a slow response — stays at `debug`, exactly as before: being offline is a
+supported state (D-13/D-14), not a misconfiguration, and this diagnostic does not fire
+for it. Seeing the warning at all means the fix is the same one described throughout this
+page: check the configured `base_url`/`*_BASE_URL` override against the credential you
+are using.
+
 ## Environment variables
 
 The full LLM environment-variable surface — every credential, base-URL, model, timeout
