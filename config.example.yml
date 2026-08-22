@@ -43,43 +43,64 @@ llm:
     timeout_seconds: 300
     max_retries: 3
 
-  # Kimi (Moonshot AI). Base URL / default model per the KIMI_DEFAULT_BASE_URL /
-  # KIMI_DEFAULT_MODEL constants — recorded from vendor documentation, not yet verified
-  # against a live endpoint in this environment.
+  # Kimi (Moonshot AI). Live-verified 2026-08-22 (plan 17-19, closing G-17-4b): a live
+  # GET /models call and a generate() round trip both succeeded against api.moonshot.ai
+  # using the default model below. (Confirmed: model list + a completion round trip.)
   kimi:
     api_key: "${MOONSHOT_API_KEY}"
     base_url: "https://api.moonshot.ai/v1"
-    default_model: "moonshot-v1-8k"
+    default_model: "kimi-k3"
     timeout_seconds: 60
 
-  # Qwen (Alibaba DashScope). Same unverified-endpoint caveat as Kimi above.
+  # Qwen (Alibaba DashScope). Model list live-verified 2026-08-22 (plan 17-21, closing
+  # G-17-4d): GET /models against the endpoint below returned 92 live models, including
+  # the default model. The generate() round trip is NOT yet confirmed — blocked on an
+  # Alibaba Model Studio account entitlement gap (HTTP 403 Model.AccessDenied) unrelated
+  # to this configuration; see .planning/WINDOWS.md id 21. (Confirmed: model list only.)
+  #
+  # DashScope API keys are scoped to the Model Studio region that issued them and are
+  # REJECTED by every other region's endpoint. The base_url below is US (Virginia), the
+  # shipped default. If your workspace is in Singapore or on the mainland, you MUST set
+  # DASHSCOPE_BASE_URL to your own region's endpoint — the three known compatible-mode
+  # regional endpoints:
+  #   US (Virginia)    (shipped default) : https://dashscope-us.aliyuncs.com/compatible-mode/v1
+  #   Singapore                          : https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  #   China (mainland)                   : https://dashscope.aliyuncs.com/compatible-mode/v1
   qwen:
     api_key: "${DASHSCOPE_API_KEY}"
-    base_url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    base_url: "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
     default_model: "qwen-plus"
     timeout_seconds: 60
 
-  # Grok (xAI). Same unverified-endpoint caveat as Kimi above.
+  # Grok (xAI). Live-verified 2026-08-22 (plan 17-18, closing G-17-4a): a live GET
+  # /models call and a generate() round trip both succeeded against api.x.ai using the
+  # default model below. (Confirmed: model list + a completion round trip.)
   grok:
     api_key: "${XAI_API_KEY}"
     base_url: "https://api.x.ai/v1"
-    default_model: "grok-4"
+    default_model: "grok-4.6"
     timeout_seconds: 60
 
   # Ollama (self-hosted). Deliberately carries NO api_key field: Ollama requires no
   # credential at all (D-12) — the adapter substitutes an internal placeholder value that is
   # never read from config, so there is nothing to set here even with ${} indirection.
+  # Not applicable to the live-verification status below: self-hosted, no vendor endpoint
+  # to verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), which passed on
+  # a GitHub Actions runner on 2026-08-19.
   ollama:
     base_url: "http://localhost:11434/v1"
     default_model: "llama3"
     timeout_seconds: 60
 
-  # Gemini (Google). Bespoke `generateContent` protocol, not OpenAI-compatible — same
-  # unverified-endpoint caveat as Kimi above.
+  # Gemini (Google). Bespoke `generateContent` protocol, not OpenAI-compatible.
+  # Live-verified: a live GET /models call and a generate() round trip both succeeded
+  # against generativelanguage.googleapis.com. default_model was refreshed from
+  # gemini-2.5-flash (retired for new users) to gemini-3.6-flash after this plan was
+  # written, per the live catalog. (Confirmed: model list + a completion round trip.)
   gemini:
     api_key: "${GEMINI_API_KEY}"
     base_url: "https://generativelanguage.googleapis.com/v1beta"
-    default_model: "gemini-2.5-flash"
+    default_model: "gemini-3.6-flash"
     timeout_seconds: 60
 
   # Generic operator-configured OpenAI-compatible provider — points Paladin at ANY

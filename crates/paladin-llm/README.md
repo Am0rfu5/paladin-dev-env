@@ -17,16 +17,30 @@ env-var-only credential posture — no API key is ever read from a config file.
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY` | `https://api.anthropic.com/v1` |
 | DeepSeek | `deepseek` | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/v1` |
 | Kimi (Moonshot AI) | `kimi` | `MOONSHOT_API_KEY` | `https://api.moonshot.ai/v1` |
-| Qwen (DashScope) | `qwen` | `DASHSCOPE_API_KEY` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+| Qwen (DashScope) | `qwen` | `DASHSCOPE_API_KEY` | `https://dashscope-us.aliyuncs.com/compatible-mode/v1` |
 | Grok (xAI) | `grok` | `XAI_API_KEY` | `https://api.x.ai/v1` |
 | Ollama (self-hosted) | `ollama` | none required — self-hosted, no vendor credential | `http://localhost:11434/v1` |
 | Gemini (Google) | `gemini` | `GEMINI_API_KEY` | `https://generativelanguage.googleapis.com/v1beta` (bespoke `generateContent` protocol, not OpenAI-compatible) |
 | Generic OpenAI-compatible | `openai-compatible` | `OPENAI_COMPATIBLE_API_KEY` | none — operator-supplied, required |
 | Mock (testing) | `mock` | — | — |
 
-> The vendor base URLs and default model IDs above (Kimi, Qwen, Grok, Gemini) were recorded
-> from vendor documentation but have **not** been verified against a live endpoint in this
-> environment. Do not treat them as confirmed until smoke-tested against the real API.
+> **Live verification status, per vendor (not one blanket disclaimer):** Gemini and Grok
+> (xAI) are each live-verified — a model-list fetch and a `generate()` round trip both
+> succeeded. Kimi (Moonshot) is live-verified the same way, plus its measured
+> fixed-temperature constraint. Qwen (DashScope) is live-verified for its model list only
+> (92 live models at the shipped US endpoint, 2026-08-22) — its `generate()` round trip is
+> blocked on an Alibaba Model Studio account entitlement gap, not a code defect
+> (`.planning/WINDOWS.md` id 21). Ollama has no vendor endpoint to verify at all — it is
+> self-hosted; its live exercise is the Docker Tier 2 suite (UAT test 3), which passed on
+> a GitHub Actions runner on 2026-08-19.
+>
+> **DashScope (Qwen) region constraint:** API keys are scoped to the Model Studio region
+> that issued them and are rejected by every other region's endpoint. The base URL above
+> is US (Virginia), the shipped default. If your workspace is in Singapore or on the
+> mainland, you MUST set `DASHSCOPE_BASE_URL` to your own region's endpoint:
+>   - US (Virginia) (shipped default): `https://dashscope-us.aliyuncs.com/compatible-mode/v1`
+>   - Singapore: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`
+>   - China (mainland): `https://dashscope.aliyuncs.com/compatible-mode/v1`
 
 ### The generic `openai-compatible` provider
 

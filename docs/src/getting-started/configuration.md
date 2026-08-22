@@ -47,34 +47,58 @@ llm:
     timeout_seconds: 300
     max_retries: 3
 
-  # Six providers added alongside the original three. Base URLs and default model IDs for
-  # Kimi/Qwen/Grok/Gemini were recorded from vendor documentation but have not been
-  # verified against a live endpoint in this environment.
+  # Six providers added alongside the original three. Each carries its own dated
+  # verification status below rather than one blanket disclaimer — see "Live
+  # verification status" further down for what was confirmed and when.
+  #
+  # Kimi (Moonshot AI). Live-verified 2026-08-22 (plan 17-19, closing G-17-4b): GET
+  # /models and a generate() round trip both succeeded against api.moonshot.ai.
   kimi:
     base_url: "https://api.moonshot.ai/v1"
-    default_model: "moonshot-v1-8k"
+    default_model: "kimi-k3"
     timeout_seconds: 60
 
+  # Qwen (Alibaba DashScope). Model-list live-verified 2026-08-22 (plan 17-21, closing
+  # G-17-4d): GET /models returned 92 live models at the endpoint below, including the
+  # default model. The generate() round trip is NOT yet confirmed — blocked on an
+  # Alibaba Model Studio account entitlement gap (HTTP 403 Model.AccessDenied), not a
+  # code defect; see .planning/WINDOWS.md id 21.
+  #
+  # DashScope API keys are scoped to the Model Studio region that issued them and are
+  # REJECTED by every other region's endpoint. `base_url` below is US (Virginia), the
+  # shipped default. If your workspace is in Singapore or on the mainland, you MUST
+  # set `DASHSCOPE_BASE_URL` to your own region's endpoint:
+  #   - US (Virginia)  (shipped default): https://dashscope-us.aliyuncs.com/compatible-mode/v1
+  #   - Singapore:                        https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  #   - China (mainland):                 https://dashscope.aliyuncs.com/compatible-mode/v1
   qwen:
-    base_url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    base_url: "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
     default_model: "qwen-plus"
     timeout_seconds: 60
 
+  # Grok (xAI). Live-verified 2026-08-22 (plan 17-18, closing G-17-4a): GET /models and
+  # a generate() round trip both succeeded against api.x.ai.
   grok:
     base_url: "https://api.x.ai/v1"
-    default_model: "grok-4"
+    default_model: "grok-4.6"
     timeout_seconds: 60
 
   # Ollama (self-hosted) requires no api_key at all (D-12) — omit the field entirely.
+  # Not applicable to live-vendor verification: self-hosted, no vendor endpoint to
+  # verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), passed on a
+  # GitHub Actions runner 2026-08-19.
   ollama:
     base_url: "http://localhost:11434/v1"
     default_model: "llama3"
     timeout_seconds: 60
 
   # Gemini uses a bespoke `generateContent` protocol, not OpenAI-compatible.
+  # Live-verified: GET /models and a generate() round trip both succeeded against
+  # generativelanguage.googleapis.com. default_model was refreshed from
+  # gemini-2.5-flash (retired for new users) to gemini-3.6-flash per the live catalog.
   gemini:
     base_url: "https://generativelanguage.googleapis.com/v1beta"
-    default_model: "gemini-2.5-flash"
+    default_model: "gemini-3.6-flash"
     timeout_seconds: 60
 
   # Generic adapter for ANY OpenAI-compatible endpoint not named above (self-hosted
@@ -103,6 +127,36 @@ llm:
 
 > **Security:** Never put API keys in `config.yml`. Use environment variables or
 > a secrets manager (AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets).
+
+### Live verification status
+
+Per-vendor, not one blanket disclaimer — each provider's `base_url` and `default_model`
+above carry their own dated status:
+
+| Provider | Status |
+|---|---|
+| Gemini | Live-verified: a model-list fetch and a `generate()` round trip both succeeded. |
+| Grok (xAI) | Live-verified 2026-08-22 (plan 17-18): model list + a `generate()` round trip against `api.x.ai`. |
+| Kimi (Moonshot) | Live-verified 2026-08-22 (plan 17-19): model list + a `generate()` round trip against `api.moonshot.ai`, including its measured fixed-temperature constraint. |
+| Qwen (DashScope) | Live-verified 2026-08-22 (plan 17-21) for the model list only (92 live models at the shipped US endpoint) — the `generate()` round trip is blocked on an Alibaba Model Studio account entitlement gap, not a code defect or a stale endpoint (`.planning/WINDOWS.md` id 21). See the region-scoping note above `qwen:` for the mandatory override outside the US region. |
+| Ollama | Not applicable — self-hosted, no vendor endpoint to verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), passed on a GitHub Actions runner 2026-08-19. |
+
+## Environment variables
+
+The full LLM environment-variable surface — every credential, base-URL, model, timeout
+and (for the generic `openai-compatible` provider) capability/temperature override the
+adapters read — is documented as a first-class configuration path, alongside the YAML
+above, in [`.env.example`](../../../.env.example) at the repository root. Copy it to
+`.env` and fill in the credentials you need; unset variables fall back to the defaults
+shown in this guide.
+
+**In the devcontainer**, these credentials arrive from `~/.config/paladin/` (one file per
+secret, filename = the lowercased variable name — e.g. `~/.config/paladin/xai_api_key` →
+`XAI_API_KEY`) via `.devcontainer/paladin-env.sh`, sourced automatically into interactive
+shells by `~/.bashrc`. A genuinely-exported non-empty value always wins over the file. A
+**non-interactive** shell (a script, a CI step, an agent's Bash tool) does not run
+`~/.bashrc` and therefore does not source `paladin-env.sh` automatically — it must be
+sourced explicitly: `set -a; . .devcontainer/paladin-env.sh; set +a`.
 
 ## Garrison (Short-term Memory)
 
