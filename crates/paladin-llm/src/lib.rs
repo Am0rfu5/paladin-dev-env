@@ -271,13 +271,18 @@ mod capability_invariants {
     feature = "openai-compatible"
 ))]
 mod capability_invariants_new_providers {
+    use crate::gemini::adapter::{GEMINI_DEFAULT_BASE_URL, GEMINI_DEFAULT_MODEL};
     use crate::gemini::{GeminiAdapter, GeminiConfig};
+    use crate::grok::adapter::{GROK_DEFAULT_BASE_URL, GROK_DEFAULT_MODEL};
     use crate::grok::{GrokAdapter, GrokConfig};
+    use crate::kimi::adapter::{KIMI_DEFAULT_BASE_URL, KIMI_DEFAULT_MODEL};
     use crate::kimi::{KimiAdapter, KimiConfig};
+    use crate::ollama::adapter::{OLLAMA_DEFAULT_BASE_URL, OLLAMA_DEFAULT_MODEL};
     use crate::ollama::{OllamaAdapter, OllamaConfig};
     use crate::openai_compatible::{
         OpenAiCompatibleAdapter, OpenAiCompatibleCapabilitiesConfig, OpenAiCompatibleConfig,
     };
+    use crate::qwen::adapter::{QWEN_DEFAULT_BASE_URL, QWEN_DEFAULT_MODEL};
     use crate::qwen::{QwenAdapter, QwenConfig};
     use paladin_ports::output::llm_port::LlmPort;
 
@@ -317,31 +322,31 @@ mod capability_invariants_new_providers {
         // these adapters make a request in this test, so the URL need not resolve.
         let kimi = KimiAdapter::new(KimiConfig::new(
             "test-key".to_string(),
-            "https://api.moonshot.ai/v1".to_string(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_BASE_URL.to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         ))
         .unwrap();
         let qwen = QwenAdapter::new(QwenConfig::new(
             "test-key".to_string(),
-            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1".to_string(),
-            "qwen-plus".to_string(),
+            QWEN_DEFAULT_BASE_URL.to_string(),
+            QWEN_DEFAULT_MODEL.to_string(),
         ))
         .unwrap();
         let grok = GrokAdapter::new(GrokConfig::new(
             "test-key".to_string(),
-            "https://api.x.ai/v1".to_string(),
-            "grok-4".to_string(),
+            GROK_DEFAULT_BASE_URL.to_string(),
+            GROK_DEFAULT_MODEL.to_string(),
         ))
         .unwrap();
         let ollama = OllamaAdapter::new(OllamaConfig::new(
-            "http://localhost:11434/v1".to_string(),
-            "llama3".to_string(),
+            OLLAMA_DEFAULT_BASE_URL.to_string(),
+            OLLAMA_DEFAULT_MODEL.to_string(),
         ))
         .unwrap();
         let gemini = GeminiAdapter::new(GeminiConfig::new(
             "test-key".to_string(),
-            "https://generativelanguage.googleapis.com/v1beta".to_string(),
-            "gemini-2.5-flash".to_string(),
+            GEMINI_DEFAULT_BASE_URL.to_string(),
+            GEMINI_DEFAULT_MODEL.to_string(),
         ))
         .unwrap();
         // The pessimistic-default path (D-04): every field its own conservative

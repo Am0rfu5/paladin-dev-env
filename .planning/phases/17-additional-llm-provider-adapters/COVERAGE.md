@@ -33,6 +33,16 @@ This matrix covers the surfaces this phase newly integrates.
   Kimi (`api.moonshot.ai/v1`, `moonshot-v1-8k`), Qwen
   (`dashscope-intl.aliyuncs.com/compatible-mode/v1`, `qwen-plus`), Grok (`api.x.ai/v1`, `grok-4`),
   Ollama (`localhost:11434/v1`, `llama3`), and the operator-configured generic provider (**D-03**).
+  **Amended 2026-08-22 (plan 17-20):** the identifiers above are the values this phase originally
+  shipped and are preserved here rather than deleted, per D-00d. Live verification (plans 17-18,
+  17-19, 17-21) has since falsified three of them: Kimi's default is now `kimi-k3` (`moonshot-v1-8k`
+  is retired, returns `404`), Grok's default is now `grok-4.6` (`grok-4` is absent from the live
+  catalog), and Qwen's base URL is now the US (Virginia) endpoint
+  `dashscope-us.aliyuncs.com/compatible-mode/v1` (the Singapore endpoint above returned a
+  region-scoped credential's `401` disguised as an authentication failure, not a working URL).
+  Gemini's `gemini-2.5-flash` default (line 31 above) is likewise retired for new users and has
+  been refreshed to `gemini-3.6-flash`. The shipped code and every operator-facing document now
+  carry these refreshed values; this paragraph is the historical record of what changed and why.
 - **`[ollama]`** — Ollama's *native* `/api/*` protocol, decided separately from the `/v1` shim.
 
 Per the gate's re-decide rule, each `[compat]` capability is decided for this surface on its own
@@ -75,7 +85,7 @@ merits rather than inherited from the existing OpenAI adapter's choices.
 | `[compat] GET /models` | INTEGRATE | Backs get_available_models and validate_model with the D-13 fallback. Ollama's is served locally. |
 | `[compat] request field model` | INTEGRATE | Per-preset default, operator-overridable. |
 | `[compat] request field messages (system/user/assistant)` | INTEGRATE | All five report supports_system_messages true. |
-| `[compat] sampling fields (temperature, max_tokens, top_p, penalties)` | INTEGRATE | The five tunables the wire type carries; each is omitted when unset rather than sent as null. |
+| `[compat] sampling fields (temperature, max_tokens, top_p, penalties)` | INTEGRATE | The five tunables the wire type carries; each is omitted when unset rather than sent as null. **Amended 2026-08-22 (plan 17-20):** the original reason above described only the caller-unset case. Live measurement (plans 17-18, 17-19) found "unset" is an incomplete description of what a vendor may require: each preset now declares, via `CompatRequestParameters`, which of the five fields its request path carries at all — Grok's request path omits `frequency_penalty`/`presence_penalty` unconditionally (xAI rejects them by presence, measured live), and Kimi's omits `temperature`/`top_p` unconditionally (Moonshot enforces fixed values on both, measured live: `temperature` accepts only `1.0`, `top_p` only `0.95`). This is a per-preset request-shaping contract, not a per-call caller choice — the field can be absent even when the caller supplied a value. |
 | `[compat] request field stream` | INTEGRATE | Selects the SSE path. |
 | `[compat] response usage (prompt/completion/total tokens)` | INTEGRATE | Mapped into LlmResponse; total_tokens is tolerated as absent and derived. |
 | `[compat] response finish_reason` | INTEGRATE | Mapped to FinishReason; an unknown value degrades to FinishReason::Error rather than panicking. |
@@ -99,10 +109,63 @@ merits rather than inherited from the existing OpenAI adapter's choices.
 
 ## Verification status of this surface
 
-Recorded for honesty, and consistent with `17-UAT.md` test 4: the base URLs, default model IDs and
-live-fetch behaviour above are taken from **vendor documentation and the shipped code**, and have
-**not** been confirmed against a live endpoint — the phase's sandbox has no network egress and no
-vendor API keys. `README.md`, `config.example.yml` and
-`docs/src/getting-started/configuration.md` all carry that caveat explicitly. An `INTEGRATE`
-decision in this matrix therefore means *this phase implements and unit-tests that capability
-against a mock transport*, not *this capability was exercised live*.
+**Superseded 2026-08-22 (plan 17-20) — original text preserved below per D-00d, not deleted,
+because it was true when written and is the record of why a live run mattered.**
+
+> Recorded for honesty, and consistent with `17-UAT.md` test 4: the base URLs, default model IDs
+> and live-fetch behaviour above are taken from **vendor documentation and the shipped code**, and
+> have **not** been confirmed against a live endpoint — the phase's sandbox has no network egress
+> and no vendor API keys. `README.md`, `config.example.yml` and
+> `docs/src/getting-started/configuration.md` all carry that caveat explicitly. An `INTEGRATE`
+> decision in this matrix therefore means *this phase implements and unit-tests that capability
+> against a mock transport*, not *this capability was exercised live*.
+
+### What changed (2026-08-22)
+
+Network egress and all four hosted-vendor credentials now exist in this environment. A live run
+(plans 17-18, 17-19, 17-21) both **confirmed** facts the paragraph above could only cite, and
+**falsified** others outright:
+
+- **Confirmed live:** Grok (xAI), Kimi (Moonshot) and Gemini each PASS both a live model-list
+  fetch and a live `generate()` round trip with the framework's default prompt parameters, using
+  the currently-shipped default model. Qwen (DashScope) PASSES the live model-list fetch (92
+  models at the shipped US-Virginia endpoint) but its `generate()` round trip is **blocked**, not
+  falsified or confirmed — see below.
+- **Falsified:** Grok's shipped default model (`grok-4`) and Kimi's (`moonshot-v1-8k`) were both
+  **absent** from their vendor's live catalog and rejected outright; Qwen's shipped base URL
+  (the Singapore endpoint) returned a well-formed `401` that was previously read as "the URL is
+  right, only the key is wrong" — that reading does not hold for a region-scoped credential, which
+  returns the identical `401` envelope from every endpoint except its own. All three are now
+  corrected in the shipped constants and every operator-facing document (17-20).
+- **No row remains blocked on a credential.** This reverses the previous text's premise
+  ("the sandbox has no network egress and no vendor API keys"), which is no longer true for any of
+  the four hosted vendors.
+
+### Per-surface: live-exercised vs. mock-transport-only
+
+| Surface | Live-exercised end to end | Remains mock-transport-only |
+|---|---|---|
+| `[compat] POST /chat/completions` (non-streaming) | Grok, Kimi, Qwen (model-list path only — see Qwen note below) | — |
+| `[compat] GET /models` | Grok, Kimi, Qwen, Ollama (local) | — |
+| `[compat] response usage (token counts)` | Grok, Kimi (both `generate()` responses carry live token usage) | Qwen (no live `generate()` response to map usage from yet) |
+| `[compat] request field stream` / SSE streaming | — | Grok, Kimi, Qwen, Ollama, openai-compatible (no live streaming probe exists; unit-tested against a mock transport only) |
+| `[compat] response finish_reason` | Grok, Kimi (live completions returned a mapped finish reason) | Qwen, Ollama, openai-compatible |
+| `[compat] response reasoning_content` | — | All five presets — no vendor in the live run emitted a `reasoning_content` field, so this path is still mock-transport-only |
+| `[compat] sampling fields (temperature, max_tokens, top_p, penalties)` | Grok's and Kimi's *omission* declarations (measured against the live rejection each vendor returned) | The remaining accepted fields on Qwen and Ollama |
+| `[gemini]` every INTEGRATE row above | Model list, `generateContent` (non-streaming), `usageMetadata` mapping | `streamGenerateContent` (no live streaming probe) |
+| `[ollama] GET /v1/models` | — (local Ollama in the Docker Tier 2 suite, not this live-vendor harness) | Chat completions against a local Ollama instance are exercised only in the Docker Tier 2 suite (UAT test 3), not the hosted-vendor live harness this section otherwise describes |
+
+**Qwen's `generate()` — blocked, not exercised, not falsified.** Every model in the live catalog
+(78 `qwen`-prefixed identifiers and non-Qwen families on the same DashScope workspace) returns
+`HTTP 403 Model.AccessDenied` for the same credential that successfully lists models. This is an
+Alibaba Model Studio account entitlement gap — the workspace can browse its regional catalog
+before invocation is activated — not a code defect, not a stale model identifier, and not
+resolvable by a code change. Filed as `.planning/WINDOWS.md` id 21. Until a human activates model
+access in the Alibaba console, Qwen's `[compat] POST /chat/completions` completion path, its
+sampling-field omissions (if any prove necessary), its `response usage` mapping and its
+`response finish_reason` mapping for the *generate* path all remain unexercised live — the table
+above credits Qwen only for the model-list half.
+
+An `INTEGRATE` decision in the Matrix above still means, at minimum, *this phase implements and
+unit-tests that capability against a mock transport* — the table in this section is what narrows
+that baseline down to what a live run has now additionally proven, surface by surface.
