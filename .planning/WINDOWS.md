@@ -277,6 +277,18 @@ last_updated: 2026-08-22T16:29:02.316Z
     "reason": "Fixed by the orchestrator between waves 1 and 2 of /gsd-execute-phase 17 --gaps-only (commit 954b750). GEMINI_DEFAULT_MODEL -> gemini-3.6-flash and GEMINI_FALLBACK_MODELS -> [gemini-3.6-flash, gemini-3.5-flash], every entry verified by a live generateContent call on 2026-08-22 rather than taken from the vendor deprecation message on faith. No pro-family fallback entry: gemini-2.5-pro and gemini-3-pro-preview are retired, gemini-3.6-pro is absent from v1beta, and gemini-pro-latest / gemini-3.1-pro-preview returned quota errors on the available credential -- an unverified identifier is what this refresh exists to remove. Escalated out of follow-up status because plans 17-19, 17-21 and 17-22 each carry a must_have requiring Gemini to PASS both live probes, and 17-22 requires four vendors PASS; leaving it open would have made three downstream must_haves unachievable. Live harness after the fix: Grok PASS/PASS, Gemini PASS/PASS.",
     "recorded_at": "2026-08-22T16:29:02.316Z",
     "resolved_at": "2026-08-22T16:52:00.000Z"
+  },
+  {
+    "id": 21,
+    "kind": "blocker",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/qwen/adapter.rs",
+    "line": null,
+    "description": "Plan 17-21 Task 2 is BLOCKED on an Alibaba Cloud Model Studio account entitlement, not on any code defect. After Task 1 moved QWEN_DEFAULT_BASE_URL to the US (Virginia) compatible-mode endpoint, the credential authenticates there correctly -- GET /models returns 92 entries with qwen-plus present, versus invalid_api_key at the previous dashscope-intl (Singapore) default, which is the measurement that proves the reversal right. But every chat-completion invocation returns HTTP 403 {\"code\":\"Model.AccessDenied\"}. The plan's executor ruled out a stale-identifier explanation across 78 qwen-prefixed identifiers and their -us regional variants, two unrelated model families hosted on the same workspace (deepseek-v4-flash, glm-5.1), and both the OpenAI-compatible and native DashScope invocation endpoints; the orchestrator independently reproduced the same 403 on qwen-plus. Consequence: the Qwen generate() probe cannot PASS, so plan 17-21's remaining must_haves (QWEN_FALLBACK_MODELS refreshed from a live-measured catalog, the five sampling-parameter verdicts, both temperature_range endpoints) are unmeasurable, and plan 17-22's 'four vendors PASS' clause is unachievable. Note that 17-21-SUMMARY.md exists with frontmatter status: blocked, but phase-plan-index keys off file EXISTENCE, so 17-21 reads as complete to the index and will be skipped by a plain --gaps-only re-run. It is deliberately NOT marked complete in ROADMAP.md. Required human action: in the Model Studio console, for the workspace tied to DASHSCOPE_API_KEY, select US (Virginia) and activate model invocation for at least qwen-plus, clearing whatever billing/quota/terms gate the console surfaces -- the API returns only the generic Model.AccessDenied code. Verify with: cargo run -p paladin-llm --example live_vendor_smoke --features kimi,qwen,grok,gemini (DASHSCOPE_BASE_URL left unset); Qwen's generate line should read PASS. Filed 2026-08-22 by the /gsd-execute-phase 17 --gaps-only orchestrator; the developer chose to continue waves 4 and 5 with Qwen recorded as catalog-verified / invocation-blocked rather than wait.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-22T18:05:00.000Z",
+    "resolved_at": null
   }
 ]
 ````
