@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 14
+open_count: 15
 waived_count: 4
 fixed_count: 1
-total_count: 19
-last_updated: 2026-08-19T13:55:50.375Z
+total_count: 20
+last_updated: 2026-08-22T16:29:02.316Z
 ---
 
 # Broken Windows Ledger
@@ -34,6 +34,7 @@ last_updated: 2026-08-19T13:55:50.375Z
 | 17 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-11's verification step 7 (Snyk code scan over crates/paladin-llm/src/gemini/adapter.rs) was not run -- no snyk_code_scan MCP tool and no Snyk CLI were available in the executor's runtime (no network egress). 17-11's own SUMMARY.md recorded this as not-run, never as passed. This row is the sibling of ids 15 and 16, filed 2026-08-18 by plan 17-17 after 17-VERIFICATION.md flagged 17-11's row as missing. | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-18T02:10:42.462Z | 2026-08-19T13:55:49.665Z |
 | 18 | 17 | unrun-verify | crates/paladin-llm/src/provider_factory.rs,tests/unit/llm/provider_factory_test.rs,crates/paladin-llm/src/openai_compatible/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs,crates/paladin-llm/src/compat/engine.rs |  | Plans 17-12 through 17-16 each attempted the mandated Snyk code scan (per snyk_rules.instructions.md, imported into CLAUDE.md) over the files they modified; none could run -- no snyk_code_scan MCP tool and no Snyk CLI in this environment. All five SUMMARYs (17-12-SUMMARY.md, 17-13-SUMMARY.md, 17-14-SUMMARY.md, 17-15-SUMMARY.md, 17-16-SUMMARY.md) record their scans as not-run, never as passed. Filed 2026-08-18 by plan 17-17. | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-18T02:10:55.983Z | 2026-08-19T13:55:50.375Z |
 | 19 | 17 | deviation | .project/current-exports.txt |  | The public-API surface snapshot .project/current-exports.txt was regenerated under default features only, so KimiAdapter, QwenAdapter, GrokAdapter, OllamaAdapter, GeminiAdapter and OpenAiCompatibleAdapter do not appear in it and cannot be checked for public-API drift. This is consistent with D-11's unchanged default feature set and is not itself wrong. 17-REVIEW.md records it as IN-01, non-blocking, with the suggested follow-up of generating an --features llm-all variant or documenting its absence. It was excluded from the 2026-08-18 gap-closure scope by explicit developer decision, taken in an interactive AskUserQuestion checkpoint in the orchestrating /gsd-plan-phase 17 --gaps session -- a recorded human choice, not an --auto inference -- and is therefore carried forward as accepted debt (IN-01) rather than dropped. Filed 2026-08-18 by plan 17-17. | open |  | 2026-08-18T02:11:05.490Z |  |
+| 20 | 17 | deviation | crates/paladin-llm/src/gemini/adapter.rs |  | Live vendor smoke run for plan 17-18 (2026-08-22) found Gemini's generate() probe FAILS on GEMINI_DEFAULT_MODEL=gemini-2.5-flash: vendor error 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash'. Model-list probe still PASSES (model present in live catalog), so this is a vendor-side default-model deprecation, not a regression from 17-18's CompatRequestParameters change -- Gemini is not built on CompatEngine at all and is structurally unaffected by it. Confirmed identical before and after this plan's code changes. Out of scope for 17-18 (gemini/adapter.rs not in files_modified); candidate follow-up: refresh GEMINI_DEFAULT_MODEL similarly to this plan's Grok refresh. | open |  | 2026-08-22T16:29:02.316Z |  |
 
 ````json
 [
@@ -263,6 +264,18 @@ last_updated: 2026-08-19T13:55:50.375Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-08-18T02:11:05.490Z",
+    "resolved_at": null
+  },
+  {
+    "id": 20,
+    "kind": "deviation",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/gemini/adapter.rs",
+    "line": null,
+    "description": "Live vendor smoke run for plan 17-18 (2026-08-22) found Gemini's generate() probe FAILS on GEMINI_DEFAULT_MODEL=gemini-2.5-flash: vendor error 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash'. Model-list probe still PASSES (model present in live catalog), so this is a vendor-side default-model deprecation, not a regression from 17-18's CompatRequestParameters change -- Gemini is not built on CompatEngine at all and is structurally unaffected by it. Confirmed identical before and after this plan's code changes. Out of scope for 17-18 (gemini/adapter.rs not in files_modified); candidate follow-up: refresh GEMINI_DEFAULT_MODEL similarly to this plan's Grok refresh.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-22T16:29:02.316Z",
     "resolved_at": null
   }
 ]
