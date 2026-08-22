@@ -1217,7 +1217,7 @@ Plans:
 
 **Wave 16** *(blocked on Wave 15 — shares `compat/engine.rs`)*
 
-- [ ] 17-19-PLAN.md — G-17-4b: Kimi's retired default model refreshed against the live Moonshot catalog, its fixed-temperature constraint honoured by option (a), and the builder's ADR-0004 gate narrowed to temperatures a caller actually expressed so a truthful degenerate range is not a build-time outage *(the blocking decision checkpoint is **answered** — the developer selected option (a) on 2026-08-22, so this plan is now autonomous)*
+- [x] 17-19-PLAN.md — G-17-4b: Kimi's retired default model refreshed against the live Moonshot catalog, its fixed-temperature constraint honoured by option (a), and the builder's ADR-0004 gate narrowed to temperatures a caller actually expressed so a truthful degenerate range is not a build-time outage *(the blocking decision checkpoint is **answered** — the developer selected option (a) on 2026-08-22, so this plan is now autonomous)*
 
 **Wave 17** *(blocked on Wave 16 — shares `compat/engine.rs`)*
 
