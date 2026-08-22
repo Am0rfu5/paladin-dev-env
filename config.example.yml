@@ -95,8 +95,8 @@ llm:
   # Gemini (Google). Bespoke `generateContent` protocol, not OpenAI-compatible.
   # Live-verified: a live GET /models call and a generate() round trip both succeeded
   # against generativelanguage.googleapis.com. default_model was refreshed from
-  # gemini-2.5-flash (retired for new users) to gemini-3.6-flash after this plan was
-  # written, per the live catalog. (Confirmed: model list + a completion round trip.)
+  # gemini-2.5-flash (retired for new users) to gemini-3.6-flash on 2026-08-22, per
+  # the live catalog. (Confirmed: model list + a completion round trip.)
   gemini:
     api_key: "${GEMINI_API_KEY}"
     base_url: "https://generativelanguage.googleapis.com/v1beta"
