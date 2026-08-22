@@ -273,10 +273,10 @@ last_updated: 2026-08-22T16:29:02.316Z
     "file": "crates/paladin-llm/src/gemini/adapter.rs",
     "line": null,
     "description": "Live vendor smoke run for plan 17-18 (2026-08-22) found Gemini's generate() probe FAILS on GEMINI_DEFAULT_MODEL=gemini-2.5-flash: vendor error 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash'. Model-list probe still PASSES (model present in live catalog), so this is a vendor-side default-model deprecation, not a regression from 17-18's CompatRequestParameters change -- Gemini is not built on CompatEngine at all and is structurally unaffected by it. Confirmed identical before and after this plan's code changes. Out of scope for 17-18 (gemini/adapter.rs not in files_modified); candidate follow-up: refresh GEMINI_DEFAULT_MODEL similarly to this plan's Grok refresh.",
-    "status": "open",
-    "reason": "",
+    "status": "resolved",
+    "reason": "Fixed by the orchestrator between waves 1 and 2 of /gsd-execute-phase 17 --gaps-only (commit 954b750). GEMINI_DEFAULT_MODEL -> gemini-3.6-flash and GEMINI_FALLBACK_MODELS -> [gemini-3.6-flash, gemini-3.5-flash], every entry verified by a live generateContent call on 2026-08-22 rather than taken from the vendor deprecation message on faith. No pro-family fallback entry: gemini-2.5-pro and gemini-3-pro-preview are retired, gemini-3.6-pro is absent from v1beta, and gemini-pro-latest / gemini-3.1-pro-preview returned quota errors on the available credential -- an unverified identifier is what this refresh exists to remove. Escalated out of follow-up status because plans 17-19, 17-21 and 17-22 each carry a must_have requiring Gemini to PASS both live probes, and 17-22 requires four vendors PASS; leaving it open would have made three downstream must_haves unachievable. Live harness after the fix: Grok PASS/PASS, Gemini PASS/PASS.",
     "recorded_at": "2026-08-22T16:29:02.316Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-22T16:52:00.000Z"
   }
 ]
 ````
