@@ -16,7 +16,9 @@ use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
 };
 
-use crate::compat::{CompatCapabilities, CompatEngine, CompatEngineConfig};
+use crate::compat::{
+    CompatCapabilities, CompatEngine, CompatEngineConfig, CompatRequestParameters,
+};
 
 /// Default Grok (xAI) API base URL.
 ///
@@ -165,6 +167,14 @@ impl GrokAdapter {
                 supports_system_messages: true,
                 temperature_range: Some((0.0, 2.0)),
             },
+            // PLACEHOLDER (17-18 task 2): `CompatEngineConfig` has no
+            // `Default`, so this construction site must state a position
+            // before the crate compiles. `all()` here preserves this
+            // preset's EXACT pre-existing (broken) behaviour for this
+            // commit only — task 3, later in the same plan, replaces this
+            // with the measured declaration (`frequency_penalty: false,
+            // presence_penalty: false`) that actually fixes G-17-4a.
+            request_parameters: CompatRequestParameters::all(),
             fallback_models: GROK_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
             // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the

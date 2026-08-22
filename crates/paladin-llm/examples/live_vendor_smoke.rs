@@ -100,8 +100,7 @@ async fn probe_generate(port: &dyn LlmPort, model: &str) -> Result<GenerateOutco
         Ok(response) => {
             if response.content.trim().is_empty() {
                 return Err(
-                    "generate() returned Ok with empty content — vacuous pass refused"
-                        .to_string(),
+                    "generate() returned Ok with empty content — vacuous pass refused".to_string(),
                 );
             }
             if response.usage.total_tokens == 0 {
@@ -361,9 +360,7 @@ async fn main() {
                         println!("  default model in live list: YES");
                         println!("  RESULT        : PASS");
                     } else {
-                        println!(
-                            "  default model in live list: NO  <-- default model ID is wrong"
-                        );
+                        println!("  default model in live list: NO  <-- default model ID is wrong");
                         println!("  RESULT        : FAIL (default model absent from live list)");
                         model_failures += 1;
                     }

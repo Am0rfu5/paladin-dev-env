@@ -79,6 +79,57 @@ impl From<CompatCapabilities> for ProviderCapabilities {
     }
 }
 
+/// Which of the five optional sampling parameters a preset's own request
+/// path puts on the wire (17-18, closing G-17-4a).
+///
+/// Extends the D-04 posture from [`CompatCapabilities`] into request
+/// shaping: each flag describes what **this preset's own request path**
+/// carries, established by measurement against the vendor, not by reading
+/// the vendor's marketing page. `presence_penalty` and `frequency_penalty`
+/// were shipped as unconditionally-carried for every preset before this
+/// plan; xAI rejects both **by presence**, for every current model — the
+/// measured cause of G-17-4a, not a stale model ID.
+///
+/// A `false` flag does not omit the caller's value because the caller left
+/// it unset — the caller may have set it explicitly, and it is still
+/// dropped: the flag is a statement about the *vendor's protocol*, never
+/// about what a particular request happened to ask for.
+///
+/// Deliberately has **no** `Default` impl, matching the same posture on
+/// [`CompatEngineConfig`] itself (no `Default`, no struct-update syntax at
+/// any construction site): a new preset must be a compile error until its
+/// author states a position for every field, one at a time. Silent
+/// inheritance of "everything is supported" is exactly how the shipped
+/// Grok preset came to send a parameter xAI rejects.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CompatRequestParameters {
+    /// Whether this preset's request path carries `temperature`.
+    pub temperature: bool,
+    /// Whether this preset's request path carries `max_tokens`.
+    pub max_tokens: bool,
+    /// Whether this preset's request path carries `top_p`.
+    pub top_p: bool,
+    /// Whether this preset's request path carries `frequency_penalty`.
+    pub frequency_penalty: bool,
+    /// Whether this preset's request path carries `presence_penalty`.
+    pub presence_penalty: bool,
+}
+
+impl CompatRequestParameters {
+    /// Every optional sampling parameter carried — the OpenAI-compatible
+    /// baseline every preset except Grok's xAI preset declares in this
+    /// plan (T-17-75's behaviour-preservation requirement).
+    pub const fn all() -> Self {
+        Self {
+            temperature: true,
+            max_tokens: true,
+            top_p: true,
+            frequency_penalty: true,
+            presence_penalty: true,
+        }
+    }
+}
+
 /// Configuration a preset supplies to construct a [`CompatEngine`].
 pub struct CompatEngineConfig {
     /// The provider's API base URL, e.g. `https://api.moonshot.ai/v1`.
@@ -93,6 +144,12 @@ pub struct CompatEngineConfig {
     pub max_retries: u32,
     /// What this preset's own request path implements (D-04 posture).
     pub capabilities: CompatCapabilities,
+    /// Which optional sampling parameters this preset's own request path
+    /// carries (17-18). Gates `build_request`'s five optional fields — see
+    /// [`CompatRequestParameters`]. Sits beside `error_override` and
+    /// `redirect_policy` as a per-vendor protocol knob the engine reads
+    /// off its own config rather than branching on provider identity.
+    pub request_parameters: CompatRequestParameters,
     /// The curated model list returned when the live `/models` endpoint
     /// fails or returns an empty list (D-13).
     pub fallback_models: Vec<String>,
@@ -193,18 +250,61 @@ impl CompatEngine {
     }
 
     /// Build the outgoing request body from a port-level [`LlmRequest`].
+    ///
+    /// Each of the five optional sampling parameters is gated on this
+    /// engine's own [`CompatRequestParameters`] declaration (17-18): a
+    /// carried parameter passes the caller's `Option` through unchanged; a
+    /// parameter the preset does not carry resolves to `None`, which
+    /// `CompatRequest`'s existing `skip_serializing_if = "Option::is_none"`
+    /// turns into an absent JSON key — never a `null`. The gate reads only
+    /// `self.config.request_parameters`, never the provider name or base
+    /// URL, so the same mechanism serves the next vendor without editing
+    /// this method.
     fn build_request(&self, request: &LlmRequest) -> Result<CompatRequest, LlmError> {
         let messages = Self::convert_prompt_to_messages(&request.prompt)?;
         let params = &request.prompt.node.node.parameters;
+        let allowed = &self.config.request_parameters;
+
+        let temperature = params.temperature.filter(|_| allowed.temperature);
+        let max_tokens = params.max_tokens.filter(|_| allowed.max_tokens);
+        let top_p = params.top_p.filter(|_| allowed.top_p);
+        let frequency_penalty = params
+            .frequency_penalty
+            .filter(|_| allowed.frequency_penalty);
+        let presence_penalty = params.presence_penalty.filter(|_| allowed.presence_penalty);
+
+        let mut dropped: Vec<&'static str> = Vec::new();
+        if params.temperature.is_some() && temperature.is_none() {
+            dropped.push("temperature");
+        }
+        if params.max_tokens.is_some() && max_tokens.is_none() {
+            dropped.push("max_tokens");
+        }
+        if params.top_p.is_some() && top_p.is_none() {
+            dropped.push("top_p");
+        }
+        if params.frequency_penalty.is_some() && frequency_penalty.is_none() {
+            dropped.push("frequency_penalty");
+        }
+        if params.presence_penalty.is_some() && presence_penalty.is_none() {
+            dropped.push("presence_penalty");
+        }
+        if !dropped.is_empty() {
+            log::debug!(
+                "this preset's request_parameters declaration does not carry {:?}; \
+                 dropped from the outgoing body although the caller supplied a value",
+                dropped
+            );
+        }
 
         Ok(CompatRequest {
             model: request.model.clone(),
             messages,
-            temperature: params.temperature,
-            max_tokens: params.max_tokens,
-            top_p: params.top_p,
-            frequency_penalty: params.frequency_penalty,
-            presence_penalty: params.presence_penalty,
+            temperature,
+            max_tokens,
+            top_p,
+            frequency_penalty,
+            presence_penalty,
             stream: request.stream,
         })
     }
@@ -731,6 +831,10 @@ mod tests {
                 supports_system_messages: true,
                 temperature_range: Some((0.0, 1.0)),
             },
+            // Unchanged pre-existing behaviour: no vendor-specific
+            // restriction has been measured for this synthetic test
+            // preset, so it declares full support (17-18).
+            request_parameters: CompatRequestParameters::all(),
             fallback_models: vec!["fallback-model".to_string()],
             error_override: None,
             redirect_policy: None,
@@ -1127,6 +1231,255 @@ mod tests {
         assert_eq!(
             deltas,
             vec!["Hel".to_string(), "lo ".to_string(), "world".to_string()]
+        );
+    }
+
+    // ── CompatRequestParameters (17-18, closing G-17-4a) ──
+    //
+    // A preset declares which of the five optional sampling parameters its
+    // own request path carries; the engine reads only that declaration —
+    // never a provider name, base URL, or other vendor identity — to decide
+    // what reaches the wire. These five tests exercise the mechanism
+    // directly against a synthetic preset carrying no vendor identity at
+    // all, per the plan's own edge case: "a synthetic preset carrying no
+    // vendor identity at all, declaring one parameter unsupported, produces
+    // a body omitting exactly that parameter."
+    //
+    // All five values below (0.5, 0.25, 0.75, 0.125) are exact sums of
+    // negative powers of two, so the `f32` caller value and the `f64`
+    // parsed from the captured wire JSON compare exactly — no floating
+    // -point tolerance is needed or used.
+
+    use paladin_core::platform::container::prompt::PromptParameters;
+    use serde_json::{Value, json};
+    use std::sync::{Arc, Mutex};
+
+    fn test_config_with_request_parameters(
+        base_url: &str,
+        request_parameters: CompatRequestParameters,
+    ) -> CompatEngineConfig {
+        let mut config = test_config_at(base_url);
+        config.request_parameters = request_parameters;
+        config
+    }
+
+    /// Every one of the five optional sampling parameters set to a distinct,
+    /// exactly-representable value, so a captured wire body can be checked
+    /// against the caller's actual value, not merely "is present".
+    fn fully_specified_parameters() -> PromptParameters {
+        PromptParameters {
+            max_tokens: Some(123),
+            temperature: Some(0.5),
+            top_p: Some(0.25),
+            frequency_penalty: Some(0.75),
+            presence_penalty: Some(0.125),
+            stop_sequences: None,
+        }
+    }
+
+    fn build_request_with_parameters(model: &str, parameters: PromptParameters) -> LlmRequest {
+        let mut request = build_request(model);
+        request.prompt.node.node.parameters = parameters;
+        request
+    }
+
+    /// Sets up a mock `/chat/completions` endpoint that captures the raw
+    /// outgoing request body (as both parsed JSON and the original text) and
+    /// answers with a minimal well-formed completion, and runs `generate()`
+    /// against it. Returns the captured body — this is the shared plumbing
+    /// under all five tests below; each test differs only in the engine
+    /// config and request it builds.
+    async fn generate_and_capture_body(
+        config: CompatEngineConfig,
+        request: LlmRequest,
+    ) -> (Value, String) {
+        // `server` must outlive the call to `generate()` below (it is
+        // dropped at the end of this function's scope, after `.await`
+        // returns), so it cannot be constructed inside a nested block.
+        let mut server = Server::new_async().await;
+        let captured: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let captured_clone = Arc::clone(&captured);
+
+        // `config`'s `base_url` is overwritten to point at this mock server
+        // — every caller below builds its config via `test_config_at`-style
+        // helpers whose `base_url` is a placeholder replaced here, so the
+        // mock is guaranteed to be the one actually hit.
+        let mut config = config;
+        config.base_url = server.url();
+
+        server
+            .mock("POST", "/chat/completions")
+            .with_status(200)
+            .with_body_from_request(move |req| {
+                let body_text = req.utf8_lossy_body().unwrap_or_default().into_owned();
+                *captured_clone.lock().unwrap() = Some(body_text);
+                json!({
+                    "id": "cmpl-1",
+                    "model": "test-model",
+                    "choices": [{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop"
+                    }],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+                })
+                .to_string()
+                .into_bytes()
+            })
+            .create_async()
+            .await;
+
+        let engine = CompatEngine::new(config).unwrap();
+        let result = engine.generate(request).await;
+        assert!(
+            result.is_ok(),
+            "mock server returned a well-formed response: {result:?}"
+        );
+
+        let body_text = captured
+            .lock()
+            .unwrap()
+            .take()
+            .expect("mock must have been called exactly once");
+        let body_json: Value =
+            serde_json::from_str(&body_text).expect("captured body must be valid JSON");
+        (body_json, body_text)
+    }
+
+    // Test 1 — mechanism is data-driven: a preset declaring
+    // `presence_penalty: false` and everything else `true` omits exactly
+    // that key while carrying the caller's values for the rest.
+    #[tokio::test]
+    async fn build_request_omits_exactly_the_declared_unsupported_parameter() {
+        let mut request_parameters = CompatRequestParameters::all();
+        request_parameters.presence_penalty = false;
+
+        let config =
+            test_config_with_request_parameters("https://example.invalid/v1", request_parameters);
+        let request = build_request_with_parameters("test-model", fully_specified_parameters());
+
+        let (body, _) = generate_and_capture_body(config, request).await;
+        let obj = body.as_object().expect("body must be a JSON object");
+
+        assert!(
+            !obj.contains_key("presence_penalty"),
+            "declared-unsupported parameter must be absent from the wire body, got: {obj:?}"
+        );
+        assert_eq!(obj.get("temperature").and_then(Value::as_f64), Some(0.5));
+        assert_eq!(obj.get("max_tokens").and_then(Value::as_u64), Some(123));
+        assert_eq!(obj.get("top_p").and_then(Value::as_f64), Some(0.25));
+        assert_eq!(
+            obj.get("frequency_penalty").and_then(Value::as_f64),
+            Some(0.75)
+        );
+    }
+
+    // Test 2 — behaviour preservation: a preset declaring every parameter
+    // carried produces a body byte-for-byte identical, in substance, to the
+    // pre-17-18 engine — all five keys present with exactly the caller's
+    // values.
+    #[tokio::test]
+    async fn build_request_with_all_declared_carries_every_caller_value_unchanged() {
+        let config = test_config_with_request_parameters(
+            "https://example.invalid/v1",
+            CompatRequestParameters::all(),
+        );
+        let request = build_request_with_parameters("test-model", fully_specified_parameters());
+
+        let (body, _) = generate_and_capture_body(config, request).await;
+        let obj = body.as_object().expect("body must be a JSON object");
+
+        assert_eq!(obj.get("temperature").and_then(Value::as_f64), Some(0.5));
+        assert_eq!(obj.get("max_tokens").and_then(Value::as_u64), Some(123));
+        assert_eq!(obj.get("top_p").and_then(Value::as_f64), Some(0.25));
+        assert_eq!(
+            obj.get("frequency_penalty").and_then(Value::as_f64),
+            Some(0.75)
+        );
+        assert_eq!(
+            obj.get("presence_penalty").and_then(Value::as_f64),
+            Some(0.125)
+        );
+    }
+
+    // Test 3 — omission is absence, not `null`: the raw wire text contains
+    // no occurrence of the dropped key's name at all, so a future change
+    // that serialised `"presence_penalty":null` instead of dropping the key
+    // would fail this test even though Test 1's `contains_key` check on the
+    // parsed object could not tell the difference between "absent" and
+    // "present with a null value that happened to parse oddly".
+    #[tokio::test]
+    async fn build_request_omission_is_absence_never_a_null_value() {
+        let mut request_parameters = CompatRequestParameters::all();
+        request_parameters.presence_penalty = false;
+
+        let config =
+            test_config_with_request_parameters("https://example.invalid/v1", request_parameters);
+        let request = build_request_with_parameters("test-model", fully_specified_parameters());
+
+        let (_, body_text) = generate_and_capture_body(config, request).await;
+
+        assert!(
+            !body_text.contains("presence_penalty"),
+            "the key name itself must not appear on the wire — got body: {body_text}"
+        );
+    }
+
+    // Test 4 — a caller-supplied value cannot resurrect a declared
+    // -unsupported parameter: the declaration is about the vendor's
+    // protocol, not about whether the caller happened to supply a value.
+    #[tokio::test]
+    async fn build_request_declared_unsupported_wins_even_when_caller_sets_a_value() {
+        let mut request_parameters = CompatRequestParameters::all();
+        request_parameters.presence_penalty = false;
+
+        let config =
+            test_config_with_request_parameters("https://example.invalid/v1", request_parameters);
+        let mut parameters = fully_specified_parameters();
+        parameters.presence_penalty = Some(1.5);
+        let request = build_request_with_parameters("test-model", parameters);
+
+        let (body, body_text) = generate_and_capture_body(config, request).await;
+        let obj = body.as_object().expect("body must be a JSON object");
+
+        assert!(
+            !obj.contains_key("presence_penalty"),
+            "an explicit caller value must not resurrect a declared-unsupported \
+             parameter, got: {obj:?}"
+        );
+        assert!(!body_text.contains("presence_penalty"));
+    }
+
+    // Test 5 — unset stays unset: a preset declaring a parameter carried,
+    // whose caller left it `None`, still omits the key. This is the
+    // pre-existing `skip_serializing_if` behaviour, and this test proves the
+    // new gating logic does not disturb it.
+    #[tokio::test]
+    async fn build_request_carried_but_caller_unset_parameter_stays_omitted() {
+        let config = test_config_with_request_parameters(
+            "https://example.invalid/v1",
+            CompatRequestParameters::all(),
+        );
+        let mut parameters = fully_specified_parameters();
+        parameters.presence_penalty = None;
+        let request = build_request_with_parameters("test-model", parameters);
+
+        let (body, _) = generate_and_capture_body(config, request).await;
+        let obj = body.as_object().expect("body must be a JSON object");
+
+        assert!(
+            !obj.contains_key("presence_penalty"),
+            "a parameter the caller left unset must stay omitted, got: {obj:?}"
+        );
+        // The other four, which the caller DID set, must still be present —
+        // proving this is "unset stays unset", not an accidental drop of
+        // everything.
+        assert_eq!(obj.get("temperature").and_then(Value::as_f64), Some(0.5));
+        assert_eq!(obj.get("max_tokens").and_then(Value::as_u64), Some(123));
+        assert_eq!(obj.get("top_p").and_then(Value::as_f64), Some(0.25));
+        assert_eq!(
+            obj.get("frequency_penalty").and_then(Value::as_f64),
+            Some(0.75)
         );
     }
 }

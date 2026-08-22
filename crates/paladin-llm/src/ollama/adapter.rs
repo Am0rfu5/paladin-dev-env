@@ -33,7 +33,9 @@ use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
 };
 
-use crate::compat::{CompatCapabilities, CompatEngine, CompatEngineConfig};
+use crate::compat::{
+    CompatCapabilities, CompatEngine, CompatEngineConfig, CompatRequestParameters,
+};
 
 /// Default Ollama base URL — the local OpenAI-compatibility layer
 /// (`/v1/*`), not the native `/api/chat` endpoint. See the module-level
@@ -189,6 +191,9 @@ impl OllamaAdapter {
                 supports_system_messages: true,
                 temperature_range: Some((0.0, 2.0)),
             },
+            // Unchanged pre-existing behaviour (17-18): no vendor-specific
+            // sampling-parameter restriction has been measured for Ollama.
+            request_parameters: CompatRequestParameters::all(),
             fallback_models: OLLAMA_FALLBACK_MODELS
                 .iter()
                 .map(|s| s.to_string())
