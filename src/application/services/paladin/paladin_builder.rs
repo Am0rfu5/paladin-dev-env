@@ -1094,9 +1094,18 @@ impl PaladinBuilder {
     /// # Validation Rules
     ///
     /// - `system_prompt` must be non-empty
-    /// - `temperature` must fall within the selected provider's declared
-    ///   `temperature_range` (both endpoints inclusive); providers that declare no range
-    ///   fall back to `[0.0, 1.0]` (ADR-0004)
+    /// - **A temperature the caller actually expressed** (via [`Self::temperature`], or
+    ///   the auto-temperature branch in [`Self::build`]) must fall within the selected
+    ///   provider's declared `temperature_range` (both endpoints inclusive); providers
+    ///   that declare no range fall back to `[0.0, 1.0]` (ADR-0004). **Refined 2026-08-22
+    ///   (17-19, closing G-17-4b):** ADR-0004 validates "whatever temperature the caller
+    ///   ultimately supplies" — a caller who never called `.temperature()` supplied
+    ///   nothing; the `0.7` `validate()` would otherwise see is
+    ///   `PaladinData::default()`'s framework fabrication, not a request. This gate now
+    ///   fires only when `manual_temperature_override` is set, so a provider's truthful,
+    ///   narrow declaration (e.g. a degenerate `(1.0, 1.0)`) cannot deny service to a
+    ///   caller who said nothing about temperature — while a caller who did ask for an
+    ///   illegal value is still refused by name, unchanged.
     /// - `max_loops` must be in range [1, 100]
     /// - If `autosave_enabled` is true, `state_dir` must be set or Citadel must be configured
     /// - If `sanctum_port` is set, `embedding_port` must also be set (required for RAG)
@@ -1116,19 +1125,30 @@ impl PaladinBuilder {
         // back to [0.0, 1.0] when the provider has not declared one (ADR-0004). Both
         // endpoints are inclusive; no epsilon, no rounding, no clamping — an
         // out-of-range value is reported to the caller rather than silently corrected.
-        let (min_temp, max_temp) = self
-            .llm_port
-            .get_capabilities()
-            .temperature_range
-            .unwrap_or((0.0, 1.0));
-        if !(self.data.temperature >= min_temp && self.data.temperature <= max_temp) {
-            return Err(PaladinError::ConfigurationError(format!(
-                "temperature must be between {} and {} for provider '{}', got {}",
-                min_temp,
-                max_temp,
-                self.llm_port.get_provider_name(),
-                self.data.temperature
-            )));
+        //
+        // Refined 2026-08-22 (17-19, closing G-17-4b, T-17-78): only checked when the
+        // caller actually expressed a temperature (`manual_temperature_override`). A
+        // provider's own declared range is not the caller's business until the caller
+        // asks for something; `PaladinData::default()`'s fabricated `0.7` is not a
+        // request and must not be judged against a narrow provider declaration such as
+        // Kimi's measured `(1.0, 1.0)`. This is a narrowing of what the gate checks, not
+        // a weakening of it: an expressed out-of-range value is still rejected below,
+        // unchanged.
+        if self.manual_temperature_override {
+            let (min_temp, max_temp) = self
+                .llm_port
+                .get_capabilities()
+                .temperature_range
+                .unwrap_or((0.0, 1.0));
+            if !(self.data.temperature >= min_temp && self.data.temperature <= max_temp) {
+                return Err(PaladinError::ConfigurationError(format!(
+                    "temperature must be between {} and {} for provider '{}', got {}",
+                    min_temp,
+                    max_temp,
+                    self.llm_port.get_provider_name(),
+                    self.data.temperature
+                )));
+            }
         }
 
         // Validate max_loops is in [1, 100]
@@ -1392,6 +1412,11 @@ mod tests {
 
     #[test]
     fn test_builder_validation_invalid_temperature() {
+        // `manual_temperature_override: true` expresses this test's actual intent
+        // (17-19): "a value the caller asked for and cannot have is rejected" — not
+        // "a value that merely happens to sit in the struct is rejected". Since the
+        // gate was narrowed to values the caller actually expressed, leaving this
+        // flag `false` would make the builder ignore `temperature: 1.5` entirely.
         let builder = PaladinBuilder {
             llm_port: Arc::new(MockLlmPort),
             data: PaladinData {
@@ -1414,7 +1439,7 @@ mod tests {
             agent_description: None,
             manual_prompt_override: false,
             auto_temperature_enabled: false,
-            manual_temperature_override: false,
+            manual_temperature_override: true,
             specialist_agents: Vec::new(),
             handoffs_configured: false,
             handoff_config: None,
@@ -1492,6 +1517,58 @@ mod tests {
             .build()
             .await;
         assert!(matches!(result, Err(PaladinError::ConfigurationError(_))));
+    }
+
+    // ── ADR-0004 refinement (17-19, closing G-17-4b's Task 2): the gate ──
+    // validates a temperature the caller actually expressed, not a
+    // framework-fabricated default (`PaladinData::default()`'s `0.7`).
+    // Lands ahead of Kimi's truthful degenerate `(1.0, 1.0)` declaration
+    // (Task 3) so no intermediate commit makes every Kimi-backed Paladin
+    // fail to build (T-17-78).
+
+    #[tokio::test]
+    async fn test_unexpressed_temperature_builds_against_a_degenerate_provider_range() {
+        // A provider declaring the degenerate range (1.0, 1.0) — Kimi's
+        // live-measured constraint (17-19) — must not reject a Paladin whose
+        // caller never called `.temperature()`. The value `validate()` would
+        // otherwise see is the framework-fabricated `PaladinData::default()`
+        // value of 0.7, not a caller request.
+        let result = PaladinBuilder::new(Arc::new(MockLlmPortWithTemperatureRange((1.0, 1.0))))
+            .system_prompt("Test")
+            .build()
+            .await;
+        assert!(
+            result.is_ok(),
+            "a Paladin whose caller never expressed a temperature must build even \
+             against a degenerate provider range, got: {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_expressed_temperature_is_still_rejected_against_a_degenerate_provider_range() {
+        // The narrowing only exempts the unexpressed case — a caller who
+        // explicitly asks for a temperature the provider cannot honour is
+        // still refused by name, with the legal endpoints in the message.
+        let result = PaladinBuilder::new(Arc::new(MockLlmPortWithTemperatureRange((1.0, 1.0))))
+            .system_prompt("Test")
+            .temperature(0.5)
+            .build()
+            .await;
+        match result {
+            Err(PaladinError::ConfigurationError(msg)) => {
+                assert!(
+                    msg.contains("0.5"),
+                    "error should name the rejected value: {}",
+                    msg
+                );
+                assert!(
+                    msg.contains('1'),
+                    "error should name the legal endpoints: {}",
+                    msg
+                );
+            }
+            other => panic!("expected ConfigurationError, got {:?}", other),
+        }
     }
 
     #[test]
@@ -1841,6 +1918,65 @@ mod tests {
 
         fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
             paladin_ports::output::llm_port::ProviderCapabilities::default()
+        }
+    }
+
+    /// Mock LLM port with a configurable declared `temperature_range`, for testing
+    /// the ADR-0004 gate against provider ranges other than `MockLlmPort`'s `None`
+    /// (17-19: the degenerate `(1.0, 1.0)` range Kimi's live measurement produces).
+    struct MockLlmPortWithTemperatureRange(pub (f32, f32));
+
+    #[async_trait::async_trait]
+    impl LlmPort for MockLlmPortWithTemperatureRange {
+        async fn generate(
+            &self,
+            _request: paladin_ports::output::llm_port::LlmRequest,
+        ) -> Result<
+            paladin_ports::output::llm_port::LlmResponse,
+            paladin_ports::output::llm_port::LlmError,
+        > {
+            unimplemented!()
+        }
+
+        async fn generate_stream(
+            &self,
+            _request: paladin_ports::output::llm_port::LlmRequest,
+        ) -> Result<
+            Box<
+                dyn futures::Stream<
+                        Item = Result<
+                            paladin_ports::output::llm_port::StreamingResponse,
+                            paladin_ports::output::llm_port::LlmError,
+                        >,
+                    > + Send,
+            >,
+            paladin_ports::output::llm_port::LlmError,
+        > {
+            unimplemented!()
+        }
+
+        async fn validate_model(
+            &self,
+            _model: &str,
+        ) -> Result<bool, paladin_ports::output::llm_port::LlmError> {
+            Ok(true)
+        }
+
+        async fn get_available_models(
+            &self,
+        ) -> Result<Vec<String>, paladin_ports::output::llm_port::LlmError> {
+            Ok(vec![])
+        }
+
+        fn get_provider_name(&self) -> &'static str {
+            "MockWithTemperatureRange"
+        }
+
+        fn get_capabilities(&self) -> paladin_ports::output::llm_port::ProviderCapabilities {
+            paladin_ports::output::llm_port::ProviderCapabilities {
+                temperature_range: Some(self.0),
+                ..Default::default()
+            }
         }
     }
 
