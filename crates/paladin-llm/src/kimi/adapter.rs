@@ -230,10 +230,20 @@ impl KimiAdapter {
             // `frequency_penalty` and `presence_penalty` remain carried,
             // unchanged from 17-18's behaviour-preserving `all()`
             // declaration.
+            // WR-02: every field stated explicitly. `..CompatRequestParameters::all()`
+            // was a struct-update spread, which the type's own invariant
+            // (`compat/engine.rs`) and plan 17-18's prohibition both forbid: the
+            // point of having no `Default` and no spread is that a sixth
+            // parameter becomes a COMPILE ERROR until each preset's author
+            // states a position for it. A spread silently defaults the new
+            // field to `true` here, which is exactly how the shipped Grok
+            // preset came to send a parameter xAI rejects.
             request_parameters: CompatRequestParameters {
                 temperature: false,
                 top_p: false,
-                ..CompatRequestParameters::all()
+                max_tokens: true,
+                frequency_penalty: true,
+                presence_penalty: true,
             },
             fallback_models: KIMI_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,

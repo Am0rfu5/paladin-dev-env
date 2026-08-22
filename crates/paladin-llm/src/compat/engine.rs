@@ -308,7 +308,12 @@ fn base_url_without_userinfo(base_url: &str) -> String {
         .unwrap_or(base_url.len());
 
     let authority = &base_url[authority_start..authority_end];
-    let Some(at_idx) = authority.find('@') else {
+    // RFC 3986 terminates userinfo at the LAST '@' in the authority, not the
+    // first. `find` here leaked a credential fragment whenever a password
+    // contained an unescaped '@': for `https://alice:p@ssw0rd@example.com/v1`
+    // it kept everything after the first '@', emitting `ssw0rd@example.com`
+    // into the warn diagnostic. `rfind` strips the whole userinfo component.
+    let Some(at_idx) = authority.rfind('@') else {
         return base_url.to_string();
     };
 
@@ -1790,6 +1795,20 @@ mod tests {
         assert_eq!(
             base_url_without_userinfo("https://user:secret@example.invalid/v1"),
             "https://example.invalid/v1"
+        );
+    }
+
+    #[test]
+    fn base_url_without_userinfo_strips_a_password_containing_an_unescaped_at() {
+        // WR-01: userinfo ends at the LAST '@' per RFC 3986. Stripping to the
+        // first one left `ssw0rd@example.invalid` in the warn line.
+        assert_eq!(
+            base_url_without_userinfo("https://alice:p@ssw0rd@example.invalid/v1"),
+            "https://example.invalid/v1"
+        );
+        assert_eq!(
+            base_url_without_userinfo("https://a@b@c@example.invalid:8443/v1"),
+            "https://example.invalid:8443/v1"
         );
     }
 

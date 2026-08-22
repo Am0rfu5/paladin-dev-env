@@ -1311,6 +1311,37 @@ impl PaladinBuilder {
                     .await
                 {
                     Ok(optimal_temp) => {
+                        // CR-01: validate() runs BEFORE this branch and, since
+                        // 17-19, fires only on `manual_temperature_override` --
+                        // which the auto path deliberately does not set. An
+                        // LLM-chosen temperature therefore reached `data` with no
+                        // ADR-0004 check at all, while validate()'s own rustdoc
+                        // claimed to cover "the auto-temperature branch in
+                        // Self::build". The gap predates 17-19 but only became
+                        // reachable when Kimi began declaring a degenerate
+                        // (1.0, 1.0): before that no provider had a range an
+                        // auto-selected value could fall outside.
+                        //
+                        // ADR-0004 refuses rather than substitutes, so an
+                        // out-of-range auto selection is an error naming the
+                        // legal endpoints -- never a silent clamp the caller
+                        // cannot discover.
+                        let (min_temp, max_temp) = self
+                            .llm_port
+                            .get_capabilities()
+                            .temperature_range
+                            .unwrap_or((0.0, 1.0));
+                        if !(optimal_temp >= min_temp && optimal_temp <= max_temp) {
+                            return Err(PaladinError::ConfigurationError(format!(
+                                "auto-selected temperature {} is outside the range {} to {} \
+                                 declared by provider '{}'. Set an explicit temperature within \
+                                 that range, or disable auto_temperature for this provider.",
+                                optimal_temp,
+                                min_temp,
+                                max_temp,
+                                self.llm_port.get_provider_name()
+                            )));
+                        }
                         log::info!(
                             "Auto-selected temperature {} for agent based on task type",
                             optimal_temp
@@ -1447,6 +1478,48 @@ mod tests {
 
         let result = builder.validate();
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn auto_selected_temperature_is_validated_against_the_provider_range() {
+        // CR-01. `validate()` runs before build()'s auto-temperature branch and,
+        // since 17-19, fires only on `manual_temperature_override` -- which the
+        // auto path does not set. An LLM-chosen temperature therefore reached
+        // `data` unchecked. The mock classifies as CREATIVE -> 0.85, outside the
+        // degenerate (1.0, 1.0) Kimi's live measurement produces.
+        let result = PaladinBuilder::new(Arc::new(MockLlmPortWithTemperatureRange((1.0, 1.0))))
+            .system_prompt("Test")
+            .agent_description("write an imaginative short story")
+            .auto_temperature(true)
+            .build()
+            .await;
+
+        let err = result.expect_err("0.85 is outside (1.0, 1.0) and must be refused");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("auto-selected temperature"),
+            "error must name the auto path, got: {msg}"
+        );
+        // ADR-0004 refuses by name and states the legal endpoints rather than
+        // silently substituting a value the caller cannot discover.
+        assert!(
+            msg.contains('1'),
+            "error must state the legal range, got: {msg}"
+        );
+    }
+
+    #[tokio::test]
+    async fn auto_selected_temperature_inside_the_provider_range_still_builds() {
+        // Control for the test above: the gate must refuse only what is actually
+        // out of range. 0.85 lies inside (0.0, 1.0), so this must still build --
+        // otherwise CR-01's fix would be a denial of service on every auto caller.
+        let result = PaladinBuilder::new(Arc::new(MockLlmPortWithTemperatureRange((0.0, 1.0))))
+            .system_prompt("Test")
+            .agent_description("write an imaginative short story")
+            .auto_temperature(true)
+            .build()
+            .await;
+        assert!(result.is_ok(), "0.85 is inside (0.0, 1.0) and must build");
     }
 
     /// Builds a DeepSeek-backed `Arc<dyn LlmPort>` for the provider-aware temperature
@@ -1928,14 +2001,28 @@ mod tests {
 
     #[async_trait::async_trait]
     impl LlmPort for MockLlmPortWithTemperatureRange {
+        /// Answers the task-type classification `TemperatureService` sends on the
+        /// auto-temperature path. `CREATIVE` maps to `creative_temp` (0.85), which
+        /// sits outside a degenerate `(1.0, 1.0)` declaration -- the CR-01 case.
+        /// Previously `unimplemented!()`, which made the auto path untestable.
         async fn generate(
             &self,
-            _request: paladin_ports::output::llm_port::LlmRequest,
+            request: paladin_ports::output::llm_port::LlmRequest,
         ) -> Result<
             paladin_ports::output::llm_port::LlmResponse,
             paladin_ports::output::llm_port::LlmError,
         > {
-            unimplemented!()
+            Ok(paladin_ports::output::llm_port::LlmResponse {
+                id: uuid::Uuid::new_v4(),
+                request_id: request.id,
+                model: request.model.clone(),
+                content: "CREATIVE".to_string(),
+                finish_reason: paladin_ports::output::llm_port::FinishReason::Stop,
+                usage: Default::default(),
+                created_at: chrono::Utc::now(),
+                function_call: None,
+                metadata: Default::default(),
+            })
         }
 
         async fn generate_stream(
