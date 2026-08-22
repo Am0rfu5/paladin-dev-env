@@ -47,6 +47,34 @@ use paladin_llm::qwen::{QwenAdapter, QwenConfig};
 use paladin_ports::output::llm_port::{LlmPort, LlmRequest};
 use uuid::Uuid;
 
+/// Minimal `log::Log` implementation, no dependency (17-22, G-17-4d).
+///
+/// With no logger installed, the `log` facade silently discards every
+/// record — so before this plan's engine-level `log::warn!` diagnostic
+/// existed to demonstrate, this harness had nothing to show it with even if
+/// it fired. Fixed at `LevelFilter::Warn` rather than parsing `RUST_LOG`:
+/// hand-rolling a level-string parser with no dependency would add
+/// complexity this harness does not need — `Warn` is exactly the level the
+/// new diagnostic is emitted at, so a fixed filter is sufficient to prove
+/// both halves of task 2: the warning fires on a deliberately mismatched
+/// endpoint (run A) and stays completely silent on the shipped defaults
+/// (run B).
+struct StderrLogger;
+
+impl log::Log for StderrLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::Level::Warn
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            eprintln!("[{}] {}", record.level(), record.args());
+        }
+    }
+
+    fn flush(&self) {}
+}
+
 /// Outcome of the model-list half of a vendor probe.
 struct Live {
     models: Vec<String>,
@@ -142,6 +170,16 @@ struct Probe {
 
 #[tokio::main]
 async fn main() {
+    // `set_logger` (not `set_boxed_logger`) is used deliberately: the latter
+    // requires `log`'s `std` feature, which this workspace does not enable
+    // for `log = { workspace = true }` — adding it would be exactly the
+    // dependency-surface change T-17-SC-22's prohibition rules out. A
+    // `'static` reference to a zero-sized logger needs no allocation and no
+    // additional feature.
+    static LOGGER: StderrLogger = StderrLogger;
+    log::set_logger(&LOGGER).expect("logger installed exactly once at harness startup");
+    log::set_max_level(log::LevelFilter::Warn);
+
     let mut probes: Vec<Probe> = Vec::new();
 
     // ── Kimi (Moonshot) ─────────────────────────────────────────────

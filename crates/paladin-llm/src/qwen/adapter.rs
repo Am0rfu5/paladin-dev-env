@@ -39,13 +39,15 @@
 //! versa) is not tuning, it is a required step for that credential to reach
 //! its own account.
 //!
-//! What a region mismatch looks like **today**: not an error, but a
-//! plausible three-entry curated model list, because
-//! [`crate::compat::engine::CompatEngine::available_models`] reports an auth
-//! failure exactly as it reports being offline — it swallows the error and
-//! returns [`QWEN_FALLBACK_MODELS`]. Plan 17-22 changes that symptom; this
-//! paragraph describes the behaviour as it exists at the time this default
-//! changed, and should be amended, not deleted, when 17-22 lands.
+//! What a region mismatch looks like **today** (amended 2026-08-22, plan
+//! 17-22, closing G-17-4d's diagnosability half): a `warn`-level log line
+//! naming the endpoint that rejected the request, alongside a model list
+//! that is [`QWEN_FALLBACK_MODELS`] rather than the vendor's own catalog —
+//! [`crate::compat::engine::CompatEngine::available_models`] now reads its
+//! own error classification and raises exactly this failure mode above the
+//! `debug` level an offline vendor stays at (see that method's rustdoc for
+//! the classification). The remedy is unchanged: point `DASHSCOPE_BASE_URL`
+//! at the row above matching your own workspace's region.
 //!
 //! ### Reversal record — read before touching `QWEN_DEFAULT_BASE_URL` again
 //!
