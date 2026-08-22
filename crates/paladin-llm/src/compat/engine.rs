@@ -104,6 +104,23 @@ impl From<CompatCapabilities> for ProviderCapabilities {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CompatRequestParameters {
     /// Whether this preset's request path carries `temperature`.
+    ///
+    /// **Option (a) — chosen by the developer 2026-08-22, recorded here
+    /// against ADR-0004 (closing G-17-4b, plan 17-19).** When a preset
+    /// declares this `false`, [`CompatEngine::build_request`] omits
+    /// `temperature` from the outgoing body entirely; it never substitutes
+    /// one legal value for another. ADR-0004's *Considered Options* rejects
+    /// adapter-level clamping by name: *"a caller who requested 1.8 and got
+    /// 1.0 silently substituted has no way to discover the substitution
+    /// happened."* Declaring this field `false` is not that: no value is
+    /// swapped in for another, the key is simply absent from the JSON body,
+    /// and the vendor's own single legal value applies server-side. The
+    /// caller's declared-unsupported value is still discoverable — see the
+    /// `debug` log this method emits when a value is dropped. First used by
+    /// Kimi's fixed-temperature preset (`kimi::adapter::KimiAdapter`, plan
+    /// 17-19), whose live-measured constraint made the framework's
+    /// fabricated `0.7` default temperature (`PaladinData::default()`)
+    /// unconditionally rejected by the vendor.
     pub temperature: bool,
     /// Whether this preset's request path carries `max_tokens`.
     pub max_tokens: bool,
@@ -1480,6 +1497,49 @@ mod tests {
         assert_eq!(
             obj.get("frequency_penalty").and_then(Value::as_f64),
             Some(0.75)
+        );
+    }
+
+    // Test 6 (17-19, closing G-17-4b) — option (a) pinned specifically for
+    // `temperature`: a preset declaring `temperature: false` produces a body
+    // with no `temperature` key at all, while the other four sampling
+    // parameters still carry the caller's values unchanged. Tests 1-5 above
+    // exercise the mechanism generically through `presence_penalty`; this
+    // test exercises the exact field plan 17-19's Kimi preset declares
+    // absent, so a future change that special-cased `presence_penalty`
+    // without generalizing to `temperature` would be caught here.
+    #[tokio::test]
+    async fn build_request_omits_exactly_a_declared_absent_temperature() {
+        let mut request_parameters = CompatRequestParameters::all();
+        request_parameters.temperature = false;
+
+        let config =
+            test_config_with_request_parameters("https://example.invalid/v1", request_parameters);
+        let request = build_request_with_parameters("test-model", fully_specified_parameters());
+
+        let (body, body_text) = generate_and_capture_body(config, request).await;
+        let obj = body.as_object().expect("body must be a JSON object");
+
+        assert!(
+            !obj.contains_key("temperature"),
+            "declared-absent temperature must not appear on the wire, got: {obj:?}"
+        );
+        assert!(
+            !body_text.contains("temperature"),
+            "the key name itself must not appear on the wire — got body: {body_text}"
+        );
+        // The other four parameters, all declared carried, must still be
+        // present with exactly the caller's values — proving this is a
+        // targeted omission of one field, not an accidental drop of all.
+        assert_eq!(obj.get("max_tokens").and_then(Value::as_u64), Some(123));
+        assert_eq!(obj.get("top_p").and_then(Value::as_f64), Some(0.25));
+        assert_eq!(
+            obj.get("frequency_penalty").and_then(Value::as_f64),
+            Some(0.75)
+        );
+        assert_eq!(
+            obj.get("presence_penalty").and_then(Value::as_f64),
+            Some(0.125)
         );
     }
 }
