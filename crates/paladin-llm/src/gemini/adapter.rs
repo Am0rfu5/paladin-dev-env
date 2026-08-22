@@ -92,7 +92,19 @@ use crate::redaction::{
 pub const GEMINI_DEFAULT_BASE_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
 
 /// Default Gemini model requested when `GEMINI_MODEL` is unset.
-pub const GEMINI_DEFAULT_MODEL: &str = "gemini-2.5-flash";
+///
+/// **Refreshed 2026-08-22** from `gemini-2.5-flash`, which Google retired for
+/// new users: a `generateContent` call against it returns *"no longer
+/// available to new users \u2014 please update your code to use
+/// models/gemini-3.6-flash"*. The model remained present in the live
+/// `GET /models` catalog throughout, so the list probe kept passing while
+/// every generate call failed \u2014 catalog presence is not callability, and
+/// only the generate probe distinguishes them.
+///
+/// `gemini-3.6-flash` is the identifier Google's own deprecation message
+/// names, and it was verified by a live `generateContent` call on
+/// 2026-08-22 rather than taken from that message on faith.
+pub const GEMINI_DEFAULT_MODEL: &str = "gemini-3.6-flash";
 
 /// Curated fallback model list (D-13), returned when the live `GET /models`
 /// endpoint fails, is unreachable, or returns an empty list. Gemini's
@@ -100,7 +112,20 @@ pub const GEMINI_DEFAULT_MODEL: &str = "gemini-2.5-flash";
 /// (17-RESEARCH.md Assumptions Log A1), which is exactly why the live fetch
 /// is this adapter's primary path — this list is a degrade-gracefully
 /// placeholder, not an authoritative catalog.
-pub const GEMINI_FALLBACK_MODELS: &[&str] = &["gemini-2.5-flash", "gemini-2.5-pro"];
+/// **Refreshed 2026-08-22.** Both prior entries were retired for new users:
+/// `gemini-2.5-flash` and `gemini-2.5-pro` each return *"no longer available
+/// to new users"* on `generateContent` while still appearing in the live
+/// catalog. Both replacements were verified by a live generate call on that
+/// date.
+///
+/// **Why no `-pro` entry:** at the time of refresh no pro-family identifier
+/// could be verified callable \u2014 `gemini-2.5-pro` and `gemini-3-pro-preview`
+/// are retired, `gemini-3.6-pro` does not exist on `v1beta`, and
+/// `gemini-pro-latest` / `gemini-3.1-pro-preview` returned a quota error on
+/// the credential available. An unverified identifier is exactly the kind of
+/// entry this refresh exists to remove, so the list carries only what was
+/// measured.
+pub const GEMINI_FALLBACK_MODELS: &[&str] = &["gemini-3.6-flash", "gemini-3.5-flash"];
 
 /// The header name Gemini's API expects the credential on. Never the
 /// documented `?key=` query-parameter alternative — see this module's
@@ -2267,7 +2292,7 @@ mod tests {
                 .collect::<Vec<_>>()
         );
 
-        assert!(adapter.validate_model("gemini-2.5-pro").await.unwrap());
+        assert!(adapter.validate_model("gemini-3.5-flash").await.unwrap());
     }
 
     #[tokio::test]
