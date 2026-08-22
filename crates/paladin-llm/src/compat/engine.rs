@@ -200,6 +200,125 @@ pub struct CompatEngineConfig {
     pub redirect_policy: Option<reqwest::redirect::Policy>,
 }
 
+/// Whether a failed `fetch_live_models` call indicates the operator
+/// misconfigured something, or is a state this design already supports and
+/// deliberately stays quiet about (G-17-4d, 2026-08-22).
+///
+/// Read by [`CompatEngine::available_models`]'s `Err(e)` arm to choose a log
+/// level. Deliberately just two states, not a description of *why* — the
+/// reasoning for each variant's placement lives on
+/// [`classify_fetch_failure`]'s match arms, not in this type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FetchFailureClass {
+    /// The operator most likely configured the wrong credential for the
+    /// endpoint they pointed it at, or the wrong endpoint for the credential
+    /// they hold. Worth surfacing at `warn`.
+    Misconfiguration,
+    /// A state this design already supports — offline, rate-limited, out of
+    /// quota, or any other failure a model-list fetch has no business
+    /// diagnosing on the operator's behalf. Stays at `debug`, unchanged from
+    /// before this plan.
+    Supported,
+}
+
+/// Classify a `fetch_live_models` failure for
+/// [`CompatEngine::available_models`]'s log level (G-17-4d, 2026-08-22).
+///
+/// A pure function of the [`LlmError`] variant alone — no provider name, no
+/// base-URL host, no feature flag. `CompatEngine` backs six presets (kimi,
+/// qwen, grok, ollama, openai-compatible, and the deepseek-style preset
+/// family), and this function reaching every one of them without any preset
+/// change is exactly what keeps D-05's shared-engine boundary intact: the
+/// engine still learns nothing about which vendor is on the other end.
+///
+/// Exhaustive over every `LlmError` variant — **deliberately no wildcard
+/// arm**. A variant added to `paladin-ports::LlmError` later is a compile
+/// error here until a person decides which side of the split it falls on,
+/// rather than silently landing in a catch-all and being absorbed into the
+/// quiet path unnoticed.
+fn classify_fetch_failure(error: &LlmError) -> FetchFailureClass {
+    match error {
+        // The one case this plan closes: a rejected credential (mapped from
+        // HTTP 401 by `map_error`) is a configuration problem, not a state
+        // the D-13/D-14 fallback design was ever meant to describe quietly.
+        LlmError::AuthenticationError(_) => FetchFailureClass::Misconfiguration,
+
+        // Being offline is the exact case D-13/D-14 were written for — a
+        // self-hosted Ollama that has not started yet is a normal, SUPPORTED
+        // condition, not a misconfiguration. Warn-spam here would train
+        // operators to ignore the one message this plan makes audible.
+        LlmError::NetworkError(_) => FetchFailureClass::Supported,
+        // A slow or unresponsive endpoint is transient, for the same reason
+        // as the arm above.
+        LlmError::Timeout(_) => FetchFailureClass::Supported,
+
+        // A rate limit says "you called too often", not "you configured the
+        // wrong thing" — the credential and the endpoint are both fine.
+        LlmError::RateLimitExceeded => FetchFailureClass::Supported,
+        // An exhausted quota is an account-billing state, not a
+        // credential/endpoint mismatch — nothing about the CONFIGURATION is
+        // wrong here either.
+        LlmError::UsageLimitExceeded { .. } => FetchFailureClass::Supported,
+        // `fetch_live_models` GETs `/models` with no model identifier on the
+        // wire, so `map_error`'s 404 arm cannot actually be produced by this
+        // call path. Classified anyway because this match must stay
+        // exhaustive over the type, not merely over what is reachable
+        // today — and an unknown-model 404 is not itself evidence of a
+        // wrong credential or endpoint.
+        LlmError::ModelNotAvailable(_) => FetchFailureClass::Supported,
+        // Never produced by a model-list fetch (no prompt is sent) — quiet
+        // for the same exhaustiveness-over-reachability reason as above.
+        LlmError::TokenLimitExceeded => FetchFailureClass::Supported,
+        // Never produced by a model-list fetch either (no completion is
+        // requested) — same reason.
+        LlmError::EmptyCompletion(_) => FetchFailureClass::Supported,
+        // A malformed prompt cannot reach a model-list fetch at all — this
+        // arm exists only so the match stays exhaustive.
+        LlmError::InvalidPrompt(_) => FetchFailureClass::Supported,
+        // Covers the generic non-success-status catch-all AND the
+        // refused-redirect message (`map_error`'s `300..=399` arm, WR-04). A
+        // refused redirect is arguably a misconfiguration too, but it is
+        // left quiet deliberately: that message already names the exact
+        // setting to check on its own, so raising it again here would only
+        // duplicate an already-actionable message rather than surface a
+        // silent one.
+        LlmError::ProcessingError(_) => FetchFailureClass::Supported,
+    }
+}
+
+/// Remove a userinfo component (`user:pass@`) from a base URL before it is
+/// written into a log line (T-17-91). A configured base URL is
+/// operator-supplied, and while no shipped preset's documented format
+/// includes one, a base URL is exactly the kind of operator-supplied string
+/// that could carry a credential this way.
+///
+/// Looks only at the authority section — everything between the first
+/// `://` and the next `/` (or the end of the string, if there is no path).
+/// If that section contains an `@`, everything up to and including it is
+/// dropped; otherwise the input is returned unchanged. A string with no
+/// `://` at all is returned unchanged rather than guessed at.
+fn base_url_without_userinfo(base_url: &str) -> String {
+    let Some(scheme_end) = base_url.find("://") else {
+        return base_url.to_string();
+    };
+    let authority_start = scheme_end + 3;
+    let authority_end = base_url[authority_start..]
+        .find('/')
+        .map(|i| authority_start + i)
+        .unwrap_or(base_url.len());
+
+    let authority = &base_url[authority_start..authority_end];
+    let Some(at_idx) = authority.find('@') else {
+        return base_url.to_string();
+    };
+
+    let mut out = String::with_capacity(base_url.len());
+    out.push_str(&base_url[..authority_start]);
+    out.push_str(&authority[at_idx + 1..]);
+    out.push_str(&base_url[authority_end..]);
+    out
+}
+
 /// The shared OpenAI-compatible engine every preset built on this core
 /// delegates to.
 ///
@@ -792,10 +911,26 @@ impl CompatEngine {
 
     /// Resolve the model list: live on first call, memoized for this
     /// engine's lifetime (D-13/D-14). Falls back to the preset's curated
-    /// list on any failure or an empty live response — the fallback is
-    /// never reported as authoritative (logged at `debug`, never `error`,
-    /// since offline is a supported state). `tokio::sync::OnceCell` ensures
-    /// exactly one fetch even under concurrent callers.
+    /// list on any failure or an empty live response — **the fallback
+    /// contract itself is deliberately unchanged by G-17-4d (2026-08-22,
+    /// plan 17-22)**: this method still returns `Vec<String>`, still never
+    /// errors, and still returns the curated list on every failure path. See
+    /// the tests below (`available_models_returns_curated_fallback_on_*`)
+    /// for the pin.
+    ///
+    /// What DID change (G-17-4d, 2026-08-22): the `Err(e)` arm used to log
+    /// every failure at `debug` with the same sentence, which is precisely
+    /// why a region/credential mismatch looked identical to an offline
+    /// vendor and G-17-4c was misdiagnosed for five days. It now reads
+    /// [`classify_fetch_failure`]'s verdict on `e` and only a
+    /// misconfiguration (currently: `AuthenticationError`) is raised to
+    /// `warn`; every other failure — including the offline/timeout states
+    /// D-13/D-14 were written for — keeps its original `debug` wording
+    /// unchanged. The empty-live-list arm above is untouched; an endpoint
+    /// answering with an empty catalogue is neither an auth failure nor an
+    /// offline one. `tokio::sync::OnceCell` still ensures exactly one fetch
+    /// even under concurrent callers, so a rejected credential produces at
+    /// most one warning per engine, not one per caller.
     pub async fn available_models(&self) -> Vec<String> {
         self.models_cache
             .get_or_init(|| async {
@@ -808,9 +943,22 @@ impl CompatEngine {
                         self.config.fallback_models.clone()
                     }
                     Err(e) => {
-                        log::debug!(
-                            "live model list fetch failed ({e}); falling back to curated list (not authoritative)"
-                        );
+                        match classify_fetch_failure(&e) {
+                            FetchFailureClass::Misconfiguration => {
+                                log::warn!(
+                                    "configured endpoint {} rejected the request while listing \
+                                     models ({e}); the returned model list is the curated \
+                                     fallback, not this vendor's own catalog — a credential \
+                                     scoped to a different account or region is the usual cause",
+                                    base_url_without_userinfo(&self.config.base_url)
+                                );
+                            }
+                            FetchFailureClass::Supported => {
+                                log::debug!(
+                                    "live model list fetch failed ({e}); falling back to curated list (not authoritative)"
+                                );
+                            }
+                        }
                         self.config.fallback_models.clone()
                     }
                 }
@@ -1541,5 +1689,169 @@ mod tests {
             obj.get("presence_penalty").and_then(Value::as_f64),
             Some(0.125)
         );
+    }
+
+    // ── classify_fetch_failure (17-22, closing G-17-4d's diagnosability half) ──
+    //
+    // One test per `LlmError` variant, matching the plan's own requirement
+    // ("Each arm is asserted by its own test") — this is what makes the
+    // match's exhaustiveness meaningful: a variant added later without a
+    // corresponding test here is still caught by the compiler (no wildcard
+    // arm in `classify_fetch_failure` itself), but a variant classified on
+    // the WRONG side of the split would only be caught by these.
+
+    #[test]
+    fn classify_fetch_failure_authentication_error_is_misconfiguration() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::AuthenticationError("bad key".to_string())),
+            FetchFailureClass::Misconfiguration
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_network_error_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::NetworkError("connection refused".to_string())),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_timeout_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::Timeout("timed out".to_string())),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_rate_limit_exceeded_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::RateLimitExceeded),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_usage_limit_exceeded_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::UsageLimitExceeded {
+                provider: "test".to_string(),
+                regain_hint: None,
+            }),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_model_not_available_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::ModelNotAvailable("no such model".to_string())),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_token_limit_exceeded_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::TokenLimitExceeded),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_empty_completion_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::EmptyCompletion("no text".to_string())),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_invalid_prompt_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::InvalidPrompt("empty prompt".to_string())),
+            FetchFailureClass::Supported
+        );
+    }
+
+    #[test]
+    fn classify_fetch_failure_processing_error_is_supported() {
+        assert_eq!(
+            classify_fetch_failure(&LlmError::ProcessingError("server error".to_string())),
+            FetchFailureClass::Supported
+        );
+    }
+
+    // ── base_url_without_userinfo (T-17-91) ──
+
+    #[test]
+    fn base_url_without_userinfo_strips_a_credential_from_the_authority() {
+        assert_eq!(
+            base_url_without_userinfo("https://user:secret@example.invalid/v1"),
+            "https://example.invalid/v1"
+        );
+    }
+
+    #[test]
+    fn base_url_without_userinfo_leaves_a_plain_url_unchanged() {
+        let url = "https://dashscope-us.aliyuncs.com/compatible-mode/v1";
+        assert_eq!(base_url_without_userinfo(url), url);
+    }
+
+    #[test]
+    fn base_url_without_userinfo_preserves_port_and_path_after_stripping() {
+        assert_eq!(
+            base_url_without_userinfo("https://user:secret@example.invalid:8443/v1/models"),
+            "https://example.invalid:8443/v1/models"
+        );
+    }
+
+    #[test]
+    fn base_url_without_userinfo_handles_a_string_with_no_scheme_separator() {
+        let malformed = "not-a-url";
+        assert_eq!(base_url_without_userinfo(malformed), malformed);
+    }
+
+    // ── available_models' D-13/D-14 fallback contract, unchanged by this
+    //    plan (17-22) ──
+    //
+    // These pin the exact must_have the plan prohibits touching: the method
+    // still returns `Vec<String>`, never errors, and returns the curated
+    // list on both a misconfiguration (401) and a transport failure —
+    // proven against the RETURNED VALUE, not merely against the log, since
+    // no log-capture crate may be added (T-17-SC-22).
+
+    #[tokio::test]
+    async fn available_models_returns_curated_fallback_on_authentication_failure() {
+        let mut server = Server::new_async().await;
+        server
+            .mock("GET", "/models")
+            .with_status(401)
+            .with_body(r#"{"error":"invalid_api_key"}"#)
+            .create_async()
+            .await;
+
+        let engine = CompatEngine::new(test_config_at(&server.url())).unwrap();
+        let models = engine.available_models().await;
+
+        assert_eq!(models, vec!["fallback-model".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn available_models_returns_curated_fallback_on_connection_failure() {
+        // A bound-then-immediately-dropped TCP listener yields a port no
+        // process is listening on, so connecting to it fails fast with a
+        // real `NetworkError` — no mock server involved, because this test
+        // exercises the transport-failure path `fetch_live_models` produces
+        // before any HTTP status exists to mock.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        drop(listener);
+
+        let engine = CompatEngine::new(test_config_at(&format!("http://{addr}"))).unwrap();
+        let models = engine.available_models().await;
+
+        assert_eq!(models, vec!["fallback-model".to_string()]);
     }
 }
