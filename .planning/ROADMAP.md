@@ -1145,7 +1145,7 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
   4. **The adapters are tested to the standard already in force**, not exempted from it: mock-transport unit tests for request shaping, response parsing, streaming chunk assembly, and error mapping into `LlmError`; the workspace stays above the 82% line-coverage floor with the new code included; every public item carries rustdoc, and any live-API test is gated behind a credential-requiring feature so CI stays green without secrets.
   5. **The advertised surface matches the shipped one.** `paladin-llm`'s `Cargo.toml` description/keywords, the crate README, and the configuration documentation name exactly the providers that exist — so this phase does not create the same documentation-currency debt Phase 16 is closing.
 
-**Plans**: 17 plans *(11 executed; 6 added 2026-08-18 by a second `/gsd-plan-phase 17 --gaps` run to close the one remaining blocking gap, the four review Warnings the developer put in scope, and two bookkeeping gaps)*
+**Plans**: 21 plans *(11 executed; 6 added 2026-08-18 by a second `/gsd-plan-phase 17 --gaps` run to close the one remaining blocking gap, the four review Warnings the developer put in scope, and two bookkeeping gaps; 4 added 2026-08-22 by a third `--gaps` run after UAT test 4 ran live against the real vendor endpoints and returned two blockers and one credential gap)*
 
 Plans:
 **Wave 1**
@@ -1210,6 +1210,24 @@ Plans:
 - [x] 17-17-PLAN.md — Bookkeeping: the `WINDOWS.md` rows for 17-11's and this run's not-run Snyk scans plus IN-01 as carried-forward debt, and a CI job that finally runs the registry regression tests under `llm-all`
 
 *Scoped to CR-01 + WR-01/WR-02/WR-03(new)/WR-04(new) by developer decision in an interactive checkpoint, 2026-08-18. **IN-01 explicitly excluded** and carried forward as tracked, accepted debt (plan 17-17 files the row). The four `human_verification` items (Snyk scan, 82% coverage floor, Ollama live server, vendor smoke test) remain blocked on Docker / network egress / vendor credentials / an unavailable Snyk tool — none is closeable by planning. Note the finding-ID collision: `17-REVIEW.md` reused the labels WR-03 and WR-04 for findings distinct from the ones plans 17-11 and 17-10 closed; all four are closed once this wave completes.*
+
+**Wave 15** *(third gap closure — UAT test 4 ran live on 2026-08-22 with real credentials and returned `issue`/blocker; tracer)*
+
+- [ ] 17-18-PLAN.md — Tracer (G-17-4a): a preset declares which sampling parameters its request path carries, the shared engine honours the declaration, and Grok completes a live `generate()` call against a refreshed, live-listed xAI model
+
+**Wave 16** *(blocked on Wave 15 — shares `compat/engine.rs`; blocking decision checkpoint)*
+
+- [ ] 17-19-PLAN.md — G-17-4b: Kimi's retired default model refreshed against the live Moonshot catalog and its fixed-temperature constraint honoured *(blocking decision checkpoint: ADR-0004 rejects adapter-level clamping by name, so how the constraint is honoured is the developer's call)*
+
+**Wave 17** *(blocked on Wave 16 — the refreshed identifiers must exist before they can be advertised)*
+
+- [ ] 17-20-PLAN.md — PROV-04's advertised surface brought back in line: every operator-facing default model matches the shipped constant, and one blanket unverified-endpoint caveat becomes a per-vendor, dated verification status
+
+**Wave 18** *(blocked on Wave 17 — shares the config example, the configuration guide, the crate README and COVERAGE.md)*
+
+- [ ] 17-21-PLAN.md — G-17-4c: Qwen held to the same live bar as Grok and Kimi, or closed as a developer-accepted deferral with the evidence that the base URL is confirmed and only the credential is rejected *(blocking human-action checkpoint: a valid DashScope key can only come from a human)*
+
+*Third gap-closure run, planned 2026-08-22 from `17-UAT.md` test 4's three diagnosed gaps. **Two of the three are code defects and one is not:** G-17-4a and G-17-4b are blockers — Grok cannot complete any `generate()` call because the shared engine unconditionally serialises a parameter xAI rejects, and Kimi's default model is retired while its current models accept only `temperature: 1`. G-17-4c is a **credential** problem, not a code problem: both DashScope endpoints return `401 invalid_api_key` in Alibaba's documented envelope, which confirms `QWEN_DEFAULT_BASE_URL` rather than implicating it, so no base-URL change is planned. Gemini passes and is the regression control across all four plans. The other four UAT tests passed on 2026-08-18/19 and are untouched here.*
 
 ## Progress
 
