@@ -46,7 +46,7 @@ Status: All plans executed and merged; verification returned `human_needed` (11/
   test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
   2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
   PROV-04 blocked on the unmeasured coverage floor.
-Last activity: 2026-08-18 — Phase 17 gap-closure execution complete (plans 17-12..17-17)
+Last activity: 2026-08-22 — Completed quick task 260822-gpf: Persist Claude Code sessions across devcontainer rebuilds via a host mount
 
 ## Performance Metrics
 
@@ -800,3 +800,9 @@ plan 09-06 in commit `cb75b2b`. SUPPLY-01 is closed, not a live cheap-item candi
 ## Operator Next Steps
 
 - Start the next milestone with /gsd-new-milestone
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260822-gpf | Persist Claude Code sessions across devcontainer rebuilds via a host mount | 2026-08-22 | 8560fb1 | [260822-gpf-persist-claude-code-sessions-across-devc](./quick/260822-gpf-persist-claude-code-sessions-across-devc/) |
