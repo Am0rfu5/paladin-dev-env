@@ -1213,7 +1213,7 @@ Plans:
 
 **Wave 15** *(third gap closure — UAT test 4 ran live on 2026-08-22 with real credentials and returned `issue`/blocker; tracer)*
 
-- [ ] 17-18-PLAN.md — Tracer (G-17-4a): a preset declares which sampling parameters its request path carries, the shared engine honours the declaration, and Grok completes a live `generate()` call against a refreshed, live-listed xAI model
+- [x] 17-18-PLAN.md — Tracer (G-17-4a): a preset declares which sampling parameters its request path carries, the shared engine honours the declaration, and Grok completes a live `generate()` call against a refreshed, live-listed xAI model
 
 **Wave 16** *(blocked on Wave 15 — shares `compat/engine.rs`)*
 
