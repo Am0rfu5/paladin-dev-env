@@ -16,7 +16,9 @@ use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
 };
 
-use crate::compat::{CompatCapabilities, CompatEngine, CompatEngineConfig};
+use crate::compat::{
+    CompatCapabilities, CompatEngine, CompatEngineConfig, CompatRequestParameters,
+};
 
 /// Default Kimi (Moonshot AI) API base URL.
 ///
@@ -165,6 +167,11 @@ impl KimiAdapter {
                 supports_system_messages: true,
                 temperature_range: Some((0.0, 1.0)),
             },
+            // Unchanged pre-existing behaviour (17-18): no vendor-specific
+            // sampling-parameter restriction has been measured for Kimi.
+            // Revisited by plan 17-19, which measures Kimi's own fixed
+            // -temperature constraint against ADR-0004.
+            request_parameters: CompatRequestParameters::all(),
             fallback_models: KIMI_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
             // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the

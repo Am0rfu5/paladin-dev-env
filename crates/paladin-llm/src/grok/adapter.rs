@@ -16,24 +16,48 @@ use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
 };
 
-use crate::compat::{CompatCapabilities, CompatEngine, CompatEngineConfig};
+use crate::compat::{
+    CompatCapabilities, CompatEngine, CompatEngineConfig, CompatRequestParameters,
+};
 
 /// Default Grok (xAI) API base URL.
 ///
-/// `[CITED: docs.x.ai]` — not live-verified at plan-authoring time
-/// (17-RESEARCH.md Assumptions Log A1 flags xAI as shipping new model
-/// generations mid-2026); this execution environment has no network
-/// egress, see the plan's SUMMARY.md for the confirmation status, per
-/// D-00e.
+/// Live-verified 2026-08-22 (17-18, D-00e): `GET {this}/models` returned
+/// HTTP 200 with a live model catalog against this exact URL. Superseding
+/// the earlier `[CITED: docs.x.ai]` / "not live-verified" note, which
+/// predated this execution environment having network egress.
 pub const GROK_DEFAULT_BASE_URL: &str = "https://api.x.ai/v1";
 
 /// Default Grok model requested when `XAI_MODEL` is unset.
-pub const GROK_DEFAULT_MODEL: &str = "grok-4";
+///
+/// Live-verified 2026-08-22 (17-18, D-00e) against the real `GET
+/// {GROK_DEFAULT_BASE_URL}/models` response, **not** copied from
+/// `17-UAT.md`'s 2026-08-22 snapshot (that snapshot is evidence the old
+/// `"grok-4"` value was wrong, not authority for this one). At that live
+/// snapshot `grok-4` and `grok-3` were both **absent** from the catalog;
+/// the highest general-purpose `grok-4.x` line present was `grok-4.6`
+/// (created after `grok-4.5` and `grok-4.3`, no embedded date or build
+/// suffix — the separately-versioned `grok-4.20-*` reasoning/non-reasoning
+/// family carries dated ids like `grok-4.20-0309-reasoning` and was
+/// excluded on that basis, per the plan's prohibition on dated snapshot
+/// identifiers). A live `generate()` call to this model, with the
+/// framework's default prompt parameters and this preset's
+/// `request_parameters` declaration below, returned a real completion.
+pub const GROK_DEFAULT_MODEL: &str = "grok-4.6";
 
 /// Curated fallback model list (D-13), returned when the live `/models`
 /// endpoint fails, is unreachable, or returns an empty list. Never reported
 /// as authoritative — see [`crate::compat::engine::CompatEngine::available_models`].
-pub const GROK_FALLBACK_MODELS: &[&str] = &["grok-4", "grok-3"];
+///
+/// Live-verified 2026-08-22 (17-18, D-00e), newest first, default first:
+/// the three stable general-purpose entries from the same live catalog
+/// that produced [`GROK_DEFAULT_MODEL`] — `grok-4.6` (created
+/// 2026-08-06), `grok-4.5` (created 2026-06-29) and `grok-4.3` (created
+/// 2026-04-17). Excludes the image/video/build-tool models
+/// (`grok-imagine-*`, `grok-build-0.1`) and the dated `grok-4.20-*`
+/// family, none of which are the general-purpose chat line this preset
+/// targets.
+pub const GROK_FALLBACK_MODELS: &[&str] = &["grok-4.6", "grok-4.5", "grok-4.3"];
 
 /// Configuration for the Grok (xAI) adapter.
 #[derive(Debug, Clone)]
@@ -165,6 +189,32 @@ impl GrokAdapter {
                 supports_system_messages: true,
                 temperature_range: Some((0.0, 2.0)),
             },
+            // Measured against live `api.x.ai` on 2026-08-22 (17-18, D-00e,
+            // closing G-17-4a) — this is the actual defect fix, not an
+            // assumption. Each request below carried exactly one optional
+            // sampling parameter, `model: "grok-4.6"`, no other parameter:
+            //   temperature:0.7        -> HTTP 200, real completion (ACCEPTED)
+            //   max_tokens:16          -> HTTP 200, real completion (ACCEPTED)
+            //   top_p:1.0              -> HTTP 200, real completion (ACCEPTED)
+            //   frequency_penalty:0.0  -> HTTP 400 {"code":"invalid-argument",
+            //     "error":"Model grok-4.6 does not support parameter
+            //     frequencyPenalty."}                          (REJECTED)
+            //   presence_penalty:0.0   -> HTTP 400 {"code":"invalid-argument",
+            //     "error":"Model grok-4.6 does not support parameter
+            //     presencePenalty."}                           (REJECTED)
+            // `frequency_penalty` was recorded UNTESTED in `17-UAT.md` and is
+            // measured here on its own — its rejection is NOT inferred from
+            // `presence_penalty`'s. A follow-up request carrying only the
+            // three ACCEPTED parameters together (temperature, max_tokens,
+            // top_p) also returned HTTP 200, confirming the combination this
+            // declaration now produces on the wire.
+            request_parameters: CompatRequestParameters {
+                temperature: true,
+                max_tokens: true,
+                top_p: true,
+                frequency_penalty: false,
+                presence_penalty: false,
+            },
             fallback_models: GROK_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
             // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the
@@ -285,7 +335,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-1",
-                    "model": "grok-4",
+                    "model": GROK_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "Hi there"},
@@ -298,11 +348,15 @@ mod tests {
             .create_async()
             .await;
 
-        let config = GrokConfig::new("test-key".to_string(), server.url(), "grok-4".to_string());
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
         let adapter = GrokAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("grok-4"))
+            .generate(build_request(GROK_DEFAULT_MODEL))
             .await
             .expect("mock server returned a well-formed response");
 
@@ -334,11 +388,15 @@ mod tests {
             .create_async()
             .await;
 
-        let config = GrokConfig::new("test-key".to_string(), server.url(), "grok-4".to_string());
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
         let adapter = GrokAdapter::new(config).unwrap();
 
         let stream = adapter
-            .generate_stream(build_request("grok-4"))
+            .generate_stream(build_request(GROK_DEFAULT_MODEL))
             .await
             .unwrap();
         let mut stream = Box::into_pin(stream);
@@ -369,10 +427,14 @@ mod tests {
             .create_async()
             .await;
 
-        let config = GrokConfig::new("test-key".to_string(), server.url(), "grok-4".to_string());
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
         let adapter = GrokAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("grok-4")).await;
+        let result = adapter.generate(build_request(GROK_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::AuthenticationError(_))));
     }
 
@@ -387,10 +449,14 @@ mod tests {
             .create_async()
             .await;
 
-        let config = GrokConfig::new("test-key".to_string(), server.url(), "grok-4".to_string());
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
         let adapter = GrokAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("grok-4")).await;
+        let result = adapter.generate(build_request(GROK_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::RateLimitExceeded)));
     }
 
@@ -404,10 +470,14 @@ mod tests {
             .create_async()
             .await;
 
-        let config = GrokConfig::new("test-key".to_string(), server.url(), "grok-4".to_string());
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
         let adapter = GrokAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("grok-4")).await;
+        let result = adapter.generate(build_request(GROK_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::ModelNotAvailable(_))));
     }
 
@@ -421,10 +491,14 @@ mod tests {
             .create_async()
             .await;
 
-        let config = GrokConfig::new("test-key".to_string(), server.url(), "grok-4".to_string());
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
         let adapter = GrokAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("grok-4")).await;
+        let result = adapter.generate(build_request(GROK_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::InvalidPrompt(_))));
     }
 
@@ -457,5 +531,95 @@ mod tests {
         assert!(!caps.supports_embeddings);
         assert!(caps.supports_streaming);
         assert!(caps.supports_system_messages);
+    }
+
+    // ── request_parameters (17-18, closing G-17-4a) ──
+
+    // Test 1: an engine built from `GrokConfig` against a mock server
+    // produces a body omitting exactly the parameters task 1 measured as
+    // rejected (`frequency_penalty`, `presence_penalty`), and carrying the
+    // rest (`temperature`, `max_tokens`, `top_p`) with the caller's values.
+    #[tokio::test]
+    async fn generate_omits_exactly_the_measured_unsupported_xai_parameters() {
+        use serde_json::Value;
+        use std::sync::{Arc, Mutex};
+
+        let mut server = Server::new_async().await;
+        let captured: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let captured_clone = Arc::clone(&captured);
+
+        server
+            .mock("POST", "/chat/completions")
+            .with_status(200)
+            .with_body_from_request(move |req| {
+                let body_text = req.utf8_lossy_body().unwrap_or_default().into_owned();
+                *captured_clone.lock().unwrap() = Some(body_text);
+                json!({
+                    "id": "cmpl-1",
+                    "model": GROK_DEFAULT_MODEL,
+                    "choices": [{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "Hi there"},
+                        "finish_reason": "stop"
+                    }],
+                    "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8}
+                })
+                .to_string()
+                .into_bytes()
+            })
+            .create_async()
+            .await;
+
+        let config = GrokConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            GROK_DEFAULT_MODEL.to_string(),
+        );
+        let adapter = GrokAdapter::new(config).unwrap();
+
+        let mut request = build_request(GROK_DEFAULT_MODEL);
+        request.prompt.node.node.parameters =
+            paladin_core::platform::container::prompt::PromptParameters {
+                max_tokens: Some(16),
+                temperature: Some(0.7),
+                top_p: Some(1.0),
+                frequency_penalty: Some(0.0),
+                presence_penalty: Some(0.0),
+                stop_sequences: None,
+            };
+
+        let result = adapter.generate(request).await;
+        assert!(
+            result.is_ok(),
+            "mock server returned a well-formed response: {result:?}"
+        );
+
+        let body_text = captured
+            .lock()
+            .unwrap()
+            .take()
+            .expect("mock must have been called exactly once");
+        let body: Value = serde_json::from_str(&body_text).expect("captured body must be JSON");
+        let obj = body.as_object().expect("body must be a JSON object");
+
+        assert!(
+            !obj.contains_key("frequency_penalty"),
+            "xAI rejects frequency_penalty by presence — it must be absent, got: {obj:?}"
+        );
+        assert!(
+            !obj.contains_key("presence_penalty"),
+            "xAI rejects presence_penalty by presence — it must be absent, got: {obj:?}"
+        );
+        assert_eq!(obj.get("temperature").and_then(Value::as_f64), Some(0.7));
+        assert_eq!(obj.get("max_tokens").and_then(Value::as_u64), Some(16));
+        assert_eq!(obj.get("top_p").and_then(Value::as_f64), Some(1.0));
+    }
+
+    // Test 2: the curated fallback can never disagree with the default
+    // about which model to reach for.
+    #[test]
+    fn fallback_models_is_non_empty_and_starts_with_the_default_model() {
+        assert!(!GROK_FALLBACK_MODELS.is_empty());
+        assert_eq!(GROK_FALLBACK_MODELS[0], GROK_DEFAULT_MODEL);
     }
 }

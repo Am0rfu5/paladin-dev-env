@@ -100,7 +100,9 @@ use paladin_ports::output::llm_port::{
     LlmError, LlmPort, LlmRequest, LlmResponse, ProviderCapabilities, StreamingResponse,
 };
 
-use crate::compat::{CompatCapabilities, CompatEngine, CompatEngineConfig};
+use crate::compat::{
+    CompatCapabilities, CompatEngine, CompatEngineConfig, CompatRequestParameters,
+};
 
 /// Default request timeout, in seconds, when `OPENAI_COMPATIBLE_TIMEOUT_SECONDS`
 /// is unset.
@@ -542,6 +544,14 @@ impl OpenAiCompatibleAdapter {
                 supports_system_messages: config.capabilities.supports_system_messages,
                 temperature_range: config.capabilities.temperature_range,
             },
+            // Unchanged pre-existing behaviour (17-18): no vendor-specific
+            // sampling-parameter restriction has been measured for this
+            // generic, operator-configured endpoint. Exposing this as an
+            // operator knob is deliberately deferred (17-18's Deferred
+            // section) — it widens D-04's operator-declared surface and its
+            // env-var contract, and is not taken here without a concrete
+            // report of a self-hosted endpoint rejecting a parameter.
+            request_parameters: CompatRequestParameters::all(),
             // No vendor-curated fallback list exists for an arbitrary
             // operator-configured endpoint (unlike the named presets, which
             // each ship a curated list per D-13). An empty live `/models`

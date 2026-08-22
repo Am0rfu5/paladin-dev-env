@@ -13,4 +13,4 @@ pub mod types;
 /// mapping, credential redaction and memoized model-list resolution.
 pub mod engine;
 
-pub use engine::{CompatCapabilities, CompatEngine, CompatEngineConfig};
+pub use engine::{CompatCapabilities, CompatEngine, CompatEngineConfig, CompatRequestParameters};
