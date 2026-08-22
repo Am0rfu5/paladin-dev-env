@@ -1221,11 +1221,11 @@ Plans:
 
 **Wave 17** *(blocked on Wave 16 — shares `compat/engine.rs`)*
 
-- [ ] 17-21-PLAN.md — G-17-4d, part 1: Qwen's shipped default region becomes US (Virginia) by developer decision, the region-scoped-credential rule and the known regional endpoints are documented where `DASHSCOPE_BASE_URL` is described, and Qwen is live-verified at the endpoint it now ships with *(**re-ordered ahead of 17-20**: the constant must change before the documentation can quote it; the human-action checkpoint is gone — the credential was valid all along)*
+- [x] 17-21-PLAN.md — G-17-4d, part 1: Qwen's shipped default region becomes US (Virginia) by developer decision, the region-scoped-credential rule and the known regional endpoints are documented where `DASHSCOPE_BASE_URL` is described, and Qwen is live-verified at the endpoint it now ships with *(**re-ordered ahead of 17-20**: the constant must change before the documentation can quote it; the human-action checkpoint is gone — the credential was valid all along)*
 
 **Wave 18** *(blocked on Wave 17 — the refreshed identifiers and the new Qwen endpoint must exist before they can be advertised)*
 
-- [ ] 17-20-PLAN.md — PROV-04's advertised surface brought back in line: every operator-facing default model and base URL matches the shipped constant, one blanket unverified-endpoint caveat becomes a per-vendor dated verification status, and the DashScope region constraint reaches the operator-facing documents
+- [x] 17-20-PLAN.md — PROV-04's advertised surface brought back in line: every operator-facing default model and base URL matches the shipped constant, one blanket unverified-endpoint caveat becomes a per-vendor dated verification status, and the DashScope region constraint reaches the operator-facing documents
 
 **Wave 19** *(blocked on Wave 18 — shares `compat/engine.rs` and the configuration guide; carries the run's final regression record)*
 
