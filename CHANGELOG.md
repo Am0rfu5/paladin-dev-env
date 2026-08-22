@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The Qwen (Alibaba DashScope) adapter's shipped default `base_url` moves from Singapore to
+  US (Virginia).** `QWEN_DEFAULT_BASE_URL` now resolves to
+  `https://dashscope-us.aliyuncs.com/compatible-mode/v1` (previously
+  `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`). DashScope API keys are region-scoped
+  and rejected with a well-formed `401` by every region except their own, so this is a behaviour
+  change even though it corrects a defect: an unconfigured install now reaches Virginia by
+  default. **If your Alibaba Model Studio workspace is in Singapore or on the mainland, you must
+  now set `DASHSCOPE_BASE_URL`** to
+  `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (Singapore) or
+  `https://dashscope.aliyuncs.com/compatible-mode/v1` (mainland) — see the "Region default" doc
+  on `QWEN_DEFAULT_BASE_URL` in `crates/paladin-llm/src/qwen/adapter.rs` for the full endpoint
+  table and why the previous default was not simply a matter of taste.
+
 ### Fixed
 
 - **The facade's `llm-*` provider flags now actually gate their adapters.** Root `Cargo.toml`
