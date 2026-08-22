@@ -3,10 +3,20 @@
 //! A thin preset (D-01, D-05, D-12) sitting entirely on
 //! [`crate::compat::CompatEngine`] — the shared OpenAI-compatible protocol
 //! engine. This adapter supplies only Kimi's `base_url`, credential env var,
-//! default model, curated fallback model list and capabilities block; every
-//! other behaviour (request shaping, retry, streaming, error mapping,
-//! credential redaction, memoized model-list resolution) is inherited from
-//! the engine unchanged.
+//! default model, curated fallback model list, capabilities block and
+//! request-parameters declaration; every other behaviour (request shaping,
+//! retry, streaming, error mapping, credential redaction, memoized
+//! model-list resolution) is inherited from the engine unchanged.
+//!
+//! **Live-verified 2026-08-22 (17-19, closing G-17-4b):** the model
+//! constants below and the fixed-temperature declaration on
+//! [`KimiAdapter::new`] were previously vendor-documentation-derived and not
+//! live-checked. Both are now live-verified against
+//! `GET https://api.moonshot.ai/v1/models` and three live
+//! `POST /chat/completions` temperature probes (17-19-SUMMARY.md carries the
+//! full live model list and all three probe verdicts verbatim). The
+//! `moonshot-v1-*` family this file previously shipped is retired — the
+//! live list returns `404 resource_not_found_error` for every one of them.
 
 use async_trait::async_trait;
 use futures::Stream;
@@ -29,13 +39,29 @@ use crate::compat::{
 pub const KIMI_DEFAULT_BASE_URL: &str = "https://api.moonshot.ai/v1";
 
 /// Default Kimi model requested when `MOONSHOT_MODEL` is unset.
-pub const KIMI_DEFAULT_MODEL: &str = "moonshot-v1-8k";
+///
+/// `kimi-k3` — the highest-numbered general-purpose line in the live
+/// `GET /models` response measured 2026-08-22 (17-19, closing G-17-4b),
+/// chosen over the two code-specialised entries (`kimi-k2.7-code`,
+/// `kimi-k2.7-code-highspeed`) present in that same response, since this is
+/// the default a caller gets when they express no preference. The retired
+/// `moonshot-v1-8k` this constant previously held is absent from the live
+/// list entirely.
+pub const KIMI_DEFAULT_MODEL: &str = "kimi-k3";
 
 /// Curated fallback model list (D-13), returned when the live `/models`
 /// endpoint fails, is unreachable, or returns an empty list. Never reported
 /// as authoritative — see [`crate::compat::engine::CompatEngine::available_models`].
-pub const KIMI_FALLBACK_MODELS: &[&str] =
-    &["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"];
+///
+/// Populated from the same 2026-08-22 live `GET /models` response as
+/// [`KIMI_DEFAULT_MODEL`] (default first), replacing the retired
+/// `moonshot-v1-*` family this constant previously held.
+pub const KIMI_FALLBACK_MODELS: &[&str] = &[
+    KIMI_DEFAULT_MODEL,
+    "kimi-k2.6",
+    "kimi-k2.7-code",
+    "kimi-k2.7-code-highspeed",
+];
 
 /// Configuration for the Kimi (Moonshot AI) adapter.
 #[derive(Debug, Clone)]
@@ -165,13 +191,50 @@ impl KimiAdapter {
                 supports_embeddings: false,
                 max_context_tokens: Some(131_072),
                 supports_system_messages: true,
-                temperature_range: Some((0.0, 1.0)),
+                // Live-measured 2026-08-22 (17-19, closing G-17-4b) against
+                // `kimi-k3` (`KIMI_DEFAULT_MODEL`) and independently
+                // confirmed on `kimi-k2.6`: a request with `temperature`
+                // omitted or `1.0` succeeds; `0.7` (the framework's
+                // `PromptParameters`/`PaladinData` default) is rejected with
+                // the vendor's own `{"message":"invalid temperature: only 1
+                // is allowed for this model","type":"invalid_request_error"}`.
+                // The declared range is therefore the truthful degenerate
+                // `(1.0, 1.0)`, replacing the previous unmeasured
+                // `(0.0, 1.0)` — see 17-19-SUMMARY.md for the full probe
+                // transcript. `test_every_adapter_declares_a_temperature_range`
+                // (`lib.rs`) still holds: `Some(_)`, never `None`.
+                temperature_range: Some((1.0, 1.0)),
             },
-            // Unchanged pre-existing behaviour (17-18): no vendor-specific
-            // sampling-parameter restriction has been measured for Kimi.
-            // Revisited by plan 17-19, which measures Kimi's own fixed
-            // -temperature constraint against ADR-0004.
-            request_parameters: CompatRequestParameters::all(),
+            // Option (a), chosen by the developer 2026-08-22 against
+            // ADR-0004 (17-19, closing G-17-4b): Kimi's request path does
+            // NOT carry `temperature` — the key is omitted from the
+            // outgoing body entirely rather than a legal value being
+            // substituted for another (see
+            // `CompatRequestParameters::temperature`'s rustdoc for the full
+            // ADR-0004 reasoning). The vendor's own single legal value
+            // (`1`) applies server-side once the key is absent.
+            //
+            // `top_p` is declared unsupported for the same reason, on a
+            // separate measured constraint discovered while re-running the
+            // live harness after the temperature fix landed (Rule 1,
+            // in-scope bugfix, not a plan-scope expansion — ADR-0004 governs
+            // `temperature` only; `top_p` has no `ProviderCapabilities`
+            // range field and no builder-side gate, so dropping it needs no
+            // equivalent to Task 2's narrowing): with `temperature` no
+            // longer sent, the framework's `PromptParameters::default()`
+            // `top_p: Some(1.0)` became the next value the vendor's
+            // per-field validation rejected —
+            // `{"message":"invalid top_p: only 0.95 is allowed for this
+            // model","type":"invalid_request_error"}` — measured on both
+            // `kimi-k3` and `kimi-k2.6`, 2026-08-22. `max_tokens`,
+            // `frequency_penalty` and `presence_penalty` remain carried,
+            // unchanged from 17-18's behaviour-preserving `all()`
+            // declaration.
+            request_parameters: CompatRequestParameters {
+                temperature: false,
+                top_p: false,
+                ..CompatRequestParameters::all()
+            },
             fallback_models: KIMI_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
             // WR-04 (`17-REVIEW.md`, T-17-52/T-17-53), superseding the
@@ -288,7 +351,7 @@ mod tests {
             .mock("POST", "/chat/completions")
             .match_header("authorization", "Bearer test-key")
             .match_body(Matcher::PartialJson(json!({
-                "model": "moonshot-v1-8k",
+                "model": KIMI_DEFAULT_MODEL,
                 "stream": false
             })))
             .with_status(200)
@@ -296,7 +359,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-1",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "Hi there"},
@@ -312,12 +375,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await
             .expect("mock server returned a well-formed response");
 
@@ -339,7 +402,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-2",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "hi"},
@@ -355,12 +418,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
 
@@ -379,7 +442,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-3",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "partial answer"},
@@ -395,12 +458,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
 
@@ -416,7 +479,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-4",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "answer"},
@@ -432,12 +495,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
 
@@ -453,7 +516,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-5",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "answer"}
@@ -468,12 +531,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
 
@@ -489,7 +552,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-6",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": null},
@@ -505,12 +568,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let response = adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
 
@@ -526,7 +589,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-7",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [],
                     "usage": {"prompt_tokens": 1, "completion_tokens": 0, "total_tokens": 1}
                 })
@@ -538,11 +601,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
 
         assert!(matches!(result, Err(LlmError::EmptyCompletion(_))));
     }
@@ -562,11 +625,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::AuthenticationError(_))));
     }
 
@@ -584,11 +647,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::RateLimitExceeded)));
     }
 
@@ -605,11 +668,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::ModelNotAvailable(_))));
     }
 
@@ -626,11 +689,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         assert!(matches!(result, Err(LlmError::InvalidPrompt(_))));
     }
 
@@ -648,11 +711,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         match result {
             Err(LlmError::ProcessingError(msg)) => assert!(msg.contains("500")),
             other => panic!("expected ProcessingError carrying the status code, got {other:?}"),
@@ -675,11 +738,11 @@ mod tests {
         let config = KimiConfig::new(
             secret.to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         match result {
             Err(LlmError::InvalidPrompt(msg)) => {
                 assert!(
@@ -708,11 +771,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let schema_result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let schema_result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         let schema_msg = match schema_result {
             Err(LlmError::ProcessingError(msg)) => msg,
             other => panic!("expected ProcessingError for schema mismatch, got {other:?}"),
@@ -726,11 +789,11 @@ mod tests {
         let unreachable_config = KimiConfig::new(
             "test-key".to_string(),
             "http://127.0.0.1:1".to_string(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let unreachable_adapter = KimiAdapter::new(unreachable_config).unwrap();
         let transport_result = unreachable_adapter
-            .generate(build_request("moonshot-v1-8k"))
+            .generate(build_request(KIMI_DEFAULT_MODEL))
             .await;
         let transport_msg = match transport_result {
             Err(LlmError::NetworkError(msg)) => msg,
@@ -769,12 +832,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let stream = adapter
-            .generate_stream(build_request("moonshot-v1-8k"))
+            .generate_stream(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
         let mut stream = Box::into_pin(stream);
@@ -808,12 +871,12 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
         let stream = adapter
-            .generate_stream(build_request("moonshot-v1-8k"))
+            .generate_stream(build_request(KIMI_DEFAULT_MODEL))
             .await
             .unwrap();
         let mut stream = Box::into_pin(stream);
@@ -863,6 +926,155 @@ mod tests {
         assert!(caps.supports_system_messages);
     }
 
+    // ── Live-measured temperature constraint (17-19, closing G-17-4b) ──
+
+    #[test]
+    fn get_capabilities_reports_the_measured_degenerate_temperature_range() {
+        // The cross-adapter invariant in `lib.rs`
+        // (`test_every_adapter_declares_a_temperature_range`) requires
+        // `Some(_)`; this pins the exact measured value, not merely its
+        // presence.
+        let config = KimiConfig::new(
+            "test-key".to_string(),
+            KIMI_DEFAULT_BASE_URL.to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
+        );
+        let adapter = KimiAdapter::new(config).unwrap();
+        let caps = adapter.get_capabilities();
+
+        assert_eq!(caps.temperature_range, Some((1.0, 1.0)));
+    }
+
+    #[test]
+    fn fallback_models_is_non_empty_and_starts_with_the_default_model() {
+        // The curated fallback cannot disagree with the default about which
+        // model to reach for.
+        assert!(!KIMI_FALLBACK_MODELS.is_empty());
+        assert_eq!(KIMI_FALLBACK_MODELS[0], KIMI_DEFAULT_MODEL);
+    }
+
+    #[tokio::test]
+    async fn generate_omits_temperature_from_the_moonshot_request_body() {
+        // Option (a): Kimi's request path does not carry `temperature` at
+        // all — asserted by capturing the real outgoing wire body, not by
+        // reading the preset's declaration. `build_request`'s default
+        // parameters (`PromptParameters::default()`) carry
+        // `temperature: Some(0.7)`, so this proves the value is actively
+        // dropped, not merely never supplied.
+        use std::sync::{Arc, Mutex};
+
+        let mut server = Server::new_async().await;
+        let captured: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let captured_clone = Arc::clone(&captured);
+        server
+            .mock("POST", "/chat/completions")
+            .with_status(200)
+            .with_body_from_request(move |req| {
+                *captured_clone.lock().unwrap() =
+                    Some(req.utf8_lossy_body().unwrap_or_default().into_owned());
+                json!({
+                    "id": "cmpl-notemp",
+                    "model": KIMI_DEFAULT_MODEL,
+                    "choices": [{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop"
+                    }],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+                })
+                .to_string()
+                .into_bytes()
+            })
+            .create_async()
+            .await;
+
+        let config = KimiConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            KIMI_DEFAULT_MODEL.to_string(),
+        );
+        let adapter = KimiAdapter::new(config).unwrap();
+
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
+        assert!(
+            result.is_ok(),
+            "mock returned a well-formed response: {result:?}"
+        );
+
+        let body = captured
+            .lock()
+            .unwrap()
+            .take()
+            .expect("mock must have been called exactly once");
+        assert!(
+            !body.contains("temperature"),
+            "the key name itself must not appear on the wire — got body: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn generate_omits_top_p_from_the_moonshot_request_body() {
+        // Same mechanism, second measured constraint (discovered re-running
+        // the live harness after the temperature fix): with `temperature`
+        // no longer sent, `PromptParameters::default()`'s `top_p: Some(1.0)`
+        // became the next value the vendor's per-field validation rejected.
+        use std::sync::{Arc, Mutex};
+
+        let mut server = Server::new_async().await;
+        let captured: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let captured_clone = Arc::clone(&captured);
+        server
+            .mock("POST", "/chat/completions")
+            .with_status(200)
+            .with_body_from_request(move |req| {
+                *captured_clone.lock().unwrap() =
+                    Some(req.utf8_lossy_body().unwrap_or_default().into_owned());
+                json!({
+                    "id": "cmpl-notopp",
+                    "model": KIMI_DEFAULT_MODEL,
+                    "choices": [{
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop"
+                    }],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+                })
+                .to_string()
+                .into_bytes()
+            })
+            .create_async()
+            .await;
+
+        let config = KimiConfig::new(
+            "test-key".to_string(),
+            server.url(),
+            KIMI_DEFAULT_MODEL.to_string(),
+        );
+        let adapter = KimiAdapter::new(config).unwrap();
+
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
+        assert!(
+            result.is_ok(),
+            "mock returned a well-formed response: {result:?}"
+        );
+
+        let body = captured
+            .lock()
+            .unwrap()
+            .take()
+            .expect("mock must have been called exactly once");
+        assert!(
+            !body.contains("top_p"),
+            "the key name itself must not appear on the wire — got body: {body}"
+        );
+        // max_tokens, frequency_penalty and presence_penalty remain
+        // carried — proving this is a targeted omission of two fields, not
+        // an accidental drop of every sampling parameter.
+        assert!(body.contains("max_tokens"));
+        assert!(body.contains("frequency_penalty"));
+        assert!(body.contains("presence_penalty"));
+    }
+
     // ── Model list: memoization / concurrency (D-13/D-14) ──
 
     #[tokio::test]
@@ -872,7 +1084,8 @@ mod tests {
             .mock("GET", "/models")
             .with_status(200)
             .with_body(
-                json!({"data": [{"id": "moonshot-v1-8k"}, {"id": "moonshot-v1-32k"}]}).to_string(),
+                json!({"data": [{"id": KIMI_DEFAULT_MODEL}, {"id": "moonshot-v1-32k"}]})
+                    .to_string(),
             )
             .expect(1)
             .create_async()
@@ -881,7 +1094,7 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
@@ -908,7 +1121,7 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
@@ -935,11 +1148,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        assert!(adapter.validate_model("moonshot-v1-8k").await.unwrap());
+        assert!(adapter.validate_model(KIMI_DEFAULT_MODEL).await.unwrap());
         assert!(!adapter.validate_model("no-such-model").await.unwrap());
     }
 
@@ -959,11 +1172,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let _ = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let _ = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         mock.assert_async().await;
     }
 
@@ -981,11 +1194,11 @@ mod tests {
         let config = KimiConfig::new(
             "test-key".to_string(),
             server.url(),
-            "moonshot-v1-8k".to_string(),
+            KIMI_DEFAULT_MODEL.to_string(),
         );
         let adapter = KimiAdapter::new(config).unwrap();
 
-        let result = adapter.generate(build_request("moonshot-v1-8k")).await;
+        let result = adapter.generate(build_request(KIMI_DEFAULT_MODEL)).await;
         assert!(result.is_err());
         mock.assert_async().await;
     }
@@ -1007,7 +1220,7 @@ mod tests {
             .with_body(
                 json!({
                     "id": "cmpl-redirect",
-                    "model": "moonshot-v1-8k",
+                    "model": KIMI_DEFAULT_MODEL,
                     "choices": [{
                         "index": 0,
                         "message": {"role": "assistant", "content": "should never be seen"},
