@@ -101,6 +101,65 @@ make keys      # or `paladin-keys` in any interactive shell
 
 Neither ever prints a key — only the variable name, provider, and character count.
 
+## Claude Code session persistence
+
+`/home/vscode` is part of the container filesystem and is destroyed on every rebuild,
+and Claude Code keeps all of its user state there — session transcripts under
+`.claude/projects/<escaped-cwd>/`, todos, shell snapshots, user settings, and the
+`.credentials.json` auth token.
+
+### One-time host setup
+
+```bash
+mkdir -p ~/.claude-paladin
+chmod 700 ~/.claude-paladin
+```
+
+Run this on the **HOST** before the container is (re)built. Creating it first is
+required, because the Docker daemon otherwise creates it root-owned and the
+container user cannot write to it; `post-start.sh` reports both failure modes
+(absent, and root-owned) with the fix to run.
+
+### Mechanism
+
+`docker-compose.yml` bind-mounts the host's `~/.claude-paladin` **read-write** at
+`/home/vscode/.claude` (read-write, unlike the read-only credentials mount above,
+because Claude Code writes here), and sets `CLAUDE_CONFIG_DIR=/home/vscode/.claude`
+so that `.claude.json` — which by default sits at `$HOME/.claude.json`, outside
+`.claude/`, and is rewritten by atomic rename — is kept inside the mounted directory
+too. A single-file mount or a symlink would not work here: the rename replaces it
+with a plain file and persistence breaks silently. Verified against Claude Code
+2.1.239.
+
+A dedicated directory is used rather than the host's real `~/.claude` so that a
+Claude Code session running on the host cannot race or conflict with the
+container's.
+
+To change the host path, edit the mount line in `.devcontainer/docker-compose.yml`.
+There is deliberately no environment-variable override, matching the credentials
+mount.
+
+### First run
+
+You must authenticate Claude Code once after the mount is in place; the login then
+persists across rebuilds because `.credentials.json` lives inside the mount.
+
+### Session continuity
+
+Transcripts are filed under `projects/-workspace/`, a key derived from the
+`workspaceFolder` `/workspace` pinned in `devcontainer.json`. That path is stable
+across rebuilds, so `claude --continue` and `claude --resume` still find prior
+sessions afterwards.
+
+### Scope
+
+This persists Claude Code session transcripts, history, todos, shell snapshots,
+user settings and auth — it does **not** persist the container filesystem
+generally, so anything else written under `/home/vscode` is still lost on rebuild.
+`/workspace/.claude/` is a different thing entirely — the project-local GSD
+install — already persisted by the workspace bind mount and untouched by this
+change.
+
 ## Quick Start
 
 ### Prerequisites
