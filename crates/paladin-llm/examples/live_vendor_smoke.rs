@@ -34,8 +34,12 @@ use paladin_ports::output::llm_port::LlmPort;
 struct Probe {
     vendor: &'static str,
     key_var: &'static str,
-    base_url: &'static str,
-    default_model: &'static str,
+    /// The base URL the run ACTUALLY used, read back off the resolved config —
+    /// NOT the `*_DEFAULT_BASE_URL` constant. A `*_BASE_URL` environment
+    /// override changes what goes on the wire, and a record that printed the
+    /// constant regardless would attribute a result to the wrong endpoint.
+    base_url: String,
+    default_model: String,
     /// `Err` = the adapter could not even be constructed (missing key).
     result: Result<Live, String>,
 }
@@ -64,78 +68,138 @@ async fn main() {
     let mut probes: Vec<Probe> = Vec::new();
 
     // ── Kimi (Moonshot) ─────────────────────────────────────────────
-    probes.push(Probe {
-        vendor: "Kimi",
-        key_var: "MOONSHOT_API_KEY",
-        base_url: KIMI_DEFAULT_BASE_URL,
-        default_model: KIMI_DEFAULT_MODEL,
-        result: match KimiConfig::from_env()
-            .and_then(|c| KimiAdapter::new(c).map_err(|e| e.to_string()))
-        {
-            Ok(a) => match a.get_available_models().await {
-                Ok(m) => Ok(classify(m, KIMI_FALLBACK_MODELS, KIMI_DEFAULT_MODEL)),
-                Err(e) => Err(format!("get_available_models failed: {e}")),
-            },
-            Err(e) => Err(e),
+    probes.push(match KimiConfig::from_env() {
+        Err(e) => Probe {
+            vendor: "Kimi",
+            key_var: "MOONSHOT_API_KEY",
+            base_url: KIMI_DEFAULT_BASE_URL.to_string(),
+            default_model: KIMI_DEFAULT_MODEL.to_string(),
+            result: Err(e),
         },
+        Ok(cfg) => {
+            let (base_url, model) = (cfg.base_url.clone(), cfg.model.clone());
+            let result = match KimiAdapter::new(cfg) {
+                Err(e) => Err(e.to_string()),
+                Ok(a) => match a.get_available_models().await {
+                    Ok(m) => Ok(classify(m, KIMI_FALLBACK_MODELS, &model)),
+                    Err(e) => Err(format!("get_available_models failed: {e}")),
+                },
+            };
+            Probe {
+                vendor: "Kimi",
+                key_var: "MOONSHOT_API_KEY",
+                base_url,
+                default_model: model,
+                result,
+            }
+        }
     });
 
     // ── Qwen (Alibaba DashScope) ────────────────────────────────────
-    probes.push(Probe {
-        vendor: "Qwen",
-        key_var: "DASHSCOPE_API_KEY",
-        base_url: QWEN_DEFAULT_BASE_URL,
-        default_model: QWEN_DEFAULT_MODEL,
-        result: match QwenConfig::from_env()
-            .and_then(|c| QwenAdapter::new(c).map_err(|e| e.to_string()))
-        {
-            Ok(a) => match a.get_available_models().await {
-                Ok(m) => Ok(classify(m, QWEN_FALLBACK_MODELS, QWEN_DEFAULT_MODEL)),
-                Err(e) => Err(format!("get_available_models failed: {e}")),
-            },
-            Err(e) => Err(e),
+    probes.push(match QwenConfig::from_env() {
+        Err(e) => Probe {
+            vendor: "Qwen",
+            key_var: "DASHSCOPE_API_KEY",
+            base_url: QWEN_DEFAULT_BASE_URL.to_string(),
+            default_model: QWEN_DEFAULT_MODEL.to_string(),
+            result: Err(e),
         },
+        Ok(cfg) => {
+            let (base_url, model) = (cfg.base_url.clone(), cfg.model.clone());
+            let result = match QwenAdapter::new(cfg) {
+                Err(e) => Err(e.to_string()),
+                Ok(a) => match a.get_available_models().await {
+                    Ok(m) => Ok(classify(m, QWEN_FALLBACK_MODELS, &model)),
+                    Err(e) => Err(format!("get_available_models failed: {e}")),
+                },
+            };
+            Probe {
+                vendor: "Qwen",
+                key_var: "DASHSCOPE_API_KEY",
+                base_url,
+                default_model: model,
+                result,
+            }
+        }
     });
 
     // ── Grok (xAI) ──────────────────────────────────────────────────
-    probes.push(Probe {
-        vendor: "Grok",
-        key_var: "XAI_API_KEY",
-        base_url: GROK_DEFAULT_BASE_URL,
-        default_model: GROK_DEFAULT_MODEL,
-        result: match GrokConfig::from_env()
-            .and_then(|c| GrokAdapter::new(c).map_err(|e| e.to_string()))
-        {
-            Ok(a) => match a.get_available_models().await {
-                Ok(m) => Ok(classify(m, GROK_FALLBACK_MODELS, GROK_DEFAULT_MODEL)),
-                Err(e) => Err(format!("get_available_models failed: {e}")),
-            },
-            Err(e) => Err(e),
+    probes.push(match GrokConfig::from_env() {
+        Err(e) => Probe {
+            vendor: "Grok",
+            key_var: "XAI_API_KEY",
+            base_url: GROK_DEFAULT_BASE_URL.to_string(),
+            default_model: GROK_DEFAULT_MODEL.to_string(),
+            result: Err(e),
         },
+        Ok(cfg) => {
+            let (base_url, model) = (cfg.base_url.clone(), cfg.model.clone());
+            let result = match GrokAdapter::new(cfg) {
+                Err(e) => Err(e.to_string()),
+                Ok(a) => match a.get_available_models().await {
+                    Ok(m) => Ok(classify(m, GROK_FALLBACK_MODELS, &model)),
+                    Err(e) => Err(format!("get_available_models failed: {e}")),
+                },
+            };
+            Probe {
+                vendor: "Grok",
+                key_var: "XAI_API_KEY",
+                base_url,
+                default_model: model,
+                result,
+            }
+        }
     });
 
     // ── Gemini (Google) ─────────────────────────────────────────────
-    probes.push(Probe {
-        vendor: "Gemini",
-        key_var: "GEMINI_API_KEY",
-        base_url: GEMINI_DEFAULT_BASE_URL,
-        default_model: GEMINI_DEFAULT_MODEL,
-        result: match GeminiConfig::from_env()
-            .and_then(|c| GeminiAdapter::new(c).map_err(|e| e.to_string()))
-        {
-            Ok(a) => match a.get_available_models().await {
-                Ok(m) => Ok(classify(m, GEMINI_FALLBACK_MODELS, GEMINI_DEFAULT_MODEL)),
-                Err(e) => Err(format!("get_available_models failed: {e}")),
-            },
-            Err(e) => Err(e),
+    probes.push(match GeminiConfig::from_env() {
+        Err(e) => Probe {
+            vendor: "Gemini",
+            key_var: "GEMINI_API_KEY",
+            base_url: GEMINI_DEFAULT_BASE_URL.to_string(),
+            default_model: GEMINI_DEFAULT_MODEL.to_string(),
+            result: Err(e),
         },
+        Ok(cfg) => {
+            let (base_url, model) = (cfg.base_url.clone(), cfg.model.clone());
+            let result = match GeminiAdapter::new(cfg) {
+                Err(e) => Err(e.to_string()),
+                Ok(a) => match a.get_available_models().await {
+                    Ok(m) => Ok(classify(m, GEMINI_FALLBACK_MODELS, &model)),
+                    Err(e) => Err(format!("get_available_models failed: {e}")),
+                },
+            };
+            Probe {
+                vendor: "Gemini",
+                key_var: "GEMINI_API_KEY",
+                base_url,
+                default_model: model,
+                result,
+            }
+        }
     });
 
     let mut failures = 0usize;
 
     for p in &probes {
         println!("\n=== {} ({}) ===", p.vendor, p.key_var);
-        println!("  base_url      : {}", p.base_url);
+        let shipped_default = match p.vendor {
+            "Kimi" => KIMI_DEFAULT_BASE_URL,
+            "Qwen" => QWEN_DEFAULT_BASE_URL,
+            "Grok" => GROK_DEFAULT_BASE_URL,
+            _ => GEMINI_DEFAULT_BASE_URL,
+        };
+        println!(
+            "  base_url      : {}{}",
+            p.base_url,
+            if p.base_url == shipped_default {
+                String::new()
+            } else {
+                format!(
+                    "\n                  [OVERRIDE via *_BASE_URL — shipped default is {shipped_default}]"
+                )
+            }
+        );
         println!("  default model : {}", p.default_model);
         match &p.result {
             Err(e) => {

@@ -3,12 +3,12 @@ status: diagnosed
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-22T02:10:00Z
+updated: 2026-08-22T03:05:00Z
 ---
 
 ## Current Test
 
-[testing complete — 4 passed, 1 issue (test 4, blocker)]
+[testing complete — 4 passed, 1 issue (test 4, blocker); G-17-4c resolved, G-17-4d opened]
 
 ## Tests
 
@@ -155,7 +155,13 @@ findings: |
        Default prompt parameters send temperature 0.7 (prompt.rs:151).
     So the model-ID fix is necessary but not sufficient; the temperature constraint must also
     be honoured (the preset carries `temperature_range`, engine.rs:64, but it is not enforced).
-  G-17-4c QWEN LIVE PATH UNVERIFIED — credential rejected, not a proven code defect (major).
+  G-17-4c QWEN — SUPERSEDED 2026-08-22, see the corrected entry under `## Gaps`. The live path
+    is now VERIFIED (92 models via the US Virginia endpoint) and the credential is VALID. The
+    conclusion below — that the base_url was confirmed correct and only auth failed — was WRONG:
+    DashScope keys are region-scoped, so a well-formed 401 is returned by every endpoint except
+    the key's own region, and cannot be read as confirming the URL. Superseded by gap G-17-4d,
+    which records the real defect: the shipped default hardcodes one region.
+  ORIGINAL (retained for the record, conclusion since falsified):
     Both endpoints return 401 `invalid_api_key` with the documented Alibaba error envelope:
       https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models  -> 401 invalid_api_key
       https://dashscope.aliyuncs.com/compatible-mode/v1/models       -> 401 invalid_api_key
@@ -241,17 +247,52 @@ blocked: 0
 
 - gap_id: G-17-4c
   truth: "Qwen's live get_available_models path returns a real model list containing the default model"
-  status: failed
-  reason: "Live run 2026-08-22: both the intl and mainland DashScope endpoints return 401 invalid_api_key, so the live path silently fell back to QWEN_FALLBACK_MODELS. Qwen's base_url is confirmed correct; the stored credential is rejected."
+  status: resolved
+  resolved_by: "live verification 2026-08-22 against the US (Virginia) endpoint"
+  resolved_at: 2026-08-22
+  reason: "RESOLVED. Re-run with DASHSCOPE_BASE_URL=https://dashscope-us.aliyuncs.com/compatible-mode/v1 returns 92 live models, differs from the curated fallback, and QWEN_DEFAULT_MODEL 'qwen-plus' is present. The stored credential is VALID; the shipped default base_url pointed at the wrong region."
   severity: major
   test: 4
-  root_cause: "Credential, not code. The stored dashscope_api_key is a structurally clean single 117-char token (no '=', whitespace or newline, so the loader is not corrupting it) but is rejected by both endpoints with the documented Alibaba invalid_api_key envelope. DashScope keys are conventionally 'sk-' + 32 hex, so the file most likely holds the wrong secret."
+  correction: |
+    This gap's original diagnosis reached the WRONG CONCLUSION and is superseded. It recorded
+    "base_url is CONFIRMED CORRECT ... only authentication fails", reasoning that a 401 carrying
+    Alibaba's documented error envelope proved the URL was right and implicated the key. That
+    inference does not hold. Alibaba documents that "a Base URL must be used together with an
+    API Key from the same billing plan; otherwise, a 401 error occurs. API Keys are independent
+    across regions and cannot be used across regions." A region-scoped key therefore returns a
+    well-formed 401 from every endpoint EXCEPT its own — which is exactly the signature observed
+    on both intl (Singapore) and mainland. The 117-char length, also cited as evidence of a
+    wrong secret, was a red herring: the key is valid.
+    Credit for the correction: the operator identified that their Model Studio workspace is set
+    to US (Virginia).
+  measured: |
+    Same credential, same binary, same run, only DASHSCOPE_BASE_URL differing:
+      A) https://dashscope-intl.aliyuncs.com/compatible-mode/v1  (shipped default, Singapore)
+         -> 3 models, byte-identical to QWEN_FALLBACK_MODELS -> live fetch silently failed -> FAIL
+      B) https://dashscope-us.aliyuncs.com/compatible-mode/v1    (US Virginia)
+         -> 92 models, differs from fallback, qwen-plus present -> PASS
+  harness_defect_fixed: |
+    The first Virginia run appeared to pass while printing the INTL base_url, because the
+    harness printed the `*_DEFAULT_BASE_URL` constant rather than the URL the run actually
+    used — it would have attributed a result to the wrong endpoint. `live_vendor_smoke.rs` now
+    reads `base_url` back off the resolved config and flags an override explicitly.
+
+- gap_id: G-17-4d
+  truth: "An operator whose Alibaba Model Studio workspace is in any region other than Singapore can use the Qwen adapter's shipped defaults and reach their own account"
+  status: failed
+  reason: "Discovered 2026-08-22 while resolving G-17-4c. QWEN_DEFAULT_BASE_URL hardcodes the Singapore/intl endpoint, but DashScope API keys are region-scoped and are rejected 401 by every other region's endpoint. Any operator on US (Virginia), Tokyo, Hong Kong or mainland gets a silent failure with the shipped defaults."
+  severity: major
+  test: 4
+  root_cause: "The adapter models DashScope as a single global endpoint. Alibaba operates per-region endpoints with region-scoped credentials (`dashscope-us.aliyuncs.com` for US Virginia, `dashscope-intl.aliyuncs.com` for Singapore, `dashscope.aliyuncs.com` for mainland, plus workspace-dedicated `{workspace-id}.{region}.maas.aliyuncs.com` domains recommended for production). The failure is invisible because `available_models()` swallows the 401 and returns the curated fallback, so the adapter reports a plausible 3-model list instead of an auth error — the same masking that hid G-17-4c for five days."
   artifacts:
-    - path: "~/.config/paladin/dashscope_api_key"
-      issue: "117-char token rejected 401 by both dashscope-intl and dashscope endpoints"
+    - path: "crates/paladin-llm/src/qwen/adapter.rs"
+      issue: "QWEN_DEFAULT_BASE_URL hardcodes one region; nothing documents that the key must match it"
+    - path: "crates/paladin-llm/src/compat/engine.rs"
+      issue: "available_models() reports an auth failure identically to an offline failure, masking a region/credential mismatch"
   missing:
-    - "A valid DashScope API key on the host"
-    - "Re-run the live smoke test to verify QWEN_DEFAULT_MODEL 'qwen-plus' exists in the live list"
+    - "Document the region-scoped-credential constraint wherever DASHSCOPE_BASE_URL is described, naming the known regional endpoints"
+    - "Decide whether the shipped default stays Singapore, and make the mismatch diagnosable rather than silent"
+    - "Consider distinguishing an auth failure (misconfiguration, warrants `warn`) from an offline failure (supported state, `debug`) in available_models()"
   debug_session: ""
 
 ## Deferred Follow-Ups
