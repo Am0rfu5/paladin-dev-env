@@ -1229,7 +1229,7 @@ Plans:
 
 **Wave 19** *(blocked on Wave 18 — shares `compat/engine.rs` and the configuration guide; carries the run's final regression record)*
 
-- [ ] 17-22-PLAN.md — G-17-4d, part 2: the shared engine stops describing an authentication failure the way it describes being offline, so a region/credential mismatch is audible instead of returning a plausible curated list — vendor-agnostic, so all six compat-backed adapters gain it, and the D-13/D-14 fallback contract is deliberately unchanged
+- [x] 17-22-PLAN.md — G-17-4d, part 2: the shared engine stops describing an authentication failure the way it describes being offline, so a region/credential mismatch is audible instead of returning a plausible curated list — vendor-agnostic, so all six compat-backed adapters gain it, and the D-13/D-14 fallback contract is deliberately unchanged
 
 *Third gap-closure run, planned 2026-08-22 from `17-UAT.md` test 4's diagnosed gaps. G-17-4a and G-17-4b are blockers — Grok cannot complete any `generate()` call because the shared engine unconditionally serialises a parameter xAI rejects, and Kimi's default model is retired while its current models accept only `temperature: 1`. Gemini passes and is the regression control across every plan in the run. The other four UAT tests passed on 2026-08-18/19 and are untouched here.*
 
