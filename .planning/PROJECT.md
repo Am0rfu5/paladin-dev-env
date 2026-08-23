@@ -412,7 +412,9 @@ while the code ships):
 Current scope is **milestone close-out**: make the planning record match the shipped code, resolve
 the contested type and gate definitions, close the residual functional gaps, make the quality
 numbers real, make the release and security gates actually hold, and build the one epic-set nobody
-ever started. **61 requirements remaining across 12 phases (5-16)** — see `.planning/ROADMAP.md`.
+ever started. **65 requirements remaining across 13 phases (5-17)** — 61 from the ingest-derived
+corpus plus the four-requirement Phase 17 forward addition (PROV-01 … PROV-04, user direction
+2026-08-15, the first phase beyond the ingest) — see `.planning/ROADMAP.md`.
 The first 25, covering Phases 1-4, shipped as **v0.7.1** on 2026-08-04 and have moved to
 *Validated* above.
 
@@ -550,6 +552,14 @@ forward scope and are not part of v0.7.2.
       chapter its own rewrite epic was exempted from touching (DOCS-02)
 - [ ] Apply one `cargo doc` bar with a CI gate and document every public item to it (DOCS-03), and
       record the demos decision so an empty `docs/assets/` stops implying work in flight (DOCS-04)
+- [ ] Talk to the providers users actually deploy: narrow the candidate field to a recorded
+      decision rather than brand recognition (PROV-01), ship every survivor against the full
+      `LlmPort` contract with a truthful `get_capabilities` (PROV-02), feature-gate each one so the
+      default feature set and every existing provider's behaviour are unchanged (PROV-03), and hold
+      the new code to the coverage, rustdoc and advertised-surface standards already in force
+      (PROV-04). **Delivered and verified in Phase 17 (2026-08-23); the bullets stay in Active
+      pending the v0.7.2 milestone close, per this project's convention of graduating requirements
+      to Validated at ship time.**
 
 ### Out of Scope
 
@@ -1319,6 +1329,45 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-08-23 after **Phase 17: Additional LLM Provider Adapters** completed and
+verified — 22 plans (11 planned, 11 added across three `/gsd-plan-phase 17 --gaps` runs), all four
+requirements (PROV-01 … PROV-04) closed, `17-VERIFICATION.md` `passed` on its **fourth** pass at
+16/16 must-haves. This was the **first phase beyond the ingest-derived roadmap** — not ingest
+material, user direction of 2026-08-15. [ADR-0045](.planning/decisions/0045-additional-llm-provider-selection.md)
+records the selection study with its criteria written down before any candidate was scored:
+**build** — Kimi, Qwen, Grok, Ollama, Gemini; **reject, already covered by the generic
+operator-configured OpenAI-compatible provider** — Groq, Together, Mistral, Fireworks, Bedrock;
+**Meta/Llama** dispositioned by naming Ollama as the host it actually targets, since "Llama" names
+a model family and not a provider. Every verdict was human-selected in an interactive
+`/gsd-discuss-phase` session, none `--auto`-derived (D-00i). Six adapters ship: five named presets
+over a shared `CompatEngine`, plus one generic `base_url`-configured provider. The engine's
+`CompatRequestParameters` mechanism gates the five optional sampling parameters **per preset with
+no vendor-name branching** — Grok declares `frequency_penalty`/`presence_penalty` absent because
+xAI rejects them by presence, Kimi declares `temperature`/`top_p` absent because Moonshot enforces
+fixed values. Gemini is not built on `CompatEngine` at all; `generateContent` is its own shape.
+Two further ADRs: 0046 (facade LLM feature-flag wiring), and **0004 amended in place** — the
+temperature-range gate in `PaladinBuilder::validate()` now fires only when the caller actually
+expressed a temperature (`manual_temperature_override`), not unconditionally, and the ADR's text
+was brought back into agreement with the shipped code rather than left to teach a stale contract.
+CI at `76b859d`: 46 success, 3 skipped, 0 failures, re-queried first-hand by the verifier (which
+corrected the orchestrator's own "44 success" count). The `Coverage` job runs
+`cargo llvm-cov --fail-under-lines 82`, so its success **is** the ADR-0006 floor holding with all
+nine adapters counted — the job emits no percentage, so the record carries the verdict and not a
+number, and the earlier 85.01% figure is superseded rather than re-cited. The live four-vendor
+smoke (8/8 probes on shipped defaults, no overrides) is **relayed evidence**, not verifier-executed:
+no vendor credentials or egress exist in that sandbox. Two `WINDOWS.md` rows stay open by design —
+id 14 (a compose healthcheck never validated by `docker compose config`) and id 19
+(`.project/current-exports.txt` generated under default features only, carried forward as accepted
+debt IN-01 by a recorded human decision in an interactive checkpoint, not an `--auto` inference).
+Rows 15-18 are waived: the Snyk mandate was **removed** on 2026-08-18 after measurement — Snyk Code
+found 0 of 4 planted vulnerabilities in Rust that it caught in equivalent JavaScript, and Snyk Open
+Source has no Cargo support, so a "clean" result there meant nothing was analysed. The known gap it
+leaves — **no static taint analysis for first-party Rust** — is stated plainly in
+`.github/instructions/security.instructions.md` rather than papered over, with manual
+credential-handling review as the standing control. The PROV-* bullets remain in Active pending the
+v0.7.2 milestone close, per this project's convention of graduating requirements to Validated at
+ship time.*
+
 *Last updated: 2026-08-10 after **Phase 13: Milestone 9-12 Ground Truth & Recorded Account**
 completed and verified — 13 plans across 4 waves, all five requirements (ORCH-01 … ORCH-05) closed
 with cited evidence, UAT 1/1 passed, security `threats_open: 0`. This was the **last ground-truth
