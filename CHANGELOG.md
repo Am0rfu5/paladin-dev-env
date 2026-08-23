@@ -9,18 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **The Qwen (Alibaba DashScope) adapter's shipped default `base_url` moves from Singapore to
-  US (Virginia).** `QWEN_DEFAULT_BASE_URL` now resolves to
-  `https://dashscope-us.aliyuncs.com/compatible-mode/v1` (previously
-  `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`). DashScope API keys are region-scoped
-  and rejected with a well-formed `401` by every region except their own, so this is a behaviour
-  change even though it corrects a defect: an unconfigured install now reaches Virginia by
-  default. **If your Alibaba Model Studio workspace is in Singapore or on the mainland, you must
-  now set `DASHSCOPE_BASE_URL`** to
-  `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (Singapore) or
-  `https://dashscope.aliyuncs.com/compatible-mode/v1` (mainland) — see the "Region default" doc
-  on `QWEN_DEFAULT_BASE_URL` in `crates/paladin-llm/src/qwen/adapter.rs` for the full endpoint
-  table and why the previous default was not simply a matter of taste.
+- **The Qwen (Alibaba DashScope) adapter's shipped default `base_url` is the Singapore
+  (international) endpoint.** `QWEN_DEFAULT_BASE_URL` resolves to
+  `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`. This constant moved twice inside one
+  week: Singapore → US (Virginia) on 2026-08-22, then back to Singapore on 2026-08-23, when the
+  project's own credential was replaced with a Singapore-scoped key and the Virginia default it
+  had just shipped started failing. Neither move settles the question for every operator —
+  DashScope API keys are region-scoped and rejected with a well-formed `401` by every region
+  except their own, so **whichever region this default names, an operator whose workspace is in
+  a different region must set `DASHSCOPE_BASE_URL`** to their own endpoint:
+  `https://dashscope-us.aliyuncs.com/compatible-mode/v1` (US/Virginia) or
+  `https://dashscope.aliyuncs.com/compatible-mode/v1` (mainland China). See the "Region default"
+  and "Reversal record" docs on `QWEN_DEFAULT_BASE_URL` in
+  `crates/paladin-llm/src/qwen/adapter.rs` for the full endpoint table and why no single default
+  here is ever the whole answer — the override and the diagnostic below are what actually protect
+  every operator, not the choice of default.
+- **`QWEN_DEFAULT_MODEL` stays `qwen-plus`, now for a stated reason.** Live-verified 2026-08-23
+  against the shipped Singapore endpoint alongside the alternative candidate `qwen3.7-plus`: both
+  are present in the live catalog and both accept every measured sampling parameter, so
+  `qwen-plus` was kept as the rolling, generation-independent alias rather than switched to the
+  generation-pinned `qwen3.7-plus`, which a future Qwen generation will eventually retire the way
+  `moonshot-v1-8k` and `gemini-2.5-flash` were retired earlier in this phase.
+- **Qwen's declared `temperature_range` narrows from `(0.0, 2.0)` to `(0.0, 1.99)`.** Live
+  measurement against the shipped endpoint found DashScope's own accepted range is the half-open
+  interval `[0.0, 2.0)` — a request carrying `temperature: 2.0` is rejected with
+  `HTTP 400 InternalError.Algo.InvalidParameter`. Since `ProviderCapabilities`'s validation gate
+  treats both endpoints of a declared range as inclusive, advertising `2.0` verbatim would let a
+  legal-looking request through the local gate only to fail on the wire.
 
 ### Fixed
 
