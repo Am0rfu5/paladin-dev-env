@@ -178,10 +178,10 @@ last_updated: 2026-08-23T12:55:15.198Z
     "file": "tests/integration/ollama_docker_test.rs",
     "line": null,
     "description": "Ollama Docker-gated Tier 2 suite (17-07 Task 2) authored and proven to compile/clippy-clean/skip-gracefully, but never run against a real Ollama server -- no Docker daemon in the execution sandbox. Runtime behavior (generate/generate_stream/get_available_models/validate_model against real qwen2.5:0.5b) is unverified.",
-    "status": "open",
-    "reason": "",
+    "status": "resolved",
+    "reason": "Resolved 2026-08-23 by a CI run on the pushed branch. The orchestrator queried the GitHub check-runs API directly for commit 76b859d (the SHA it pushed) rather than relying on a report: 44 checks success, 3 skipped, 0 failures. This is first-hand evidence at CURRENT HEAD, which is what these rows lacked -- the previously cited run was at ca211644 (2026-08-19), before ~2,160 lines of gap-closure code landed. The 'Ollama Integration Tests (live server)' job concluded success (completed 2026-08-23T16:55:44Z), exercising the Docker-gated Tier 2 suite this row recorded as unrun.",
     "recorded_at": "2026-08-17T14:17:30.134Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-23T17:55:00.000Z"
   },
   {
     "id": 13,
@@ -190,10 +190,10 @@ last_updated: 2026-08-23T12:55:15.198Z
     "file": "Makefile",
     "line": null,
     "description": "17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead.",
-    "status": "open",
-    "reason": "",
+    "status": "resolved",
+    "reason": "Resolved 2026-08-23 by a CI run on the pushed branch. The orchestrator queried the GitHub check-runs API directly for commit 76b859d (the SHA it pushed) rather than relying on a report: 44 checks success, 3 skipped, 0 failures. This is first-hand evidence at CURRENT HEAD, which is what these rows lacked -- the previously cited run was at ca211644 (2026-08-19), before ~2,160 lines of gap-closure code landed. The 'Coverage' job concluded success (completed 2026-08-23T16:59:08Z). That job runs `cargo llvm-cov --fail-under-lines 82`, so a success conclusion IS the >=82% workspace line-coverage assertion (ADR-0006) holding against the gap-closure code -- the exact measurement this row recorded as unrun. The job emitted no percentage into its check-run output, so the pass/fail verdict is recorded here rather than a figure.",
     "recorded_at": "2026-08-17T14:17:37.112Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-23T17:55:00.000Z"
   },
   {
     "id": 14,

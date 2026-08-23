@@ -349,3 +349,50 @@ measurement.
 Everything else in this report stands: the phase's core deliverable is achieved, re-confirmed
 fresh at current HEAD, with `cargo test --workspace`, `cargo fmt --check` and
 `cargo clippy --workspace --all-targets --features llm-all -- -D warnings` all clean.
+
+
+---
+
+## CI evidence at current HEAD — 2026-08-23, after the push
+
+The branch was pushed (`cfa59cc..76b859d`) with the developer's approval, which was the single
+action all remaining items depended on. CI then ran on gap-closure code for the first time.
+
+**Result: 44 success, 3 skipped, 0 failures.** Read first-hand from the GitHub check-runs API for
+commit `76b859d`, not taken from any report.
+
+| Job | Conclusion | Closes |
+|---|---|---|
+| `Coverage` | success | item 1, `WINDOWS` row 13 |
+| `Ollama Integration Tests (live server)` | success | `WINDOWS` row 12 |
+| `LLM Registry Unit Tests (llm-all)` | success | item 4 |
+| `Build & Test (llm-all)` | success | item 4 |
+| `Code Quality` | success | item 4 |
+| `Integration Tests` | success | item 4 |
+| `Docker Integration Tests` | success | item 4 |
+
+**On the coverage figure specifically.** The `Coverage` job runs
+`cargo llvm-cov --fail-under-lines 82`, so a success conclusion *is* the assertion that ADR-0006's
+82% workspace line-coverage floor holds against the gap-closure code. The job emitted no
+percentage into its check-run output, so what is recorded here is the verdict, not a number. The
+stale 85.01% figure from `ca211644` is superseded as evidence and should not be re-cited as a
+current measurement.
+
+**One job did not finish:** `Docker Build` was still `in_progress` ~57 minutes after starting. It
+is not a failure and gates none of the items above; it does not appear in any must-have. Worth a
+glance if it stays stuck, since a genuinely hung image build is its own problem.
+
+### Status of the five `human_verification` items
+
+| # | Item | State |
+|---|---|---|
+| 1 | Coverage at current HEAD | **CLOSED** — `Coverage` job success at `76b859d` |
+| 2 | ADR-0004 amendment | **CLOSED** — commit `1deceae` |
+| 3 | `WINDOWS` rows 12/13/20 | **CLOSED** — 20 was already resolved; 12/13 reconciled on this CI evidence |
+| 4 | Full CI at current HEAD | **CLOSED** — 44/44 non-skipped checks success |
+| 5 | Live four-vendor smoke at current HEAD | **CLOSED** — 8/8 probes, shipped defaults, no override |
+
+All five are closed. The blocking reason for `status: human_needed` no longer holds; the phase is
+ready for a final verification pass to move it to `passed`. That re-verification is deliberately
+left to a fresh `gsd-verifier` run rather than asserted here, since the orchestrator closing items
+against its own execution is exactly the self-evaluation blind spot the verifier exists to catch.
