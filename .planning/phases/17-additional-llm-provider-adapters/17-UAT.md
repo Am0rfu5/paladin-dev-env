@@ -1,10 +1,10 @@
 ---
-status: partially_resolved
+status: resolved
 phase: 17-additional-llm-provider-adapters
 source: [17-VERIFICATION.md]
 started: 2026-08-18T02:35:00Z
-updated: 2026-08-22T22:40:00Z
-blocked_on: "WINDOWS.md id 21 (G-17-4d generate probe) — Alibaba Model Studio invocation entitlement"
+updated: 2026-08-23T13:20:00Z
+
 ---
 
 ## Current Test
@@ -300,10 +300,38 @@ blocked: 0
 
 - gap_id: G-17-4d
   truth: "An operator whose Alibaba Model Studio workspace is in any region other than Singapore can use the Qwen adapter's shipped defaults and reach their own account"
-  status: partially_resolved
+  status: resolved
+  closed_by: "plan 17-21 Task 2 (2026-08-23) after the operator rotated the DashScope credential"
+  closure_note: |
+    The invocation entitlement (WINDOWS id 21) was cleared EXTERNALLY, by the operator
+    enabling models and issuing a new key -- not by a code change. The new credential is
+    Singapore-scoped, so QWEN_DEFAULT_BASE_URL moved again, to
+    https://dashscope-intl.aliyuncs.com/compatible-mode/v1.
+
+    That second move is the substance of this gap's final lesson. Two credentials one day
+    apart produced opposite 'correct' regions, which shows the shipped default was being
+    pinned to whichever region one workspace happened to occupy -- not a stable basis for a
+    shipped constant. No single value is right for every operator. What makes it safe is the
+    documented DASHSCOPE_BASE_URL override naming all three regional endpoints (17-21) plus
+    the warning that makes a mismatch audible instead of silent (17-22).
+
+    The 2026-08-23 rotation independently re-confirmed Alibaba's region-scoping rule in the
+    OPPOSITE direction: the new Singapore key returns a well-formed 401 from Virginia, exactly
+    as the old Virginia key did from Singapore. The falsified inference -- that a well-formed
+    401 proves the base URL correct -- remains invalid and is NOT rehabilitated.
+
+    Live-measured corrections in this task: temperature_range is the half-open [0.0, 2.0),
+    declared (0.0, 1.99); all five optional sampling parameters are accepted by DashScope;
+    QWEN_DEFAULT_MODEL stays the rolling alias qwen-plus rather than the pinned qwen3.7-plus,
+    since a pinned generation is exactly what retired moonshot-v1-8k and gemini-2.5-flash in
+    this same phase. The workspace-dedicated maas.aliyuncs.com domain was NOT adopted: plain
+    dashscope-intl returns the identical 162-model catalog, so the prohibition still stands.
+
+    Final: all four vendors PASS both live probes on shipped defaults with no override,
+    which also closes plan 17-22's previously-unmet 'four vendors PASS' clause.
   resolved_by: "plans 17-21, 17-20, 17-22 (2026-08-22) -- region and diagnosability halves"
   resolved_at: 2026-08-22
-  blocked_on: "WINDOWS.md id 21 -- Alibaba Model Studio invocation entitlement"
+  resolved_fully_at: 2026-08-23
   resolution: |
     RESOLVED: the region half. QWEN_DEFAULT_BASE_URL now names the US (Virginia)
     compatible-mode endpoint. Same credential, same binary, endpoint the only variable:
