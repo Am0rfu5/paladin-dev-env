@@ -163,7 +163,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 
 **Provider Expansion** — first forward work beyond the ingest (added 2026-08-15)
 
-- [ ] **Phase 17: Additional LLM Provider Adapters** - Decide which additional providers qualify against recorded criteria, then ship each survivor as a feature-gated adapter meeting the full `LlmPort` contract
+- [x] **Phase 17: Additional LLM Provider Adapters** - Decide which additional providers qualify against recorded criteria, then ship each survivor as a feature-gated adapter meeting the full `LlmPort` contract (completed 2026-08-23)
 
 ## Phase Details
 

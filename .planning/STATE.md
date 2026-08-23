@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
-current_phase: 17
-current_phase_name: additional-llm-provider-adapters
-status: awaiting_verification
-stopped_at: Phase 17 executed — awaiting human UAT before phase close
-last_updated: "2026-08-18T00:55:04.673Z"
-last_activity: 2026-08-18
-last_activity_desc: Phase 17 gap-closure execution complete; verification human_needed
+current_phase: 16
+current_phase_name: Documentation Currency & the Architecture Gap
+status: planning
+stopped_at: Phase 17 context gathered
+last_updated: "2026-08-23T19:00:05.106Z"
+last_activity: 2026-08-23
+last_activity_desc: Phase 17 complete, transitioned to Phase 16
 progress:
   total_phases: 13
-  completed_phases: 12
-  total_plans: 130
-  completed_plans: 124
+  completed_phases: 13
+  total_plans: 135
+  completed_plans: 135
 ---
 
 # Project State
@@ -39,20 +39,20 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 17 (additional-llm-provider-adapters) — EXECUTED, AWAITING HUMAN VERIFICATION
-Plan: 17 of 17 complete
-Status: All plans executed and merged; verification returned `human_needed` (11/12 must-haves, 0 gaps).
+Phase: 16 — Documentation Currency & the Architecture Gap
+Plan: Not started
+Status: Ready to plan
   5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
   test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
   2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
   PROV-04 blocked on the unmeasured coverage floor.
-Last activity: 2026-08-18 — Phase 17 gap-closure execution complete (plans 17-12..17-17)
+Last activity: 2026-08-23 — Phase 17 complete, transitioned to Phase 16
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 126
+- Total plans completed: 148
 - Average duration: —
 - Total execution time: —
 
@@ -73,6 +73,7 @@ Last activity: 2026-08-18 — Phase 17 gap-closure execution complete (plans 17-
 | 13 | 13 | - | - |
 | 14 | 8 | - | - |
 | 15 | 10 | - | - |
+| 17 | 22 | - | - |
 
 *Updated after each plan completion*
 

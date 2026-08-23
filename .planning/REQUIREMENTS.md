@@ -3413,7 +3413,7 @@ build before the study reports.
 
 ### Additional LLM provider adapters (PROV)
 
-- [ ] **PROV-01**: The additional-provider field is **narrowed to a decision**, and the criteria are
+- [x] **PROV-01**: The additional-provider field is **narrowed to a decision**, and the criteria are
       written down before the candidates are scored.
       `paladin-llm` ships three real providers today — `openai`, `anthropic`, `deepseek` — plus
       `mock`, each behind its own Cargo feature, resolved through `provider_factory.rs`.
@@ -3454,8 +3454,12 @@ build before the study reports.
       satisfies the requirement's "Done when" clause, but the phase's requirement checkboxes are
       adjudicated at phase close, per the Phase 3 precedent that a requirement is not marked
       complete while sibling plans carrying the same ID are still open.
+      **Discharged 2026-08-23 at phase close.** All 22 phase-17 plans carry a committed SUMMARY.md
+      and `17-VERIFICATION.md` reads `passed` on its fourth pass, so the condition this note
+      records — sibling plans still open — no longer holds. PROV-01..04 were ticked by
+      `phase.complete 17` under exactly the rule stated above, not in spite of it.
 
-- [ ] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
+- [x] **PROV-02**: Every provider PROV-01 marks **build** implements the **full `LlmPort`
       contract**, not a convenient subset.
       The trait requires `generate`, `generate_stream`, `validate_model`,
       `get_available_models`, `get_provider_name` and `get_capabilities`
@@ -3470,7 +3474,7 @@ build before the study reports.
       *Not ingest-derived — user direction, 2026-08-15. Couples to DEBT-05 (canonical `TokenUsage`)
       and to Phase 14's capability-truthfulness standard.*
 
-- [ ] **PROV-03**: Each new adapter is **feature-gated and additive** — adding a provider changes
+- [x] **PROV-03**: Each new adapter is **feature-gated and additive** — adding a provider changes
       no existing provider's behaviour.
       `paladin-llm`'s feature set today is `default = ["openai", "mock"]` with `anthropic`,
       `deepseek`, `vision` and `openai-embeddings` opt-in. Each new provider gains one feature in
@@ -3482,7 +3486,7 @@ build before the study reports.
       to existing config files.
       *Not ingest-derived — user direction, 2026-08-15.*
 
-- [ ] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
+- [x] **PROV-04**: The new code is **tested and documented to the standard already in force**, and
       the advertised surface matches the shipped one.
       **Tests**: mock-transport unit tests for request shaping, response parsing, streaming chunk
       assembly and error mapping — the workspace stays above the **82% line-coverage floor**
@@ -4549,14 +4553,18 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | DOCS-02 | Phase 16 | Pending |
 | DOCS-03 | Phase 16 | Pending |
 | DOCS-04 | Phase 16 | Pending |
+| PROV-01 | Phase 17 | Complete |
+| PROV-02 | Phase 17 | Complete |
+| PROV-03 | Phase 17 | Complete |
+| PROV-04 | Phase 17 | Complete |
 
 **Coverage:**
 
-- v1 requirements: **86 total** (25 Milestone-1 close-out + 9 Milestone 2-3 close-out +
+- v1 requirements: **90 total** (25 Milestone-1 close-out + 9 Milestone 2-3 close-out +
   12 Milestone 4-6 close-out + 16 Milestone 7-8 close-out + 24 Milestone 9-12 + Deferred-QA
-  close-out)
+  close-out + 4 Provider Expansion, Phase 17)
 
-- Mapped to phases: 86
+- Mapped to phases: 90
 - Unmapped: 0 ✓
 - Duplicated across phases: 0 ✓
 

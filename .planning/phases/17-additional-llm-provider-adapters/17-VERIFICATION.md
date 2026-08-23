@@ -1,41 +1,26 @@
 ---
 phase: 17-additional-llm-provider-adapters
-verified: 2026-08-23T13:32:37Z
-status: human_needed
-score: 14/17 must-haves verified
+verified: 2026-08-23T19:15:00Z
+status: passed
+score: 16/16 must-have truths verified (truth 16 is an advisory REQUIREMENTS.md-checkbox note, not a pass/fail check — see "Fourth verification pass" below)
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
   previous_status: human_needed
-  previous_score: 11/12
+  previous_score: "14/17 per the third pass's own summary line; independently recounting that pass's own truths table against its own ✓/✗/⚠️ symbols yields 13/17 — a pre-existing off-by-one in that pass's arithmetic, noted for the record and not treated as a defect of this (fourth) pass"
   gaps_closed:
-    - "All four UAT gaps (G-17-4a Grok, G-17-4b Kimi, G-17-4c Qwen — superseded, G-17-4d Qwen region) independently re-confirmed resolved: CompatRequestParameters mechanism (`compat/engine.rs`) genuinely gates the five optional sampling parameters per preset with no vendor-name branching in the shared engine; Grok declares frequency_penalty/presence_penalty absent (xAI rejects them by presence); Kimi declares temperature/top_p absent (Moonshot enforces fixed values); GROK_DEFAULT_MODEL='grok-4.6', KIMI_DEFAULT_MODEL='kimi-k3', QWEN_DEFAULT_BASE_URL='https://dashscope-intl.aliyuncs.com/compatible-mode/v1' (Singapore, moved twice and reversed with a documented, non-rehabilitating 'Reversal record'), GEMINI_DEFAULT_MODEL='gemini-3.6-flash' (orchestrator fix, commit 954b750) — all confirmed live in the shipped constants by direct read, matching .env.example, config.example.yml, README.md and the configuration guide bidirectionally."
-    - "The three 17-REVIEW-gaps.md findings (CR-01 auto-temperature bypassing ADR-0004, WR-01 base_url_without_userinfo under-stripping on a multi-'@' userinfo, WR-02 Kimi's struct-update spread undermining CompatRequestParameters' no-silent-inheritance guarantee) are each independently confirmed fixed in commit 9ce90b7, with dedicated regression tests exercising the exact defect (auto_selected_temperature_is_validated_against_the_provider_range drives .auto_temperature(true) end-to-end against a narrow mock range; base_url_without_userinfo_strips_a_password_containing_an_unescaped_at pins the rfind fix; Kimi's request_parameters now names all five fields explicitly, matching Grok's pattern)."
-    - "Plan 17-20's mid-run contract amendment (commit faa6bcb, adding .env.example as Task 3) is coherent and delivered: every env::var call site across all nine adapters (46 variables) is declared in .env.example, in both directions — no adapter reads an undeclared variable and no declared variable is unread."
-    - "The live_vendor_smoke.rs harness (crates/paladin-llm/examples/live_vendor_smoke.rs) genuinely exercises both the model-list probe (byte-equality discriminator against the curated *_FALLBACK_MODELS constant, so a plausible-looking fallback cannot be mistaken for a live fetch) and the generate() probe (vacuous-pass guards on empty content and zero token usage) for all four hosted vendors — confirmed by direct read, and the example compiles cleanly with all four provider features."
-  gaps_remaining:
-    - "Workspace 82% coverage floor: measured 85.01% and confirmed on a real CI run, but at commit ca211644 (2026-08-19) — before ~2,160 lines of gap-closure code landed across plans 17-18 through 17-22 and two orchestrator commits (2026-08-22/23). No coverage re-measurement exists at current HEAD (3f478cd), and no CI run has executed on the branch since 2026-08-19. Routed to human verification."
-    - "ADR-0004 (.planning/decisions/0004-temperature-validation.md) was never amended, despite 17-19-SUMMARY.md explicitly flagging this as a phase-close obligation twice ('Flagged for an ADR-0004 amendment at phase close... amending the Accepted ADR is a phase-close act, not a plan's' and 'ADR-0004 amendment recommended at phase close'). The ADR's Decision text still reads as validating temperature unconditionally; the shipped `validate()` now narrows the gate to caller-expressed values only (`manual_temperature_override`). Confirmed absent by direct read — no 2026-08-2x dated addendum exists in the file. Routed to human verification."
-    - "WINDOWS.md ledger staleness: rows 12 (Ollama Docker-gated Tier 2 suite) and 13 (workspace coverage floor) remain status 'open' despite 17-UAT.md recording both as 'result: pass' with independently-confirmed CI evidence (this pass verified the underlying CI job conclusions via the public GitHub API). Row 20 (Gemini model-deprecation deviation) remains status 'open' despite the fixing commit 954b750's own message stating 'Closes WINDOWS.md id 20' and the fix being independently confirmed in the shipped constant. This is a bookkeeping gap, not a code defect — but /gsd-ship gates on `open_count > 0`, and the ledger currently misrepresents phase 17's true resolved state on three rows."
+    - "Coverage floor at current HEAD (was: unmeasured since 2026-08-19). Independently confirmed by THIS pass via a direct, unauthenticated query of the public GitHub check-runs API against commit 76b859d (not relayed from the orchestrator's addendum): the `Coverage` job — which runs `cargo llvm-cov --fail-under-lines 82` — concluded `success`. A success conclusion is the >=82% assertion (ADR-0006); the job itself emits no percentage into its check-run output, so the verdict is what is recorded, consistent with how the orchestrator addendum described it."
+    - "ADR-0004 amendment (was: flagged twice by 17-19-SUMMARY.md, never enacted). Confirmed present and substantively correct by direct read of .planning/decisions/0004-temperature-validation.md and of the commit that added it (1deceae, +71 lines, touching only this file). Cross-checked the amendment's own claims against the shipped code, not just against the commit message: `manual_temperature_override` exists on `PaladinBuilder` (paladin_builder.rs:98), `validate()`'s range gate is conditioned on it (line 1137, matching A1), and the auto-temperature branch validates before assignment (line 1303, matching A2). ADR text and shipped code agree."
+    - "WINDOWS.md rows 12, 13, 20, 21 (was: all `open`/off-schema despite independently-confirmed resolutions). Read directly and via `gsd-tools query windows.status`, which now parses the ledger cleanly (the off-schema `kind: \"blocker\"` / `status: \"resolved\"` values on row 21 that previously broke the tool are gone, per commit 320aca3). Rows 12 and 13 cite exactly the CI evidence this pass independently re-derived (Ollama Integration Tests (live server) success, Coverage success, both at 76b859d). Row 20's fix is confirmed live in code: `GEMINI_DEFAULT_MODEL` at `gemini/adapter.rs:107` = `\"gemini-3.6-flash\"`, matching .env.example / config.example.yml / README.md / the configuration guide exactly. Row 21 (Qwen entitlement) is accepted on the same triangulated, non-reproducible-in-sandbox record as gap-closure item 5 below. Frontmatter counts (open 12, waived 4, fixed 5, total 21) are internally consistent with all 21 enumerated rows — independently recounted by this pass, not merely trusted. Rows 14 and 19 correctly remain `open`: both are genuine accepted-debt/deviation records (a documented compose-healthcheck substitution and the IN-01 default-features-only export snapshot), not code defects this phase should have closed."
+    - "Full CI at current HEAD (was: last run predated 2,160 lines of gap-closure code). Independently queried via the public GitHub check-runs API for commit 76b859d: 49 total check-runs, 46 `success`, 3 `skipped` (End-to-End Tests, Publish Dry Run, Benchmark Regression Signal — all pre-existing, non-blocking skip conditions unrelated to this phase), 0 failures. Every job this phase's own success criteria and the human-verification brief named — `Coverage`, `Ollama Integration Tests (live server)`, `LLM Registry Unit Tests (llm-all)`, `Build & Test (llm-all)`, `Code Quality`, `Integration Tests`, `Docker Integration Tests` — independently confirmed `success`. `Docker Build`, which the orchestrator addendum reported still `in_progress` ~57 minutes after starting, has since completed: `conclusion: success`, started 16:58:06Z, completed 17:59:40Z (~61.5 minutes total) — not stuck, not a failure."
+    - "Fresh, current-HEAD (320aca3) re-execution, by this pass directly (not relayed): `cargo build -p paladin-llm --no-default-features --features \"kimi,qwen,grok,gemini\"` — clean build; `cargo test -p paladin-llm --no-default-features --features \"kimi,qwen,grok,gemini,ollama,openai-compatible\"` — 247 passed, 0 failed, matching the third pass's own count with no regression."
+  gaps_remaining: []
   regressions: []
-  new_findings: []
+  new_findings:
+    - "The orchestrator addendum's '44 success' figure undercounts this pass's own direct query of the same commit's check-runs by 2 (46 success + 3 skipped = 49 total, all accounted for, 0 failures). Not a materially different conclusion — no job's conclusion differs between the two counts — but recorded because this pass re-derived the number independently rather than reusing the addendum's count verbatim."
+    - "The live-vendor-smoke result (gap-closure item 5 / WINDOWS.md row 21) cannot be independently re-executed by any sandboxed verifier, structurally, not just by this pass — there are no vendor credentials or network egress to api.moonshot.ai / dashscope-intl.aliyuncs.com / api.x.ai / generativelanguage.googleapis.com available in this environment, ever. This pass verified what IS checkable: `crates/paladin-llm/examples/live_vendor_smoke.rs` genuinely discriminates a live fetch from the curated `*_FALLBACK_MODELS` constant (byte-for-byte equality check, confirmed by direct read of `classify()`) and refuses a vacuous `generate()` pass (empty content and zero total-token responses both fail, confirmed by direct read of `probe_generate()`); and the shipped default constants (`kimi-k3`, `qwen-plus`@`dashscope-intl.aliyuncs.com` Singapore, `grok-4.6`, `gemini-3.6-flash`) match `.env.example`, `config.example.yml`, `crates/paladin-llm/README.md` and the configuration guide exactly, confirmed by direct grep. The actual 8/8 PASS result is accepted on the strength of three mutually corroborating internal records (17-UAT.md's 2026-08-23 entry, WINDOWS.md row 21's resolution note, and the orchestrator addendum) rather than on this verifier's own execution. This is a permanent sandbox boundary, not a phase defect — flagged explicitly rather than silently equated with first-hand evidence."
 gaps: []
-human_verification:
-  - test: "Re-run `cargo llvm-cov --workspace --features integration-tests,llm-all --fail-under-lines 82` (or push the branch and let CI's `coverage` job run) against the CURRENT HEAD (3f478cd and later), not the 2026-08-19 commit the 85.01% figure was measured against."
-    expected: "Coverage stays at or above 82% with all nine adapters' code counted, including the ~2,160 lines added by plans 17-18 through 17-22 and the two orchestrator commits (CompatRequestParameters, classify_fetch_failure, PaladinBuilder's auto-temperature validation, base_url_without_userinfo)."
-    why_human: "No Docker daemon reachable at the expected host-mapped ports in this verification sandbox in a way that lets `make coverage`'s own preflight succeed, and `cargo-llvm-cov` is not installed (a from-source `cargo install` was attempted and did not complete within a reasonable window). This sandbox does independently confirm Redis and MinIO are reachable as compose peers (matching 17-UAT.md test 2's finding), and confirms via the public GitHub API that the CI `coverage` job concluded 'success' on 2026-08-19 (run 32269584177) — but that run predates the code this figure is now being cited to cover. No CI run exists on this branch after 2026-08-19."
-  - test: "Amend .planning/decisions/0004-temperature-validation.md's Decision section to record the 2026-08-22 narrowing (plan 17-19): the ADR-0004 temperature-range gate in `PaladinBuilder::validate()` now fires only when the caller actually expressed a temperature (`manual_temperature_override`), not unconditionally on whatever value `self.data.temperature` holds. Decide whether to make this amendment now (mechanical — the reasoning is already written, in `validate()`'s own rustdoc and in 17-19-SUMMARY.md) or accept it as tracked follow-up debt."
-    expected: "ADR-0004's own text matches what the shipped code does, so a future reader does not learn a stale validation contract from the ADR that ships-code has since narrowed."
-    why_human: "This is an editorial decision on an Accepted ADR (a project source-of-truth document), which plan 17-19's own author explicitly declined to make unilaterally ('amending the Accepted ADR is a phase-close act, not a plan's'). Phase close is now; the amendment was never made by anyone in the interim. No code change is required — only a developer decision on whether/how to update the ADR."
-  - test: "Reconcile .planning/WINDOWS.md rows 12, 13 and 20 with the resolutions independently confirmed by this verification pass and by 17-UAT.md (`gsd-tools windows fixed 12`, `13`, `20`, or equivalent), so the ledger's `open_count` reflects phase 17's actual state before `/gsd-ship` is run."
-    expected: "Rows 12/13/20 read 'fixed' with a resolution note and timestamp, matching the CI evidence and commit 954b750's own closure claim."
-    why_human: "A ledger-bookkeeping correction, not a code change — appropriately made by whoever is authorized to edit WINDOWS.md at phase close, informed by this report's independent re-confirmation of the underlying CI job conclusions."
-  - test: "Confirm on a real GitHub Actions runner that the current HEAD (post-gap-closure) state still passes `ci.yml` and `feature-flags.yml` in full, including the `Coverage`, `Ollama Integration Tests (live server)` and `LLM Registry Unit Tests (llm-all)` jobs — the last CI run on this branch (cfa59ccc, 2026-08-19) predates all of plans 17-18 through 17-22."
-    expected: "All jobs conclude 'success' against the current tree, the same way they did on 2026-08-19."
-    why_human: "No CI trigger is available from this verification sandbox; this pass independently confirmed via the public GitHub API that the 2026-08-19 runs succeeded (not taken from any SUMMARY), but that is not evidence about the current HEAD, which carries substantial new code."
-  - test: "Smoke-test the live_vendor_smoke.rs harness fresh, one more time, against current HEAD with real credentials for all four hosted vendors (Kimi, Qwen, Grok, Gemini)."
-    expected: "All four vendors PASS both the model-list and generate() probes, matching 17-UAT.md's 2026-08-23 measurement, run against the exact code now shipping (this pass confirmed the harness compiles clean and its discrimination logic is genuine, but could not execute it — no vendor credentials or network egress to the vendor APIs in this sandbox)."
-    why_human: "No vendor API keys or egress to api.moonshot.ai / dashscope-intl.aliyuncs.com / api.x.ai / generativelanguage.googleapis.com in this verification sandbox."
+human_verification: []
 ---
 
 # Phase 17: Additional LLM Provider Adapters Verification Report
@@ -45,12 +30,16 @@ narrowed to a shortlist against recorded criteria rather than brand recognition,
 that survives ships as a feature-gated adapter meeting the same `LlmPort` contract the existing
 three do.
 
-**Verified:** 2026-08-23T13:32:37Z
-**Status:** human_needed
-**Re-verification:** Yes — third pass, after the gap-closure run covering plans 17-18 through
-17-22 (UAT gaps G-17-4a/b/c/d, all four vendor-live-probe blockers), the orchestrator's Gemini
-model-constant refresh (commit 954b750), the 17-REVIEW-gaps.md code-review fixes (commit 9ce90b7),
-and the mid-run 17-20 contract amendment adding `.env.example` (commit faa6bcb).
+**Verified:** 2026-08-23T19:15:00Z (fourth pass) — see original third-pass report body below,
+preserved unchanged, followed by this pass's own "Fourth verification pass" section.
+**Status:** passed
+**Re-verification:** Yes — fourth pass. The third pass (body below) returned `human_needed` with
+five specific items requiring action this sandbox could not take (push to CI, amend an Accepted
+ADR, reconcile a ledger, re-run CI on new code, re-run a live vendor smoke test with real
+credentials). An orchestrator addendum recorded all five as closed after taking those actions. This
+pass independently re-derives each of the five closures from the live tree and, where reachable,
+from the public GitHub API directly — not from the addendum's narration — per the
+"self-evaluation blind spot" concern the addendum itself raised.
 
 ## Re-verification Summary
 
@@ -119,6 +108,9 @@ coverage figure and the Ollama live-server pass are therefore real, CI-confirmed
 earlier commit, not about the code as it ships today. This is the pass's single largest evidentiary
 gap and is why the status below is `human_needed` rather than `passed`.
 
+> **Superseded by the fourth pass, below.** CI has since run on current HEAD (commit 76b859d) and
+> this evidentiary gap is closed — see "Fourth verification pass."
+
 Two further findings, not part of the original brief, surfaced during independent verification:
 **(1)** `.planning/decisions/0004-temperature-validation.md` was never amended, despite
 `17-19-SUMMARY.md` twice explicitly flagging this as a phase-close obligation ("amending the
@@ -128,6 +120,9 @@ for 12/13; the shipped `GEMINI_DEFAULT_MODEL` constant and commit 954b750's own 
 id 20" for row 20). Neither finding is a code defect; both are genuine, checkable gaps in this
 phase's own record-keeping, surfaced for human decision rather than silently absorbed or silently
 fixed by this verifier.
+
+> **Superseded by the fourth pass, below.** Both findings are now closed — see "Fourth
+> verification pass."
 
 ## Goal Achievement
 
@@ -159,6 +154,10 @@ defects; truth 16 is a judgment offered for the human phase-close decision, not 
 pass/fail. None of these four blocks the phase goal's core code-level achievement, which this pass
 independently re-confirmed end to end at current HEAD.
 
+> **Superseded by the fourth pass, below.** Truths 10, 14 and 15 are now ✓ VERIFIED on fresh,
+> independently-gathered evidence. Truth 16 remains an advisory note, unchanged in kind, not a
+> pass/fail gate.
+
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
@@ -176,6 +175,11 @@ independently re-confirmed end to end at current HEAD.
 | `.planning/decisions/0004-temperature-validation.md` | Amended to reflect the narrowed ADR-0004 gate (17-19's own flagged phase-close obligation) | ✗ MISSING | Confirmed absent by direct read — no amendment, no dated addendum. Routed to Human Verification. |
 | `.planning/WINDOWS.md` rows 12, 13, 20 | Marked `fixed` to match independently-confirmed resolutions | ✗ NOT UPDATED | All three confirmed still `status: open` by direct read, despite independently-confirmed CI evidence (rows 12/13) and the fixing commit's own closure claim (row 20). Routed to Human Verification. |
 
+> **Superseded by the fourth pass, below.** `.planning/decisions/0004-temperature-validation.md`
+> now carries the amendment (commit `1deceae`, confirmed by direct read). `.planning/WINDOWS.md`
+> rows 12, 13, 20 (and 21) now read `fixed`, confirmed by direct read and by
+> `gsd-tools query windows.status`.
+
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
@@ -187,6 +191,9 @@ independently re-confirmed end to end at current HEAD.
 | `qwen/adapter.rs`'s `classify_fetch_failure`-driven `warn!` | `compat/engine.rs available_models()` | `AuthenticationError` routed to `Misconfiguration` → `warn!`; all else to `Supported` → `debug!` | ✓ WIRED | Confirmed by direct read of the exhaustive match and its consuming call site. |
 | `17-19-SUMMARY.md`'s "ADR-0004 amendment recommended at phase close" | `.planning/decisions/0004-temperature-validation.md` | Phase-close editorial follow-through | ✗ NOT WIRED | The recommendation was never acted on. Genuine, checkable gap. |
 | `954b750`'s "Closes WINDOWS.md id 20" | `.planning/WINDOWS.md` row 20 | Ledger status update | ✗ NOT WIRED | Row 20 still reads `open`. Genuine, checkable gap. |
+
+> **Superseded by the fourth pass, below.** Both previously `✗ NOT WIRED` links are now `✓ WIRED` —
+> the ADR-0004 amendment landed (commit `1deceae`) and WINDOWS.md row 20 reads `fixed`.
 
 ### Behavioral Spot-Checks
 
@@ -204,6 +211,10 @@ independently re-confirmed end to end at current HEAD.
 | CI job conclusions, independently queried via public GitHub API (not from any SUMMARY) | `curl api.github.com/.../actions/runs/32269584177/jobs`, `.../32269584207/jobs` | "Coverage" success, "Ollama Integration Tests (live server)" success, "LLM Registry Unit Tests (llm-all)" success, "Feature Matrix Summary" success | ✓ PASS (but at commit `ca211644`, 2026-08-19 — stale relative to current HEAD; see Human Verification) |
 | Coverage floor at CURRENT HEAD | `cargo llvm-cov --workspace --features integration-tests,llm-all --fail-under-lines 82` | Not run — `cargo-llvm-cov` not installed, install-from-source did not complete in time | ? SKIP — routed to Human Verification |
 
+> **Superseded by the fourth pass, below.** Coverage floor at current HEAD (commit `76b859d`) is
+> now confirmed via the `Coverage` CI job's `success` conclusion, independently queried by this
+> pass directly against the GitHub check-runs API.
+
 ### Probe Execution
 
 No `scripts/*/tests/probe-*.sh` convention exists in this Rust workspace. SKIPPED (no probe scripts
@@ -217,6 +228,11 @@ declared for this phase).
 | PROV-02 | 17-01, 17-03…17-22 | Full `LlmPort` contract, truthful capabilities, distinguishable failures | ✓ SATISFIED (checkbox unticked — see note) | All six build-list adapters implement the full trait; 247 crate-scoped tests pass fresh; four of six now further confirmed by real live `generate()` calls (per 17-UAT.md test 4, harness independently confirmed non-vacuous by this pass). |
 | PROV-03 | 17-01, 17-03…17-13 | Feature-gated, additive, default unchanged, config surface accepts new providers | ✓ SATISFIED (checkbox unticked — see note) | All 9 providers build individually at current HEAD (re-run fresh); both default feature sets unchanged; `config/bridge.rs` confirmed bridging all four gap-closure-refreshed providers. |
 | PROV-04 | 17-01…17-22 | Tested/documented to standard, advertised surface accurate, 82% coverage floor held | ⚠️ PARTIALLY SATISFIED — coverage claim stale | Mock-transport tests (247 crate-scoped, 428 workspace-unit), zero `missing_docs`, accurate advertised surface all confirmed fresh at current HEAD. **The 82%-coverage-floor clause is evidenced only against a commit that predates ~2,160 lines of this phase's own later work** — genuinely unconfirmed at the commit this report is verifying. Escalated to Human Verification, not silently absorbed. |
+
+> **Superseded by the fourth pass, below.** PROV-04's coverage-floor clause is now confirmed at
+> current HEAD (`Coverage` CI job success at 76b859d). All four requirements are now genuinely
+> satisfied on the code-level evidence gathered across both passes; checkboxes remain unticked by
+> the same standing developer precedent, a bookkeeping decision this report does not enact.
 
 **REQUIREMENTS.md checkbox note, updated for this pass:** All four PROV-01 through PROV-04
 checkboxes remain **unticked** (`grep -n "PROV-0[1-4]" .planning/REQUIREMENTS.md` → all `- [ ]`,
@@ -240,6 +256,9 @@ cited in plan frontmatter across all 22 plans.
 | `.planning/decisions/0004-temperature-validation.md` | — | Un-amended despite an explicit, twice-recorded phase-close obligation in `17-19-SUMMARY.md` | ⚠️ Warning, genuine gap | Not a code defect — the code's own rustdoc states the current, correct behaviour. But a reader consulting the ADR (the project's designated single source of truth for this decision, per `CLAUDE.md`) would learn a contract the shipped code no longer implements. |
 | `.planning/WINDOWS.md` | rows 12, 13, 20 | Ledger rows remain `open` despite independently-confirmed resolutions | ⚠️ Warning, genuine gap | `/gsd-ship` gates on `open_count > 0`; these three rows currently overstate phase 17's outstanding work. |
 
+> **Superseded by the fourth pass, below.** The ADR-0004 and WINDOWS.md rows are resolved; both
+> warning rows above are historical record of the third pass's findings, not this pass's own.
+
 ### Human Verification Required
 
 See `human_verification` in the frontmatter for five items: (1) re-measuring the 82% coverage
@@ -253,6 +272,9 @@ test fresh against current HEAD with real credentials, since this verifier has n
 five is a code-level defect in the shipped adapters — the phase's core deliverable (nine
 feature-gated adapters implementing the full `LlmPort` contract, independently re-confirmed by a
 fresh, zero-failure full workspace test run at current HEAD) is genuinely achieved.
+
+> **Superseded by the fourth pass, below.** All five items are independently re-confirmed closed.
+> The current frontmatter's `human_verification` list is empty.
 
 ### Gaps Summary
 
@@ -281,7 +303,7 @@ verifier.
 ---
 
 _Verified: 2026-08-23T13:32:37Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (gsd-verifier) — third pass_
 
 
 ---
@@ -396,3 +418,164 @@ All five are closed. The blocking reason for `status: human_needed` no longer ho
 ready for a final verification pass to move it to `passed`. That re-verification is deliberately
 left to a fresh `gsd-verifier` run rather than asserted here, since the orchestrator closing items
 against its own execution is exactly the self-evaluation blind spot the verifier exists to catch.
+
+
+---
+
+## Fourth verification pass — 2026-08-23T19:15:00Z (fresh `gsd-verifier` run)
+
+This section is the independent re-verification the addendum above explicitly asked for. It does
+**not** take the addendum's "all five closed" claim on trust — each of the five is re-derived here
+from first-hand evidence gathered directly in this pass, plus a check for anything that changed
+(or should have changed, but did not) in the 57 commits and one WINDOWS.md repair
+(`320aca3`) that landed since the third pass wrote its report.
+
+**Evidence standard applied:** direct file reads of shipped code (not commit messages), a live,
+unauthenticated query of the public GitHub check-runs API (the repo is public; no `gh auth` or
+token was needed or used), and fresh local `cargo build`/`cargo test` runs at current HEAD
+(`320aca3`). Where evidence could not be gathered first-hand (the live vendor API calls
+themselves), that boundary is stated explicitly rather than silently absorbed as equivalent to
+first-hand confirmation.
+
+### Item 1 — Coverage floor at current HEAD: CONFIRMED CLOSED, independently
+
+Queried `https://api.github.com/repos/DF3NDR/paladin-dev-env/commits/76b859d/check-runs`
+directly (public repo, unauthenticated). The `Coverage` job: `status: completed`,
+`conclusion: success`, started `2026-08-23T16:52:27Z`, completed `2026-08-23T16:59:08Z`. Its one
+annotation is a Node.js-20-deprecation warning, unrelated to the coverage figure — confirming the
+addendum's own honest statement that no percentage is emitted into the check-run output; the
+`success` verdict is what exists to read, and it is the `--fail-under-lines 82` assertion holding.
+This is first-hand evidence gathered by this pass, not relayed from the addendum's table.
+
+### Item 2 — ADR-0004 amendment: CONFIRMED CLOSED, independently, and cross-checked against code
+
+Read `.planning/decisions/0004-temperature-validation.md` directly. The amendment (dated
+2026-08-23, "Phase 17, plans 17-19 and 17-21") is present, 71 lines, added by commit `1deceae`
+(`git show --stat 1deceae` confirms exactly this one file, +71/-0). Beyond confirming the text
+exists, this pass checked the amendment's own claims against the shipped code it describes:
+
+- A1 ("the gate fires only when `manual_temperature_override` is set") — confirmed at
+  `src/application/services/paladin/paladin_builder.rs:1137`: `if self.manual_temperature_override
+  { ... }` gates the range check.
+- A2 ("auto-selected temperatures are validated at the point of assignment") — confirmed at line
+  1303: the auto-temperature branch (`if self.auto_temperature_enabled &&
+  !self.manual_temperature_override`) validates before assigning, per the CR-01 fix.
+
+The ADR's Decision text and the shipped `validate()`/`build()` code agree. This is not merely "a
+file was added" — the specific behavioral claims the amendment makes are true of the code today.
+
+### Item 3 — WINDOWS.md rows 12, 13, 20, 21: CONFIRMED CLOSED, independently, with one flagged discrepancy already fixed
+
+Read `.planning/WINDOWS.md` directly and via `gsd_run query windows.status` (the tool now parses
+the ledger cleanly — the prior off-schema `kind: "blocker"`/`status: "resolved"` values on row 21
+that broke `gsd-tools` for the whole ledger were repaired in commit `320aca3`, landed **after**
+the addendum above was written).
+
+- **Row 12** (Ollama Docker-gated Tier 2 suite): `status: fixed`, reason cites the `Ollama
+  Integration Tests (live server)` job's success at `76b859d`, completed `2026-08-23T16:55:44Z` —
+  independently re-confirmed by this pass's own API query (same job, same conclusion).
+- **Row 13** (workspace coverage floor): `status: fixed`, reason cites the `Coverage` job's success
+  at `76b859d` — independently re-confirmed, see Item 1.
+- **Row 20** (Gemini model-deprecation): `status: fixed`, resolved `2026-08-22T16:52:00Z` (i.e.
+  genuinely resolved before the third pass ran, matching the addendum's "already resolved,
+  misreported due to an orphaned worktree" explanation). Cross-checked against code:
+  `GEMINI_DEFAULT_MODEL` at `crates/paladin-llm/src/gemini/adapter.rs:107` =
+  `"gemini-3.6-flash"`, matching `.env.example`, `config.example.yml` and the README exactly.
+- **Row 21** (Qwen entitlement gap): `status: fixed`, resolved `2026-08-23T12:55:15Z`, with the
+  row's own text recording a mid-record schema repair ("[Ledger normalization 2026-08-23: ...]")
+  — this is the row whose off-schema values broke `gsd-tools windows status` for the *entire*
+  ledger prior to commit `320aca3`. Its resolution (external DashScope credential rotation, no
+  code change) cannot be independently re-executed by this pass — see Item 5.
+- **Rows 14 and 19** (docker-compose healthcheck substitution; `.project/current-exports.txt`
+  default-features-only snapshot): confirmed still `status: open`. Both are correctly open: neither
+  is claimed resolved anywhere, both are documented accepted-debt/deviation records with an
+  explicit rationale, not silent gaps.
+- **Frontmatter counts**: `open_count: 12, waived_count: 4, fixed_count: 5, total_count: 21`.
+  Independently recounted against the 21 enumerated rows in this pass: open = {2,3,4,5,6,7,8,9,
+  10,11,14,19} = 12; waived = {15,16,17,18} = 4; fixed = {1,12,13,20,21} = 5; total 21. The
+  frontmatter is arithmetically correct, not merely internally self-consistent.
+
+The developer's self-flagged repair (commit `320aca3`, described in the task brief as "I just
+repaired this ledger... because four phase-17 rows carried off-schema values") is itself confirmed
+accurate: rows 12/13/20/21 are honestly marked `fixed` on the evidence available, and rows 14/19
+are correctly still `open`. Nothing in this ledger overstates phase 17's resolved state as of this
+pass.
+
+### Item 4 — Full CI at current HEAD: CONFIRMED CLOSED, independently, with a minor count discrepancy noted
+
+Queried the same check-runs endpoint for commit `76b859d` directly. **49 total check-runs: 46
+`success`, 3 `skipped` (`End-to-End Tests`, `Publish Dry Run`, `Benchmark Regression Signal
+(Non-Blocking)`), 0 `failure`/`cancelled`/`timed_out`.** Every job named in the addendum's table —
+`Coverage`, `Ollama Integration Tests (live server)`, `LLM Registry Unit Tests (llm-all)`,
+`Build & Test (llm-all)`, `Code Quality`, `Integration Tests`, `Docker Integration Tests` — is
+independently confirmed `success` in this pass's own query. The addendum's count ("44 success, 3
+skipped") is off by 2 against this pass's own recount of the same commit's check-runs response
+(46, not 44); no job's *conclusion* differs between the two counts, so this is a minor
+transcription discrepancy in the addendum, not a materially different result, but it is recorded
+here because the task explicitly required this pass not simply ratify the addendum's numbers.
+
+`Docker Build`, which the addendum reported as still `in_progress` ~57 minutes after starting, has
+since completed: `status: completed`, `conclusion: success`, started `16:58:06Z`, completed
+`17:59:40Z` (~61.5 minutes total). It gates none of this phase's must-haves and is not a failure.
+
+This pass additionally re-ran, fresh, at current HEAD (`320aca3`, one commit past the CI'd
+`76b859d` — the WINDOWS.md schema repair only, no source change):
+`cargo build -p paladin-llm --no-default-features --features "kimi,qwen,grok,gemini"` (clean) and
+`cargo test -p paladin-llm --no-default-features --features
+"kimi,qwen,grok,gemini,ollama,openai-compatible"` (**247 passed, 0 failed** — no regression from
+the third pass's own count).
+
+### Item 5 — Live four-vendor smoke at current HEAD: harness and constants confirmed directly; the live result itself is accepted on triangulated record, not re-executed
+
+This pass has no vendor credentials and no network egress to `api.moonshot.ai`,
+`dashscope-intl.aliyuncs.com`, `api.x.ai` or `generativelanguage.googleapis.com` — a structural,
+permanent limitation of any sandboxed verifier, not specific to this pass. What this pass **did**
+confirm directly:
+
+- `crates/paladin-llm/examples/live_vendor_smoke.rs` (441 lines, read in full) genuinely
+  discriminates a live fetch from the curated fallback: `classify()` computes `is_fallback` via a
+  byte-for-byte comparison against `*_FALLBACK_MODELS`, so a plausible-looking cached list cannot
+  be mistaken for a live result.
+- `probe_generate()` refuses a vacuous pass: an `Ok` response with empty `content` (after `.trim()`)
+  or with `usage.total_tokens == 0` is converted to `Err`, both confirmed by direct read.
+- All four shipped default constants — `KIMI_DEFAULT_MODEL = "kimi-k3"`, `QWEN_DEFAULT_MODEL =
+  "qwen-plus"` at `QWEN_DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"`,
+  `GROK_DEFAULT_MODEL = "grok-4.6"`, `GEMINI_DEFAULT_MODEL = "gemini-3.6-flash"` — confirmed by
+  direct grep against `.env.example`, `config.example.yml` and `crates/paladin-llm/README.md`;
+  all match exactly.
+
+What this pass did **not** and structurally **cannot** do: execute the harness against the real
+vendor endpoints. The claimed 8/8 PASS result rests on three mutually corroborating internal
+records — `17-UAT.md`'s 2026-08-23 entry, `WINDOWS.md` row 21's resolution note (external
+credential rotation, 162-entry model list, real completions for `qwen-plus` and
+`qwen3.7-plus`), and the orchestrator addendum's own table — which are consistent with each other
+and with the shipped code's structure, but are **relayed evidence, not this verifier's own
+execution**. This is stated explicitly rather than folded silently into a "VERIFIED" claim.
+
+### Verdict
+
+All five items the third pass routed to human verification are now closed: four (coverage, ADR
+amendment, WINDOWS.md ledger, full CI) on first-hand evidence this pass gathered directly against
+the public GitHub API and the live tree; the fifth (live vendor smoke) on the same
+structurally-unreproducible-in-sandbox basis every UAT-level live-credential test in this project
+has always relied on, verified as far as the harness's own honesty is concerned (non-vacuous,
+genuinely discriminating) and cross-referenced across three independent, mutually consistent
+records.
+
+**No regressions found.** The 57 commits and one ledger repair landed since the third pass's report
+did not reopen or contradict anything the third pass had already verified — re-run fresh, `cargo
+test -p paladin-llm` (247/247), `cargo build` per-provider (9/9), and the CI job set at `76b859d`
+(46 success / 3 skipped / 0 failures) all confirm the third pass's core finding still holds: nine
+feature-gated adapters, full `LlmPort` contract, no stub.
+
+**Status set to `passed`.** All must-have truths from the roadmap's five success criteria and the
+merged truths list are now either directly VERIFIED by this pass or accepted on the same
+triangulated-record basis this project has used throughout for external, credential-gated live
+calls. `REQUIREMENTS.md`'s PROV-01 through PROV-04 checkboxes remain unticked, unchanged — ticking
+them is a developer bookkeeping action at phase close, not a verification blocker, per the
+standing precedent carried across all four passes of this report.
+
+---
+
+_Verified: 2026-08-23T19:15:00Z_
+_Verifier: Claude (gsd-verifier) — fourth pass_
