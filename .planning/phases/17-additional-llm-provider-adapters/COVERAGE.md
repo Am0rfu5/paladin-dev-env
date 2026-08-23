@@ -33,16 +33,21 @@ This matrix covers the surfaces this phase newly integrates.
   Kimi (`api.moonshot.ai/v1`, `moonshot-v1-8k`), Qwen
   (`dashscope-intl.aliyuncs.com/compatible-mode/v1`, `qwen-plus`), Grok (`api.x.ai/v1`, `grok-4`),
   Ollama (`localhost:11434/v1`, `llama3`), and the operator-configured generic provider (**D-03**).
-  **Amended 2026-08-22 (plan 17-20):** the identifiers above are the values this phase originally
-  shipped and are preserved here rather than deleted, per D-00d. Live verification (plans 17-18,
-  17-19, 17-21) has since falsified three of them: Kimi's default is now `kimi-k3` (`moonshot-v1-8k`
-  is retired, returns `404`), Grok's default is now `grok-4.6` (`grok-4` is absent from the live
-  catalog), and Qwen's base URL is now the US (Virginia) endpoint
-  `dashscope-us.aliyuncs.com/compatible-mode/v1` (the Singapore endpoint above returned a
-  region-scoped credential's `401` disguised as an authentication failure, not a working URL).
-  Gemini's `gemini-2.5-flash` default (line 31 above) is likewise retired for new users and has
-  been refreshed to `gemini-3.6-flash`. The shipped code and every operator-facing document now
-  carry these refreshed values; this paragraph is the historical record of what changed and why.
+  **Amended 2026-08-22 (plan 17-20), further amended 2026-08-23 (plan 17-21 gap closure):** the
+  identifiers above are the values this phase originally shipped and are preserved here rather
+  than deleted, per D-00d. Live verification (plans 17-18, 17-19, 17-21) has since falsified three
+  of them: Kimi's default is now `kimi-k3` (`moonshot-v1-8k` is retired, returns `404`), Grok's
+  default is now `grok-4.6` (`grok-4` is absent from the live catalog), and Qwen's base URL moved
+  twice — to `dashscope-us.aliyuncs.com/compatible-mode/v1` (US/Virginia) on 2026-08-22, when a
+  Virginia-scoped credential proved the Singapore endpoint above returned a well-formed `401`
+  disguised as an authentication failure, then back to
+  `dashscope-intl.aliyuncs.com/compatible-mode/v1` (Singapore) on 2026-08-23, when the project's
+  credential was replaced with a Singapore-scoped key and the Virginia default began failing the
+  same way in the opposite direction. Neither move is a universally correct answer — see the
+  "Reversal record" in `crates/paladin-llm/src/qwen/adapter.rs` for why. Gemini's
+  `gemini-2.5-flash` default (line 31 above) is likewise retired for new users and has been
+  refreshed to `gemini-3.6-flash`. The shipped code and every operator-facing document now carry
+  these refreshed values; this paragraph is the historical record of what changed and why.
 - **`[ollama]`** — Ollama's *native* `/api/*` protocol, decided separately from the `/v1` shim.
 
 Per the gate's re-decide rule, each `[compat]` capability is decided for this surface on its own
@@ -120,7 +125,7 @@ because it was true when written and is the record of why a live run mattered.**
 > decision in this matrix therefore means *this phase implements and unit-tests that capability
 > against a mock transport*, not *this capability was exercised live*.
 
-### What changed (2026-08-22)
+### What changed (2026-08-22, superseded in part 2026-08-23)
 
 Network egress and all four hosted-vendor credentials now exist in this environment. A live run
 (plans 17-18, 17-19, 17-21) both **confirmed** facts the paragraph above could only cite, and
@@ -128,43 +133,56 @@ Network egress and all four hosted-vendor credentials now exist in this environm
 
 - **Confirmed live:** Grok (xAI), Kimi (Moonshot) and Gemini each PASS both a live model-list
   fetch and a live `generate()` round trip with the framework's default prompt parameters, using
-  the currently-shipped default model. Qwen (DashScope) PASSES the live model-list fetch (92
-  models at the shipped US-Virginia endpoint) but its `generate()` round trip is **blocked**, not
-  falsified or confirmed — see below.
+  the currently-shipped default model. **Qwen (DashScope) now PASSES both probes too** — see
+  "2026-08-23 update" below for what changed since the entitlement-gap text this paragraph
+  originally carried.
 - **Falsified:** Grok's shipped default model (`grok-4`) and Kimi's (`moonshot-v1-8k`) were both
   **absent** from their vendor's live catalog and rejected outright; Qwen's shipped base URL
-  (the Singapore endpoint) returned a well-formed `401` that was previously read as "the URL is
-  right, only the key is wrong" — that reading does not hold for a region-scoped credential, which
-  returns the identical `401` envelope from every endpoint except its own. All three are now
-  corrected in the shipped constants and every operator-facing document (17-20).
-- **No row remains blocked on a credential.** This reverses the previous text's premise
-  ("the sandbox has no network egress and no vendor API keys"), which is no longer true for any of
-  the four hosted vendors.
+  (originally the Singapore endpoint) returned a well-formed `401` that was previously read as
+  "the URL is right, only the key is wrong" — that reading does not hold for a region-scoped
+  credential, which returns the identical `401` envelope from every endpoint except its own. All
+  three are now corrected in the shipped constants and every operator-facing document (17-20,
+  17-21 gap closure).
+- **No row remains blocked on a credential or an account entitlement.** This reverses the previous
+  text's premise ("the sandbox has no network egress and no vendor API keys"), which is no longer
+  true for any of the four hosted vendors.
+
+### 2026-08-23 update: Qwen's `generate()` blocker is resolved, not merely re-diagnosed
+
+The account-entitlement gap this section originally described (`HTTP 403 Model.AccessDenied` on
+every model, `.planning/WINDOWS.md` id 21) was tied to a specific DashScope credential and its US
+(Virginia) workspace. That credential was replaced with a **Singapore-scoped** key on 2026-08-23.
+Against the new key and the Singapore endpoint, every measured request succeeded: `GET /models`
+returned 162 entries, `generate()` returned real completions for both `qwen-plus` and the
+candidate `qwen3.7-plus`, and each of the five optional sampling parameters plus both
+`temperature_range` endpoints were probed individually with no rejection below DashScope's
+documented `[0.0, 2.0)` temperature ceiling. `.planning/WINDOWS.md` id 21 is closed by this
+credential change plus the corrected shipped default (17-21 gap closure) — the entitlement gap
+was never a code defect, and the fix that resolved it was external, not a fix to `paladin-llm`.
 
 ### Per-surface: live-exercised vs. mock-transport-only
 
 | Surface | Live-exercised end to end | Remains mock-transport-only |
 |---|---|---|
-| `[compat] POST /chat/completions` (non-streaming) | Grok, Kimi, Qwen (model-list path only — see Qwen note below) | — |
+| `[compat] POST /chat/completions` (non-streaming) | Grok, Kimi, Qwen | — |
 | `[compat] GET /models` | Grok, Kimi, Qwen, Ollama (local) | — |
-| `[compat] response usage (token counts)` | Grok, Kimi (both `generate()` responses carry live token usage) | Qwen (no live `generate()` response to map usage from yet) |
+| `[compat] response usage (token counts)` | Grok, Kimi, Qwen (all three `generate()` responses carry live token usage) | — |
 | `[compat] request field stream` / SSE streaming | — | Grok, Kimi, Qwen, Ollama, openai-compatible (no live streaming probe exists; unit-tested against a mock transport only) |
-| `[compat] response finish_reason` | Grok, Kimi (live completions returned a mapped finish reason) | Qwen, Ollama, openai-compatible |
+| `[compat] response finish_reason` | Grok, Kimi, Qwen (live completions returned a mapped finish reason) | Ollama, openai-compatible |
 | `[compat] response reasoning_content` | — | All five presets — no vendor in the live run emitted a `reasoning_content` field, so this path is still mock-transport-only |
-| `[compat] sampling fields (temperature, max_tokens, top_p, penalties)` | Grok's and Kimi's *omission* declarations (measured against the live rejection each vendor returned) | The remaining accepted fields on Qwen and Ollama |
+| `[compat] sampling fields (temperature, max_tokens, top_p, penalties)` | Grok's and Kimi's *omission* declarations (measured against the live rejection each vendor returned); Qwen's *acceptance* of all five, individually measured, plus its narrowed `temperature_range` upper bound | The remaining accepted fields on Ollama |
 | `[gemini]` every INTEGRATE row above | Model list, `generateContent` (non-streaming), `usageMetadata` mapping | `streamGenerateContent` (no live streaming probe) |
 | `[ollama] GET /v1/models` | — (local Ollama in the Docker Tier 2 suite, not this live-vendor harness) | Chat completions against a local Ollama instance are exercised only in the Docker Tier 2 suite (UAT test 3), not the hosted-vendor live harness this section otherwise describes |
 
-**Qwen's `generate()` — blocked, not exercised, not falsified.** Every model in the live catalog
-(78 `qwen`-prefixed identifiers and non-Qwen families on the same DashScope workspace) returns
-`HTTP 403 Model.AccessDenied` for the same credential that successfully lists models. This is an
-Alibaba Model Studio account entitlement gap — the workspace can browse its regional catalog
-before invocation is activated — not a code defect, not a stale model identifier, and not
-resolvable by a code change. Filed as `.planning/WINDOWS.md` id 21. Until a human activates model
-access in the Alibaba console, Qwen's `[compat] POST /chat/completions` completion path, its
-sampling-field omissions (if any prove necessary), its `response usage` mapping and its
-`response finish_reason` mapping for the *generate* path all remain unexercised live — the table
-above credits Qwen only for the model-list half.
+**Qwen's `generate()` — resolved 2026-08-23, live-exercised end to end.** Every one of the five
+optional sampling parameters (`temperature`, `max_tokens`, `top_p`, `frequency_penalty`,
+`presence_penalty`), probed individually against both `qwen-plus` and `qwen3.7-plus` at the
+shipped Singapore endpoint, returned `HTTP 200` with a real completion — no rejection was
+observed, so `CompatRequestParameters::all()` remains the measured (not merely inherited)
+declaration. Both `temperature_range` endpoints were probed: `0.0` is accepted, `2.0` is rejected
+(`HTTP 400 InternalError.Algo.InvalidParameter: "Temperature should be in [0.0, 2.0)"`), which
+narrowed the declared range to `(0.0, 1.99)` — DashScope's own documented range is half-open, and
+the framework's validation gate treats a declared range as inclusive on both ends.
 
 An `INTEGRATE` decision in the Matrix above still means, at minimum, *this phase implements and
 unit-tests that capability against a mock transport* — the table in this section is what narrows
