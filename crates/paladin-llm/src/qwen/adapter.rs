@@ -11,14 +11,15 @@
 //! ## Region default
 //!
 //! DashScope publishes at least five regional base URLs. The default here is
-//! the US (Virginia) compatible-mode endpoint
-//! (`https://dashscope-us.aliyuncs.com/compatible-mode/v1`), per the
-//! developer's binding decision of 2026-08-22 (D-17-02, gap G-17-4d) — see
-//! "Reversal record" below for why this replaced the original Singapore
-//! default. An operator in any other region reaches their endpoint with
-//! `DASHSCOPE_BASE_URL` and no code change — the identical override pattern
-//! `DEEPSEEK_BASE_URL` and `ANTHROPIC_BASE_URL` already establish
-//! (17-CONTEXT.md D-12; 17-03-PLAN.md "Decisions resolved in this plan").
+//! the Singapore (international) compatible-mode endpoint
+//! (`https://dashscope-intl.aliyuncs.com/compatible-mode/v1`), per the
+//! developer's binding decision of 2026-08-23 — see "Reversal record" below
+//! for the two moves this constant has made, and why neither move is a
+//! universally correct answer. An operator in any other region reaches
+//! their endpoint with `DASHSCOPE_BASE_URL` and no code change — the
+//! identical override pattern `DEEPSEEK_BASE_URL` and `ANTHROPIC_BASE_URL`
+//! already establish (17-CONTEXT.md D-12; 17-03-PLAN.md "Decisions resolved
+//! in this plan").
 //!
 //! **The override is not optional tuning for every operator — for some it is
 //! mandatory.** Alibaba documents that a Base URL must be used together with
@@ -29,45 +30,82 @@
 //!
 //! | Region | Compatible-mode base URL |
 //! |---|---|
-//! | US (Virginia) — shipped default | `https://dashscope-us.aliyuncs.com/compatible-mode/v1` |
-//! | Singapore | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+//! | Singapore — shipped default | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+//! | US (Virginia) | `https://dashscope-us.aliyuncs.com/compatible-mode/v1` |
 //! | China (mainland) | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
 //!
-//! **If your Alibaba Model Studio workspace is in Singapore or on the
+//! **If your Alibaba Model Studio workspace is in the US or on the
 //! mainland, you MUST set `DASHSCOPE_BASE_URL` to the matching row above.**
-//! Presenting a Singapore- or mainland-scoped key to the US endpoint (or vice
-//! versa) is not tuning, it is a required step for that credential to reach
-//! its own account.
+//! Presenting a US- or mainland-scoped key to the Singapore endpoint (or
+//! vice versa) is not tuning, it is a required step for that credential to
+//! reach its own account.
 //!
-//! What a region mismatch looks like **today** (amended 2026-08-22, plan
-//! 17-22, closing G-17-4d's diagnosability half): a `warn`-level log line
-//! naming the endpoint that rejected the request, alongside a model list
-//! that is [`QWEN_FALLBACK_MODELS`] rather than the vendor's own catalog —
-//! [`crate::compat::engine::CompatEngine::available_models`] now reads its
-//! own error classification and raises exactly this failure mode above the
+//! What a region mismatch looks like **today** (plan 17-22, closing
+//! G-17-4d's diagnosability half): a `warn`-level log line naming the
+//! endpoint that rejected the request, alongside a model list that is
+//! [`QWEN_FALLBACK_MODELS`] rather than the vendor's own catalog —
+//! [`crate::compat::engine::CompatEngine::available_models`] reads its own
+//! error classification and raises exactly this failure mode above the
 //! `debug` level an offline vendor stays at (see that method's rustdoc for
 //! the classification). The remedy is unchanged: point `DASHSCOPE_BASE_URL`
 //! at the row above matching your own workspace's region.
 //!
 //! ### Reversal record — read before touching `QWEN_DEFAULT_BASE_URL` again
 //!
-//! This constant's default was Singapore until 2026-08-22, defended by a
-//! prohibition against changing it. **That prohibition was wrong and MUST
-//! NOT be reinstated or re-derived.** The argument was: a live probe against
-//! both the Singapore and mainland endpoints returned `401` carrying
-//! Alibaba's documented `invalid_api_key` error envelope, which was read as
-//! proof the URL resolved correctly and only the credential was bad. That
-//! inference does not hold, because a region-scoped key produces that exact
-//! well-formed `401` from *every* endpoint except its own — the signature is
-//! identical for a right URL with a wrong key and a wrong URL with a right
-//! key. What settled it: two runs of the same binary with the same
-//! credential, differing only in the endpoint (2026-08-22) —
-//! `dashscope-intl` (Singapore, the then-shipped default) returned 3 models
-//! byte-identical to [`QWEN_FALLBACK_MODELS`] (the live fetch silently
-//! failed), while `dashscope-us` (Virginia) returned 92 live models
-//! including [`QWEN_DEFAULT_MODEL`]. The credential was valid the whole
-//! time; the URL was the defect. A later reader who re-derives "a
-//! well-formed 401 proves the URL" meets this paragraph first.
+//! This constant has moved twice. Neither move means what it might look like
+//! from the outside, and reading either one as "the region question is now
+//! settled" is exactly the mistake this record exists to prevent.
+//!
+//! **Move 1 (2026-08-22): Singapore → US (Virginia).** The original Singapore
+//! default was defended by a prohibition against changing it, resting on the
+//! argument that a `401` carrying Alibaba's documented `invalid_api_key`
+//! envelope — returned by both the Singapore and mainland endpoints — proved
+//! the URL resolved correctly and only the credential was bad. **That
+//! argument was wrong and MUST NOT be reinstated or re-derived.** A
+//! region-scoped key produces that exact well-formed `401` from *every*
+//! endpoint except its own — the signature is identical for a right URL with
+//! a wrong key and a wrong URL with a right key. What settled it: two runs of
+//! the same binary with the same credential, differing only in the endpoint
+//! (2026-08-22) — `dashscope-intl` (Singapore, the then-shipped default)
+//! returned 3 models byte-identical to [`QWEN_FALLBACK_MODELS`] (the live
+//! fetch silently failed), while `dashscope-us` (Virginia) returned 92 live
+//! models. That credential was Virginia-scoped; it was valid the whole time,
+//! and the URL was the defect.
+//!
+//! **Move 2 (2026-08-23): US (Virginia) → Singapore, again.** One day later
+//! the operator's `DASHSCOPE_API_KEY` was replaced with a **Singapore-scoped**
+//! key. Against that new credential, `dashscope-us` (the default Move 1 had
+//! just shipped) returned a well-formed `401`, and `dashscope-intl` returned
+//! the live catalog (162 models, both [`QWEN_DEFAULT_MODEL`] and
+//! `qwen3.7-plus` present) and served every measured request. **This is not
+//! a rehabilitation of the original Singapore default, and it is not
+//! evidence that Move 1 was wrong.** It is a second, independent
+//! confirmation of the exact rule Move 1 established, now observed in the
+//! opposite direction: a region-scoped key returns a well-formed `401` from
+//! every endpoint but its own, whichever region that happens to be. Two
+//! credentials, one day apart, produced opposite "correct" answers for this
+//! one constant — which is the actual finding: **a single shipped default
+//! was never testing the URL. It was only ever testing which region one
+//! developer's workspace and credential happened to occupy that day.**
+//!
+//! **What actually makes this safe is not which endpoint this constant
+//! currently names.** It is (a) the `DASHSCOPE_BASE_URL` override documented
+//! above, naming all three known regional endpoints, and (b) the `warn`-level
+//! diagnostic plan 17-22 added to
+//! [`crate::compat::engine::CompatEngine::available_models`], which makes a
+//! region mismatch audible instead of silent. Both were already in place
+//! before Move 2, and Move 2 is the live proof: on 2026-08-23, with the
+//! shipped default still naming Virginia and the new Singapore-scoped
+//! credential already in the environment, that exact diagnostic fired
+//! unprompted — naming `dashscope-us` as the rejecting endpoint and pointing
+//! at a credential "scoped to a different account or region" as the usual
+//! cause — on a live, unstaged failure this constant's own shipped value had
+//! just created. `dashscope-intl` is named as the shipped default going
+//! forward because it is Alibaba's international endpoint serving the
+//! broadest non-mainland, non-US audience, not because it is universally
+//! correct — no single value here ever will be. A later reader who
+//! re-derives "a well-formed `401` proves the URL" meets this paragraph
+//! first, from either direction.
 
 use async_trait::async_trait;
 use futures::Stream;
@@ -82,21 +120,42 @@ use crate::compat::{
 };
 
 /// Default Qwen (Alibaba DashScope) compatible-mode API base URL — the
-/// US (Virginia) endpoint.
+/// Singapore (international) endpoint.
 ///
-/// Live-verified 2026-08-22 (D-17-02, gap G-17-4d, 17-21-PLAN.md): this
-/// endpoint returned 92 live models to this project's credential, including
-/// [`QWEN_DEFAULT_MODEL`]. See the module-level "Region default" and
-/// "Reversal record" docs above for why this replaced the earlier Singapore
-/// default, and what an operator in another region must do.
-pub const QWEN_DEFAULT_BASE_URL: &str = "https://dashscope-us.aliyuncs.com/compatible-mode/v1";
+/// Live-verified 2026-08-23, against a Singapore-scoped `DASHSCOPE_API_KEY`:
+/// this endpoint returned a 162-model catalog including [`QWEN_DEFAULT_MODEL`]
+/// and `qwen3.7-plus`, and served every measured `generate()` request. See
+/// the module-level "Region default" and "Reversal record" docs above for
+/// the two moves this constant has made and what an operator in another
+/// region must do.
+pub const QWEN_DEFAULT_BASE_URL: &str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
 
 /// Default Qwen model requested when `DASHSCOPE_MODEL` is unset.
+///
+/// `qwen-plus` over `qwen3.7-plus`, live-verified 2026-08-23: both are
+/// present in the live catalog at [`QWEN_DEFAULT_BASE_URL`] and both accept
+/// every sampling parameter this preset declares, so the choice is not about
+/// capability. It is about resilience to retirement. The live catalog
+/// carries `qwen-plus` alongside dated snapshots of it going back to
+/// `qwen-plus-2025-01-25` — evidence that `qwen-plus` is a rolling alias
+/// Alibaba has already silently re-pointed multiple times while keeping the
+/// name stable, the same pattern a caller-facing "always current" name gives
+/// elsewhere. `qwen3.7-plus` is a generation-pinned name: the live catalog
+/// already carries a newer `qwen3.8-*` generation alongside it, so
+/// `qwen3.7-plus` is a future retirement candidate in exactly the way
+/// `moonshot-v1-8k` and `gemini-2.5-flash` were pinned names this same phase
+/// had to refresh after the vendor moved on (17-19, 17-20). A rolling alias
+/// is the more durable shipped default.
 pub const QWEN_DEFAULT_MODEL: &str = "qwen-plus";
 
 /// Curated fallback model list (D-13), returned when the live `/models`
 /// endpoint fails, is unreachable, or returns an empty list. Never reported
 /// as authoritative — see [`crate::compat::engine::CompatEngine::available_models`].
+///
+/// Re-verified live 2026-08-23 at [`QWEN_DEFAULT_BASE_URL`] (162-model
+/// catalog): all three entries are present, undated, general-purpose model
+/// names (no `-vl`/`-audio`/`-image`/`-mt`/`-coder`/`-tts`/`-asr` specialised
+/// suffix), and the first entry matches [`QWEN_DEFAULT_MODEL`].
 pub const QWEN_FALLBACK_MODELS: &[&str] = &["qwen-plus", "qwen-turbo", "qwen3-max"];
 
 /// Configuration for the Qwen (Alibaba DashScope) adapter.
@@ -231,10 +290,31 @@ impl QwenAdapter {
                 supports_embeddings: false,
                 max_context_tokens: Some(131_072),
                 supports_system_messages: true,
-                temperature_range: Some((0.0, 2.0)),
+                // Live-measured 2026-08-23 against `qwen-plus` and
+                // `qwen3.7-plus` at the shipped Singapore endpoint:
+                // DashScope's own error envelope states the accepted range
+                // as the HALF-OPEN interval `[0.0, 2.0)` — `temperature:2.0`
+                // returns `HTTP 400 InternalError.Algo.InvalidParameter:
+                // "Temperature should be in [0.0, 2.0)"` on both models,
+                // while `1.9999` is accepted. `ProviderCapabilities`'s own
+                // gate (`PaladinBuilder::validate`, ADR-0004) treats both
+                // tuple endpoints as INCLUSIVE, so advertising the
+                // vendor-documented `2.0` upper bound verbatim would let a
+                // legal-looking request through the local gate only to be
+                // rejected on the wire — Kimi's defect class (17-19):
+                // declare what was measured, not what the vendor's prose
+                // says. `1.99` is comfortably inside the accepted range and
+                // round enough to read as "just under 2", not a
+                // floating-point accident.
+                temperature_range: Some((0.0, 1.99)),
             },
-            // Unchanged pre-existing behaviour (17-18): no vendor-specific
-            // sampling-parameter restriction has been measured for Qwen.
+            // Live-measured 2026-08-23 against `qwen-plus` and
+            // `qwen3.7-plus` at the shipped Singapore endpoint: each of the
+            // five optional sampling parameters (`temperature`, `max_tokens`,
+            // `top_p`, `frequency_penalty`, `presence_penalty`), probed
+            // individually, returned HTTP 200 with a real completion on both
+            // models. No rejection observed — `all()` is the measured
+            // declaration, not an unmeasured default.
             request_parameters: CompatRequestParameters::all(),
             fallback_models: QWEN_FALLBACK_MODELS.iter().map(|s| s.to_string()).collect(),
             error_override: None,
@@ -330,21 +410,21 @@ mod tests {
         assert_eq!(config.timeout_seconds, 60);
     }
 
-    /// Pins the shipped default to the literal US (Virginia) compatible-mode
-    /// endpoint, per the developer's binding decision of 2026-08-22
-    /// (D-17-02, gap G-17-4d). Asserted against the literal rather than the
-    /// constant, so this test fails against the pre-reversal Singapore
-    /// default and only passes once the constant is actually changed —
-    /// unlike `qwen_config_defaults_base_url_and_model_when_only_key_is_set`
-    /// above, which follows the constant and would pass regardless of its
-    /// value.
+    /// Pins the shipped default to the literal Singapore (international)
+    /// compatible-mode endpoint, per the developer's binding decision of
+    /// 2026-08-23 (Move 2, "Reversal record" above). Asserted against the
+    /// literal rather than the constant, so this test fails against the
+    /// intermediate Virginia default and only passes once the constant is
+    /// actually changed — unlike
+    /// `qwen_config_defaults_base_url_and_model_when_only_key_is_set` above,
+    /// which follows the constant and would pass regardless of its value.
     #[test]
-    fn qwen_config_defaults_to_the_us_virginia_endpoint_by_literal() {
+    fn qwen_config_defaults_to_the_singapore_intl_endpoint_by_literal() {
         let config = QwenConfig::from_parts(Some("test-key".to_string()), None, None, None)
             .expect("key alone must be sufficient to build a valid config");
         assert_eq!(
             config.base_url,
-            "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
         );
     }
 

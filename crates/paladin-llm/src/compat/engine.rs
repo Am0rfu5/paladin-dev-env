@@ -1814,7 +1814,7 @@ mod tests {
 
     #[test]
     fn base_url_without_userinfo_leaves_a_plain_url_unchanged() {
-        let url = "https://dashscope-us.aliyuncs.com/compatible-mode/v1";
+        let url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
         assert_eq!(base_url_without_userinfo(url), url);
     }
 

@@ -58,21 +58,19 @@ llm:
     default_model: "kimi-k3"
     timeout_seconds: 60
 
-  # Qwen (Alibaba DashScope). Model-list live-verified 2026-08-22 (plan 17-21, closing
-  # G-17-4d): GET /models returned 92 live models at the endpoint below, including the
-  # default model. The generate() round trip is NOT yet confirmed — blocked on an
-  # Alibaba Model Studio account entitlement gap (HTTP 403 Model.AccessDenied), not a
-  # code defect; see .planning/WINDOWS.md id 21.
+  # Qwen (Alibaba DashScope). Live-verified 2026-08-23 (plan 17-21 gap closure): GET
+  # /models returned a 162-model catalog at the endpoint below, including the default
+  # model, and a generate() round trip succeeded.
   #
   # DashScope API keys are scoped to the Model Studio region that issued them and are
-  # REJECTED by every other region's endpoint. `base_url` below is US (Virginia), the
-  # shipped default. If your workspace is in Singapore or on the mainland, you MUST
+  # REJECTED by every other region's endpoint. `base_url` below is Singapore, the
+  # shipped default. If your workspace is in the US or on the mainland, you MUST
   # set `DASHSCOPE_BASE_URL` to your own region's endpoint:
-  #   - US (Virginia)  (shipped default): https://dashscope-us.aliyuncs.com/compatible-mode/v1
-  #   - Singapore:                        https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  #   - Singapore      (shipped default): https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  #   - US (Virginia):                    https://dashscope-us.aliyuncs.com/compatible-mode/v1
   #   - China (mainland):                 https://dashscope.aliyuncs.com/compatible-mode/v1
   qwen:
-    base_url: "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
+    base_url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
     default_model: "qwen-plus"
     timeout_seconds: 60
 
@@ -138,7 +136,7 @@ above carry their own dated status:
 | Gemini | Live-verified: a model-list fetch and a `generate()` round trip both succeeded. |
 | Grok (xAI) | Live-verified 2026-08-22 (plan 17-18): model list + a `generate()` round trip against `api.x.ai`. |
 | Kimi (Moonshot) | Live-verified 2026-08-22 (plan 17-19): model list + a `generate()` round trip against `api.moonshot.ai`, including its measured fixed-temperature constraint. |
-| Qwen (DashScope) | Live-verified 2026-08-22 (plan 17-21) for the model list only (92 live models at the shipped US endpoint) — the `generate()` round trip is blocked on an Alibaba Model Studio account entitlement gap, not a code defect or a stale endpoint (`.planning/WINDOWS.md` id 21). See the region-scoping note above `qwen:` for the mandatory override outside the US region. |
+| Qwen (DashScope) | Live-verified 2026-08-23 (plan 17-21 gap closure): a model-list fetch (162 models at the shipped Singapore endpoint) and a `generate()` round trip both succeeded. See the region-scoping note above `qwen:` for the mandatory override outside the Singapore region. |
 | Ollama | Not applicable — self-hosted, no vendor endpoint to verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), passed on a GitHub Actions runner 2026-08-19. |
 
 ### A rejected credential now announces itself
