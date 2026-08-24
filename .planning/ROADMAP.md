@@ -1146,7 +1146,7 @@ Plans:
 
 - [x] 16-03-PLAN.md — DOCS-01 sweep B: tool-integration, paladin-configuration, output-formatting (closes the user-guides group)
 - [x] 16-09-PLAN.md — DOCS-03: executable `# Examples` on the `paladin-ports` trait surface
-- [ ] 16-14-PLAN.md — DOCS-04: four `.tape`-driven recordings, `docs/DEMOS.md`, one README line, requirement amendments
+- [x] 16-14-PLAN.md — DOCS-04: four `.tape`-driven recordings, `docs/DEMOS.md`, one README line, requirement amendments
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
