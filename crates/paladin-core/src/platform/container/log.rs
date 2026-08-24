@@ -192,6 +192,21 @@ impl LogMessage {
 pub type LogEntry = Message<LogMessage>;
 
 /// Helper functions for creating LogEntry instances
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::base::entity::message::Location;
+/// use paladin_core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
+///
+/// let entry = LogEntryBuilder::new_entry(
+///     Location::service("scheduler"),
+///     LogDestination::System,
+///     LogLevel::Info,
+///     "Scheduler started".to_string(),
+/// );
+/// assert_eq!(entry.priority, LogLevel::Info.to_priority());
+/// ```
 pub struct LogEntryBuilder;
 
 impl LogEntryBuilder {

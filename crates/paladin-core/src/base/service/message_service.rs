@@ -160,6 +160,19 @@ pub enum DeliveryStatus {
 }
 
 /// Core message service implementation
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::base::service::message_service::{MessageService, MessageServiceConfig};
+///
+/// let config = MessageServiceConfig {
+///     worker_threads: 2,
+///     ..MessageServiceConfig::default()
+/// };
+/// let service = MessageService::new(config);
+/// # let _ = service;
+/// ```
 pub struct MessageService {
     /// Service configuration
     config: MessageServiceConfig,

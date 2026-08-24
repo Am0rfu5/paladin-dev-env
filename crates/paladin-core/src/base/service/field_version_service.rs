@@ -90,6 +90,28 @@ pub trait FieldVersionRepository<T> {
 }
 
 /// Field Version Service
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::base::service::field_version_service::{
+///     FieldVersion, FieldVersionRepository, FieldVersionService,
+/// };
+/// use paladin_core::base::service::node_version_service::VersioningError;
+/// use std::sync::Arc;
+/// use uuid::Uuid;
+///
+/// fn latest_field_version<T>(
+///     repository: Arc<dyn FieldVersionRepository<T> + Send + Sync>,
+///     field_id: Uuid,
+/// ) -> Result<Option<FieldVersion<T>>, VersioningError>
+/// where
+///     T: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>,
+/// {
+///     let service = FieldVersionService::new(repository, None);
+///     service.get_current_field_version(field_id)
+/// }
+/// ```
 pub struct FieldVersionService<T> {
     repository: Arc<dyn FieldVersionRepository<T> + Send + Sync>,
     config: FieldVersioningConfig,

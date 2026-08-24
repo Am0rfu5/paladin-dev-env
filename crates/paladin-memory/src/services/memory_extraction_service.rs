@@ -38,6 +38,24 @@ pub struct ExtractedMemory {
 ///
 /// Coordinates LLM-based memory extraction and storage via [`SanctumPort`].
 /// Depends only on port traits — contains no concrete adapter references.
+///
+/// # Examples
+///
+/// ```
+/// use paladin_memory::services::memory_extraction_service::MemoryExtractionService;
+/// use paladin_ports::output::embedding_port::EmbeddingPort;
+/// use paladin_ports::output::llm_port::LlmPort;
+/// use paladin_ports::output::sanctum_port::SanctumPort;
+/// use std::sync::Arc;
+///
+/// fn build(
+///     llm: Arc<dyn LlmPort>,
+///     embedding: Arc<dyn EmbeddingPort>,
+///     sanctum: Arc<dyn SanctumPort>,
+/// ) -> MemoryExtractionService {
+///     MemoryExtractionService::new(llm, embedding, sanctum)
+/// }
+/// ```
 pub struct MemoryExtractionService {
     llm: Arc<dyn LlmPort>,
     embedding: Arc<dyn EmbeddingPort>,

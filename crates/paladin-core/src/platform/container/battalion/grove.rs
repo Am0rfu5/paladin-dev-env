@@ -295,7 +295,7 @@ pub type Grove = Node<GroveData>;
 /// Provides a fluent interface for configuring and building Grove instances
 /// with validation.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// let grove = GroveBuilder::new()
