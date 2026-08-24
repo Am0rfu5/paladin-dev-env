@@ -71,3 +71,39 @@ in the table's Verdict column (see below) rather than being omitted. A reader ca
 **Not-yet-checked count check:** thirteen of those fourteen rows still carry the seeded
 not-yet-checked verdict text above after this plan; only the `cicd.md` row has moved to
 `updated → commit`.
+
+**Superseded 2026-08-24 (16-05, D-00d):** the two lines immediately above were written by 16-01
+and were accurate at that plan's own close (one of fourteen settled). They are retained verbatim
+above, not deleted, per D-00d. As of this plan's close, all fourteen of fourteen rows carry a
+verdict of `current` or `updated → commit`; zero rows remain `pending`. See the closure statement
+below.
+
+## Closure statement (16-05, 2026-08-24)
+
+All fourteen DOCS-01 files carry a content-derived verdict: `docs/src/user-guides/`
+(`maneuver-flow-dsl.md`, `memory-management.md`, `orchestration.md`, `output-formatting.md`,
+`paladin-configuration.md`, `tool-integration.md` — 16-02/16-03), `docs/src/deployment/`
+(`cicd.md` — 16-01; `docker.md`, `kubernetes.md`, `production.md` — 16-04), and
+`docs/src/operations/` (`logging.md`, `monitoring.md`, `performance-tuning.md`,
+`troubleshooting.md` — 16-05). Every row was checked against the eight-class signal battery
+defined above (version strings, dependency pins, crate names, module/source paths, `make`
+targets, workflow/job names, error types, feature flags) plus an end-to-end prose read, each with
+its producing command recorded in the row's Findings cell — no row was settled by file existence
+or modification time alone (the method this record's own header prohibits). `grep -c 'pending —
+not yet checked' 16-DOCS-01-VERDICTS.md` → 0. `grep -c '^| docs/src/' 16-DOCS-01-VERDICTS.md` →
+14. `mdbook build docs/` exits 0 after every settling edit across all five plans, most recently
+16-05's Task 2 commit (`059523f0`) and the closing linkcheck run captured in
+`16-LINKCHECK-REPORT.md`'s Run 4.
+
+## Out of scope — observed, not fixed
+
+The phase's open count is defined as exactly fourteen (this record's own files, DOCS-01). The
+five live architecture-chapter pages are explicitly not audited here (`16-CONTEXT.md` Deferred
+Ideas). One currency defect was observed outside the fourteen while sweeping and is recorded
+here, not fixed, per this plan's own scope guard:
+
+- **`README.md`'s Project Status section states a release figure lower than the shipped
+  workspace version.** `grep -n 'Current version' README.md` → `README.md:181`, `"Current
+  version: **0.6.0**"`, against root `Cargo.toml:34` which ships `0.8.0`. Do not edit
+  `README.md` here — plan 16-14 adds exactly one line to that file under D-15 and nothing else;
+  fixing it in this plan would step on that plan's own scoped change.
