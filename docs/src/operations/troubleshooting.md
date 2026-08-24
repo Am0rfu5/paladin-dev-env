@@ -16,12 +16,18 @@ Common issues, diagnostic procedures, and solutions for Paladin deployments.
 
 ### Check Application Status
 
+**Corrected 2026-08-24:** there is no `/metrics` endpoint in this codebase — `prometheus` and
+`opentelemetry` are not dependencies anywhere in the workspace and no `/metrics` route is
+registered (see `monitoring.md`'s scope note). Port `8081` was also fabricated; `Dockerfile:68`
+exposes `8080` (app) and `9090` (reserved for metrics, unused). Only `/health` and `/ready`
+exist (`crates/paladin-web/src/health.rs`).
+
 ```bash
-# Check health endpoint
+# Check liveness
 curl http://localhost:8080/health
 
-# Check metrics
-curl http://localhost:8081/metrics
+# Check readiness (agents loaded; shallow check, no network I/O)
+curl http://localhost:8080/ready
 
 # View logs
 kubectl logs -f deployment/paladin -n paladin
@@ -32,15 +38,13 @@ kubectl describe pod <pod-name> -n paladin
 
 ### Enable Debug Logging
 
-```bash
-# Set environment variable
-export RUST_LOG=debug,paladin=trace
+There is no `logging:` YAML key anywhere in `Settings` (`grep -n logging src/config/settings.rs`
+→ 0 hits; see `logging.md`'s scope note for the real facade — `log` + `env_logger`, not
+`tracing`).
 
-# Or in config.yml
-logging:
-  level: "debug"
-  modules:
-    paladin: "trace"
+```bash
+# Set environment variable (the real, only supported mechanism)
+export RUST_LOG=debug,paladin=trace
 ```
 
 ### Collect Diagnostic Information
@@ -53,9 +57,6 @@ cargo --version
 
 # Application logs
 kubectl logs deployment/paladin -n paladin --tail=1000 > paladin.log
-
-# Metrics snapshot
-curl http://localhost:8081/metrics > metrics.txt
 
 # Configuration
 kubectl get cm paladin-config -o yaml > config.yaml
@@ -75,8 +76,9 @@ kubectl get cm paladin-config -o yaml > config.yaml
 # Check logs for error details
 kubectl logs deployment/paladin | grep ERROR
 
-# Verify LLM configuration
-curl http://localhost:8080/health | jq .components.llm
+# Check readiness — /health reports only {"status":"ok"}, no per-component detail;
+# `jq .components.llm` below was fabricated (crates/paladin-web/src/health.rs)
+curl http://localhost:8080/ready
 ```
 
 **Solutions:**
@@ -98,12 +100,17 @@ let paladin = PaladinBuilder::new(llm_port)
 ```
 
 **C. Rate Limiting**
+
+**Corrected 2026-08-24:** `max_retries`/`timeout_seconds` exist on `LlmProviderConfig`
+(`crates/paladin-llm/src/config/llm.rs:9-22`) but nested under the named provider block, not
+flat under `llm:`; there is no `retry_delay` field anywhere.
+
 ```yaml
-# Fix: Add retry logic and backoff
+# Fix: Add retry logic and timeout on the specific provider block
 llm:
-  max_retries: 3
-  retry_delay: 2s
-  timeout: 60s
+  openai:
+    max_retries: 3
+    timeout_seconds: 60
 ```
 
 ### 2. High Memory Usage
@@ -118,18 +125,21 @@ llm:
 # Check memory usage
 kubectl top pods -n paladin
 
-# Check Garrison size
-curl http://localhost:8081/metrics | grep garrison_entries
+# No /metrics endpoint exists (see Diagnostic Tools note) — check pod memory instead
 ```
 
 **Solutions:**
 
 **A. Garrison Too Large**
+
+Defaults are `max_entries: 100`, `max_tokens: 4000` (`GarrisonSettings::default()`,
+`crates/paladin-memory/src/config/garrison.rs:28-39`), not 1000/8000.
+
 ```yaml
-# Fix: Reduce garrison limits
+# Fix: Reduce garrison limits below the defaults
 garrison:
-  max_entries: 500  # Reduce from 1000
-  max_tokens: 4000  # Reduce from 8000
+  max_entries: 50    # Reduce from default 100
+  max_tokens: 2000    # Reduce from default 4000
 ```
 
 **B. Memory Leak**
@@ -174,10 +184,15 @@ kubectl scale statefulset redis --replicas=1
 ```
 
 **B. Wrong Hostname**
+
+**Corrected 2026-08-24:** `QueueConfig` (`src/config/queue.rs:8-17`) has `redis_host`/
+`redis_port` fields, not a single `url:` string.
+
 ```yaml
-# Fix: Use correct service DNS
+# Fix: Use correct service host/port
 queue:
-  url: "redis://redis.paladin.svc.cluster.local:6379"
+  redis_host: "redis.paladin.svc.cluster.local"
+  redis_port: 6379
 ```
 
 **C. Network Policy Blocking**
@@ -210,9 +225,7 @@ spec:
 
 **Diagnosis:**
 ```bash
-# Check active Paladins
-curl http://localhost:8081/metrics | grep paladin_active
-
+# No /metrics endpoint exists (see Diagnostic Tools note) — check logs instead
 # Look for deadlocks
 kubectl logs deployment/paladin | grep -i "deadlock\|timeout"
 ```
@@ -234,10 +247,15 @@ let paladin = PaladinBuilder::new(llm_port)
 ```
 
 **C. Timeout Not Set**
+
+**Corrected 2026-08-24:** there is no top-level `paladin:` config key. The real execution
+timeout policy is `AgentTimeoutsConfig` (`src/config/agents.rs:18-25`), under `timeouts:`:
+
 ```yaml
 # Fix: Add execution timeout
-paladin:
-  timeout_seconds: 300  # 5 minutes
+timeouts:
+  default_seconds: 300  # 5 minutes
+  max_seconds: 600
 ```
 
 ## Performance Issues
@@ -250,9 +268,7 @@ paladin:
 
 **Diagnosis:**
 ```bash
-# Check latency metrics
-curl http://localhost:8081/metrics | grep duration
-
+# No /metrics endpoint exists (see Diagnostic Tools note) — profile directly instead
 # Profile with flamegraph
 cargo flamegraph --bin paladin-server
 ```
@@ -260,18 +276,27 @@ cargo flamegraph --bin paladin-server
 **Solutions:**
 
 **A. Slow LLM Responses**
+
+`default_model` and `timeout_seconds` (not `timeout`) are real, but nest under the named
+provider block, matching the Rate Limiting fix above.
+
 ```yaml
 # Fix: Use faster model or increase timeout
 llm:
-  default_model: "gpt-3.5-turbo"  # Faster than gpt-4
-  timeout: 30s
+  openai:
+    default_model: "gpt-3.5-turbo"  # Faster than gpt-4
+    timeout_seconds: 30
 ```
 
 **B. Garrison Query Slow**
+
+**Corrected 2026-08-24:** `garrison_entries` has no `session_id` column — the real scoping
+column is `paladin_id` (`migrations/001_create_garrison_tables.sql:7-16`), and an index on it
+already ships (`idx_paladin_timestamp`, same migration file).
+
 ```sql
--- Fix: Add index to Garrison database
-CREATE INDEX idx_garrison_timestamp ON garrison_entries(timestamp);
-CREATE INDEX idx_garrison_session ON garrison_entries(session_id);
+-- Fix: Add an index if a query pattern isn't covered by the shipped indexes
+CREATE INDEX IF NOT EXISTS idx_garrison_paladin ON garrison_entries(paladin_id);
 ```
 
 **C. Too Many Tool Calls**
@@ -324,20 +349,31 @@ cargo build --release
 - Configuration validation errors
 
 **Diagnosis:**
-```bash
-# Validate configuration
-paladin config validate config.yml
 
-# Check for syntax errors
+**Corrected 2026-08-24:** there is no `config` subcommand on the shipped `paladin` CLI — the
+top-level commands are `agent`, `battalion`, `arsenal`, `maneuver`, `onboarding`,
+`setup-check`, `features`, `muster`, `council`, and others (`src/bin/paladin-cli.rs:32-`); none
+of them validates a YAML file directly.
+
+```bash
+# Fix: check for syntax errors (config parsing errors surface at process startup)
 yamllint config.yml
 ```
 
 **Solutions:**
+
+**Corrected 2026-08-24:** there is no top-level `paladin:` config key. `default_temperature`
+and `max_loops` are real fields, but on per-agent `AgentDefinition` entries under `agents:`
+(`src/config/agents.rs:209-229`), not a global `paladin:` block.
+
 ```yaml
-# Fix: Correct YAML syntax
-paladin:
-  default_temperature: 0.7  # Must be number
-  max_loops: 3              # Must be integer
+# Fix: Correct YAML syntax (per-agent, under agents:)
+agents:
+  - id: "my-agent"
+    model: "gpt-4"
+    system_prompt: "..."
+    temperature: 0.7  # Must be number
+    max_loops: 3       # Must be integer
 ```
 
 ### Missing Environment Variables
@@ -379,9 +415,13 @@ kubectl logs <pod-name> -n paladin --previous
 **Solutions:**
 
 **A. Missing Dependencies**
+
+**Corrected 2026-08-24:** the shipped `Dockerfile:48-50` runtime stage installs `libssl3`, not
+the older `libssl1.1`.
+
 ```dockerfile
 # Fix: Add runtime dependencies
-RUN apt-get install -y libssl1.1 ca-certificates
+RUN apt-get install -y libssl3 ca-certificates
 ```
 
 **B. Health Check Failing**
@@ -472,22 +512,24 @@ kubectl create secret generic minio-credentials \
 **Solutions:**
 
 **A. Rate Limit Exceeded**
-```yaml
-# Fix: Add rate limiting
-llm:
-  rate_limit:
-    requests_per_minute: 60
-    tokens_per_minute: 90000
-```
+
+**Corrected 2026-08-24:** there is no `rate_limit:` block anywhere in `LlmConfig` — no
+requests-per-minute/tokens-per-minute config exists in this codebase. This is illustrative of a
+feature not yet implemented, not shipped config.
 
 **B. Switch Provider**
+
+**Corrected 2026-08-24:** `LlmConfig` has no `providers:` list for fallback — it has
+`default_provider: Option<String>` (singular) plus one optional block per named provider
+(`openai`, `deepseek`, `anthropic`, etc.), each independently configured; there is no automatic
+fallback-on-failure behavior.
+
 ```yaml
-# Fix: Use fallback provider
+# Fix: configure the provider you want to switch to (no automatic fallback list)
 llm:
-  providers:
-    - openai
-    - deepseek  # Fallback
-    - anthropic # Fallback
+  default_provider: "deepseek"
+  deepseek:
+    api_key: "${DEEPSEEK_API_KEY}"
 ```
 
 ## Getting Help
@@ -510,8 +552,8 @@ kubectl logs deployment/paladin -n $NAMESPACE > paladin.log
 # Configuration
 kubectl get all,cm,secrets -n $NAMESPACE -o yaml > resources.yaml
 
-# Metrics
-curl http://localhost:8081/metrics > metrics.txt
+# Readiness snapshot (no /metrics endpoint exists — see Diagnostic Tools note)
+curl http://localhost:8080/ready > readiness.txt
 
 # Events
 kubectl get events -n $NAMESPACE > events.txt
