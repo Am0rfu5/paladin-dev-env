@@ -67,19 +67,20 @@ Comprehensive checklist and guidelines for deploying Paladin in production envir
 
 ### Authentication & Authorization
 
-```yaml
-# Use strong authentication
-auth:
-  type: "oauth2"
-  provider: "auth0"
-  scopes: ["paladin:read", "paladin:write"]
+> **Note:** the HTTP service host (`paladin-server`) has no OAuth2/Auth0 integration and no
+> YAML-configurable `rbac.roles` scheme. Authentication is code-level, in
+> `crates/paladin-web/src/agent_auth.rs`: an opaque server-issued **bearer token**
+> (`Authorization: Bearer <token>`, verified via an injected `AuthPort`) checked first, falling
+> back to an **`x-api-key` header** matched against a configured key map. There are exactly two
+> roles (`crates/paladin-core/src/platform/container/user.rs:72-78`) — `Admin` and `User`
+> (`#[default]`) — not three. `authorize_invoke(principal, allowed_roles)` enforces role checks
+> per route; an empty `allowed_roles` list means any authenticated caller.
 
-# Implement role-based access control
-rbac:
-  roles:
-    - admin: ["*"]
-    - user: ["paladin:execute", "garrison:read"]
-    - viewer: ["paladin:read"]
+```
+# Illustrative — there is no YAML config surface for this; it's wired in Rust when
+# constructing AgentAuthConfig (token_verifier + api_keys map) and passed to the router.
+Authorization: Bearer <opaque-token>     # verified by an injected AuthPort
+x-api-key: <configured-key>              # fallback, looked up in AgentAuthConfig.api_keys
 ```
 
 ### API Key Management
@@ -128,8 +129,8 @@ spec:
 ### Container Security
 
 ```dockerfile
-# Use specific versions (not latest)
-FROM rust:1.70-slim-bullseye AS builder
+# Use specific versions (not latest) — matches the live Dockerfile's builder stage
+FROM rust:1.93-slim-bookworm AS builder
 
 # Run as non-root user
 USER paladin:paladin
@@ -139,11 +140,19 @@ docker run --read-only --tmpfs /tmp paladin
 
 # Drop capabilities
 docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE paladin
-
-# Use security scanning
-docker scan paladin:latest
-snyk container test paladin:latest
 ```
+
+> **Security scanning:** `docker scan` was removed from the Docker CLI, and Snyk was
+> evaluated and removed from this project on 2026-08-18 — it has no Rust coverage
+> (`.github/instructions/security.instructions.md`, "Snyk was evaluated and removed"). Do not
+> reintroduce either. Use the repo's actual tooling instead:
+>
+> ```bash
+> make audit     # cargo-audit — vulnerable dependencies (RustSec advisory DB)
+> make deny      # cargo-deny — licenses, bans, sources, advisories
+> make security  # both of the above
+> make sbom      # cargo-cyclonedx — dependency inventory (SBOM)
+> ```
 
 ### Secrets Management
 
@@ -206,79 +215,90 @@ autoscaling:
 
 ### Connection Pooling
 
+There is no `RedisConfig`/generic connection-pool-size field in this codebase — Redis
+connectivity is configured via `QueueConfig` (`src/config/queue.rs:8-17`), which has no
+`pool_size`/`idle_timeout`/`url` fields:
+
 ```rust,ignore
-// Configure connection pools
-let redis_config = RedisConfig {
-    url: "redis://redis:6379".into(),
-    pool_size: 20,
-    connection_timeout: Duration::from_secs(5),
-    idle_timeout: Some(Duration::from_secs(60)),
+// Configure Redis (queue) via the real QueueConfig
+let queue_config = QueueConfig {
+    redis_host: "redis".into(),
+    redis_port: 6379,
+    redis_password: None,
+    redis_db: 0,
+    connection_timeout: Some(5),
+    key_prefix: Some("paladin:queue".into()),
+    max_retries: Some(3),
+    enable_priority_queues: Some(true),
 };
 
-let minio_config = MinioConfig {
-    endpoint: "minio:9000".into(),
-    max_connections: 100,
-    connection_timeout: Duration::from_secs(10),
+// Configure MinIO via the real FileStorageConfig
+let file_storage_config = FileStorageConfig {
+    minio_endpoint: "minio:9000".into(),
+    minio_access_key: "minioadmin".into(),
+    minio_secret_key: "minioadmin".into(),
+    minio_bucket: "paladin-files".into(),
+    minio_secure: Some(false),
+    connection_timeout: Some(10),
+    ..Default::default()
 };
 ```
 
 ### Caching Strategy
 
-```yaml
-# Redis caching configuration
-cache:
-  enabled: true
-  ttl: 3600  # 1 hour
-  max_size: 10000
-  eviction_policy: "lru"
+> **Note:** there is no generic Redis-backed response cache and no `garrison.cache_embeddings`/
+> `cache_ttl` field in this codebase (`GarrisonSettings`, `crates/paladin-memory/src/config/
+> garrison.rs:11-26`, has exactly seven fields: `garrison_type`, `path`, `max_entries`,
+> `max_tokens`, `tokenizer`, `eviction_strategy`, `preserve_recent_count` — no caching knobs).
+> Garrison's own bounded-memory eviction is the closest real mechanism:
 
-# Application-level caching
+```yaml
 garrison:
-  cache_embeddings: true
-  cache_ttl: 86400  # 24 hours
+  garrison_type: "sqlite"
+  max_entries: 1000
+  max_tokens: 8000
+  eviction_strategy: "importance_based"  # "importance_based" | "fifo" | "sliding_window"
+  preserve_recent_count: 10
 ```
 
 ### LLM Optimization
 
+> **Note:** there is no `model_routing` or `batching` config surface. Per-provider timeout and
+> retry are real fields on `LlmProviderConfig` (`crates/paladin-llm/src/config/llm.rs:9-22`):
+
 ```yaml
-# Optimize LLM calls
 llm:
-  timeout: 30s
-  max_retries: 3
-  retry_delay: 1s
-  connection_pooling: true
-
-  # Use faster models for simple tasks
-  model_routing:
-    simple_tasks: "gpt-3.5-turbo"
-    complex_tasks: "gpt-4"
-
-  # Batch similar requests
-  batching:
-    enabled: true
-    max_batch_size: 10
-    max_wait_time: 100ms
+  default_provider: "openai"
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    default_model: "gpt-4"
+    timeout_seconds: 30
+    max_retries: 3
 ```
 
 ## Reliability
 
 ### Health Checks
 
+The shipped routes are `/health` (liveness) and `/ready` (readiness) —
+`crates/paladin-web/src/health.rs:34-35`; there is no `/health/live` or `/health/ready`.
+
 ```yaml
-# Liveness probe (restart if fails)
+# Liveness probe (restart if fails) — always 200 once the process is up, no dependency checks
 livenessProbe:
   httpGet:
-    path: /health/live
+    path: /health
     port: 8080
   initialDelaySeconds: 30
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
 
-# Readiness probe (remove from load balancer if fails)
+# Readiness probe (remove from load balancer if fails) — shallow: 200 once the agent
+# registry is built and serving, no network I/O against dependencies
 readinessProbe:
   httpGet:
-    path: /health/ready
+    path: /ready
     port: 8080
   initialDelaySeconds: 10
   periodSeconds: 5
@@ -316,10 +336,13 @@ async fn shutdown_signal() {
     tracing::info!("Shutdown signal received, starting graceful shutdown");
 }
 
-// In main
-let server = axum::Server::bind(&addr)
-    .serve(app.into_make_service())
-    .with_graceful_shutdown(shutdown_signal());
+// In main — matches the live pattern at src/bin/paladin-server.rs:129-133. `axum::Server`
+// was removed in Axum 0.7+ (this workspace pins axum 0.8.4); the current API binds a
+// listener directly and passes it to axum::serve.
+let listener = tokio::net::TcpListener::bind(&addr).await?;
+axum::serve(listener, app.into_make_service())
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 ```
 
 ```yaml
@@ -335,58 +358,74 @@ spec:
 
 ### Circuit Breakers
 
+Paladin ships a first-party circuit breaker (`src/infrastructure/resilience/circuit_breaker.rs`)
+— there is no `circuit_breaker` external crate dependency in this workspace.
+
 ```rust,ignore
 // Implement circuit breakers for external services
-use circuit_breaker::{CircuitBreaker, Config};
+use paladin::infrastructure::resilience::circuit_breaker::CircuitBreaker;
 
-let llm_breaker = CircuitBreaker::new(Config {
-    failure_threshold: 5,
-    success_threshold: 2,
-    timeout: Duration::from_secs(60),
-});
+// new(failure_threshold, success_threshold, timeout) — positional args, no Config struct
+let llm_breaker = CircuitBreaker::new(5, 2, Duration::from_secs(60));
 
-async fn call_llm_with_breaker(prompt: &str) -> Result<Response> {
-    llm_breaker.call(async {
-        llm_client.generate(prompt).await
-    }).await
+async fn call_llm_with_breaker(prompt: &str) -> Result<Response, PaladinError> {
+    // call_async takes the future directly; returns Err(PaladinError::CircuitBreakerOpen)
+    // immediately when the breaker is open, without invoking the future at all.
+    llm_breaker.call_async(llm_client.generate(prompt)).await
 }
 ```
 
 ### Retry Logic
 
+There is no `backoff` crate dependency in this workspace. Retry/backoff is a first-party
+policy — `RetryPolicy` (`crates/paladin-core/src/platform/container/battalion/mod.rs`) plus
+the helper functions in `crates/paladin-battalion/src/retry.rs`:
+
 ```rust,ignore
-// Implement exponential backoff
-use backoff::{ExponentialBackoff, Error as BackoffError};
-use backoff::future::retry;
+// Implement exponential backoff using the shipped RetryPolicy
+use paladin_battalion::retry::{calculate_retry_delay, should_retry};
+use paladin_core::platform::container::battalion::RetryPolicy;
 
-async fn call_with_retry<F, T>(f: F) -> Result<T>
+let policy = RetryPolicy {
+    max_attempts: 3,
+    base_delay: Duration::from_millis(100),
+    max_delay: Duration::from_secs(10),
+    exponential_backoff: true,
+    jitter: true,
+};
+
+async fn call_with_retry<F, T>(policy: &RetryPolicy, f: F) -> Result<T, PaladinError>
 where
-    F: Fn() -> Result<T>,
+    F: Fn() -> Result<T, PaladinError>,
 {
-    let backoff = ExponentialBackoff {
-        max_elapsed_time: Some(Duration::from_secs(60)),
-        max_interval: Duration::from_secs(30),
-        ..Default::default()
-    };
-
-    retry(backoff, || async {
-        f().map_err(|e| {
-            if e.is_retryable() {
-                BackoffError::Transient(e)
-            } else {
-                BackoffError::Permanent(e)
+    let mut attempt = 0;
+    loop {
+        match f() {
+            Ok(v) => return Ok(v),
+            Err(e) if should_retry(policy, attempt) => {
+                tokio::time::sleep(calculate_retry_delay(policy, attempt)).await;
+                attempt += 1;
             }
-        })
-    }).await
+            Err(e) => return Err(e),
+        }
+    }
 }
 ```
 
 ## Monitoring
 
+> **Scope note:** this codebase has no Prometheus/metrics-exporter crate dependency and no
+> `/metrics` HTTP handler wired up anywhere (confirmed: `grep -rn 'metrics' crates/paladin-web/
+> src/` finds no route; the shipped routes are `/health` and `/ready`,
+> `crates/paladin-web/src/health.rs`). Every metric name and alert rule below is illustrative —
+> none are actually exported today. `Dockerfile:68`/`k8s/deployment.yaml` reserve port 9090 for
+> a future Prometheus endpoint that does not exist yet.
+
 ### Key Metrics
 
 ```yaml
-# Application metrics
+# Illustrative — not currently exported. Also note: this project is Rust, not Go, so a real
+# implementation would never emit `go_goroutines` (removed below; it does not apply here).
 metrics:
   - paladin_requests_total          # Total requests
   - paladin_request_duration_seconds  # Request latency
@@ -398,7 +437,6 @@ metrics:
 # System metrics
   - process_cpu_seconds_total       # CPU usage
   - process_resident_memory_bytes   # Memory usage
-  - go_goroutines                   # Goroutines (if applicable)
 
 # External dependencies
   - llm_api_calls_total             # LLM API calls
@@ -410,6 +448,7 @@ metrics:
 ### Alerting Rules
 
 ```yaml
+# Illustrative — depends on the metrics pipeline above, which is not implemented yet.
 # Prometheus alerting rules
 groups:
 - name: paladin
@@ -467,19 +506,18 @@ async fn execute_paladin(paladin: &Paladin, input: &str) -> Result<PaladinResult
 }
 ```
 
-```yaml
-# Log aggregation configuration
-logging:
-  level: warn  # info in staging, warn in production
-  format: json
-  outputs:
-    - type: stdout
-    - type: file
-      path: /app/logs/paladin.log
-      rotation:
-        max_size: 100MB
-        max_age: 7d
-        max_backups: 10
+> **Note:** there is no `logging:` YAML section, no file-output target, and no rotation config.
+> Logging is controlled by two env vars, read directly by `SystemLogAdapterConfig`
+> (`src/infrastructure/adapters/logs/system_log_adapter.rs:33-65`): `RUST_LOG` (level, e.g.
+> `warn`/`info`/`debug`) and `SYSTEM_LOG_FORMAT` (`json` or `text`). Output goes to stdout;
+> log rotation/aggregation is left to the orchestrator (e.g. a `docker-compose.yml`
+> `logging.driver: "json-file"` block, as shown in
+> [docker.md's Production Deployment section](docker.md#production-deployment), or a
+> cluster-level log collector).
+
+```bash
+RUST_LOG=warn          # info in staging, warn in production
+SYSTEM_LOG_FORMAT=json
 ```
 
 ## Disaster Recovery
@@ -618,7 +656,7 @@ Use this checklist before each production deployment:
 ## Pre-Deployment
 - [ ] All tests passing (unit, integration, e2e)
 - [ ] Code review completed and approved
-- [ ] Security scan passed (no high/critical vulnerabilities)
+- [ ] `make security` passed (`cargo-audit` + `cargo-deny`, no high/critical advisories)
 - [ ] Performance benchmarks within acceptable range
 - [ ] Documentation updated
 - [ ] Changelog updated
