@@ -1150,8 +1150,8 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 16-04-PLAN.md — DOCS-01 sweep C: docker, kubernetes, production (closes the deployment group)
-- [ ] 16-10-PLAN.md — DOCS-03: executable `# Examples` on paladin-core, memory, battalion, herald
+- [x] 16-04-PLAN.md — DOCS-01 sweep C: docker, kubernetes, production (closes the deployment group)
+- [x] 16-10-PLAN.md — DOCS-03: executable `# Examples` on paladin-core, memory, battalion, herald
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
