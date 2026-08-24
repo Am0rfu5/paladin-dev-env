@@ -246,3 +246,76 @@ applied to a phase record).
   plan, as instructed.** Closing DOCS-03 did not surface any new evidence attributing the 2
   remaining unaccounted `*Service` items; the delta stands recorded, not silently closed by
   adjusting the expected total to match the observed one.
+
+---
+
+## Delta attribution — added 2026-08-24 by the phase-16 execution orchestrator
+
+Plan 16-12 correctly left the 76-vs-79 delta recorded rather than closing it by adjusting the
+expected total. This note narrows it from "2 unattributed items" to a bounded conclusion. It adds
+evidence only; it does not change any enumerated row or total.
+
+### What is exact, and where the delta actually lives
+
+Re-derived independently against the tree at phase close:
+
+```bash
+S="src/ $(ls -d crates/*/src | grep -v doc-examples)"
+grep -rhoP '^\s*pub struct \K\w*Builder\b' --include=*.rs $S | sort -u | wc -l   # -> 11
+grep -rhoP '^\s*pub trait \K\w*Port\b'     --include=*.rs $S | sort -u | wc -l   # -> 35
+grep -rhoP '^\s*pub struct \K\w*Service\b' --include=*.rs $S | sort -u | wc -l   # -> 30
+```
+
+- **Builders: 11 vs D-05's 11 — exact.**
+- **`*Port` traits: 35 vs D-05's 35 — exact.**
+- **`*Service` structs: 30 vs D-05's 33.** The entire delta is here. Builders and ports carry none
+  of it.
+
+### Ruled out: the delta is not a scope-definition artifact
+
+Each candidate widening was measured and none reproduces 33:
+
+```bash
+grep -rhoP '^\s*pub trait \K\w*Service\b' --include=*.rs $S | sort -u | wc -l    # -> 9  (traits)
+grep -rhoP '^\s*pub type \K\w*Service\b'  --include=*.rs $S | sort -u | wc -l    # -> 4  (aliases)
+grep -rhoP '^\s*pub enum \K\w*Service\b'  --include=*.rs $S | sort -u | wc -l    # -> 0
+```
+
+- Including `pub trait`/`pub type`/`pub enum` gives **43** combined distinct, not 33.
+- `crates/doc-examples/src/support.rs:273` contributes `MockListService` — already excluded above
+  under the "not actually exported" rule, and it is the one item this record had explained.
+- `.project/Milestone_8-Facade-Cleanup-Shim-Resolution/Epic_2/email_notifications_review.rs:32`
+  carries a `pub struct EmailNotificationService`, but it is a planning-corpus review file, not
+  shipped code, and that name also exists in shipped code, so it adds no distinct item.
+
+No combination of these definitions yields 33.
+
+### The evidenced explanation: FR-26.3's figure is stale, not the enumeration incomplete
+
+The tree has lost `*Service` structs since FR-26.3's figure was taken. Commit `789e7f2d`
+(2026-05-30, *"chore(m8-e6): delete orphaned dead files from facade content/ directory"*) deleted
+seven `*_service.rs` files in one change:
+
+```
+src/application/services/content/{content_aggregator,content_analysis,content_delivery,
+content_fetching,content_filtering,content_list_fetching,content_llm_analysis}_service.rs
+```
+
+```bash
+git log --diff-filter=D --name-only --format="%h %ad" --date=short -300 -- '*service*.rs'
+```
+
+**Conclusion.** The two remaining unaccounted items are best explained as **a stale count in
+FR-26.3**, not as entry points this record failed to enumerate. `76` (11 + 35 + 30) is the correct,
+reproducible total for the tree as it stands; `79` is not reproducible from it under any definition
+tested above.
+
+**Confidence.** The arithmetic isolation to `*Service`, and the exclusion of every alternative
+scope definition, are *measured* — re-run the commands above. That Milestone-8-era removals are the
+specific cause is *evidenced but not proved*: the deleted facade files were recorded as "orphaned
+dead files" duplicating crate-side types, so they may not each have been a distinct public entry
+point. What is established is that FR-26.3's 33 cannot be reproduced from the current tree, so the
+enumeration should not be adjusted to chase it.
+
+This is the phase's own thesis applied to the phase's own paperwork: a documented number that no
+longer matches the code, settled by content rather than by assertion.
