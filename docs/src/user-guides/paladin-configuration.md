@@ -22,7 +22,7 @@ use paladin::prelude::*;
 let paladin = PaladinBuilder::new(llm_adapter)
     .name("Assistant")
     .system_prompt("You are a helpful assistant.")
-    .build()?;
+    .build().await?;
 ```
 
 ### Common Configuration
@@ -35,10 +35,14 @@ let paladin = PaladinBuilder::new(llm_adapter)
     .temperature(0.7)
     .max_loops(5)
     .timeout_seconds(120)
-    .build()?;
+    .build().await?;
 ```
 
 ### Full Configuration
+
+`PaladinBuilder` has no `add_armament()` method; tool registration goes through
+`.with_arsenal_registry(registry)` (`src/application/services/paladin/paladin_builder.rs:686`) --
+see [Tool Integration](tool-integration.md#custom-tool-development) for the registry-wiring detail.
 
 ```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
@@ -52,9 +56,8 @@ let paladin = PaladinBuilder::new(llm_adapter)
     .timeout_seconds(300)
     .retry_attempts(3)
     .with_garrison(garrison)
-    .add_armament(search_tool)
-    .add_armament(calculator_tool)
-    .build()?;
+    .with_arsenal_registry(arsenal_registry)
+    .build().await?;
 ```
 
 ## System Prompt Best Practices
@@ -217,19 +220,19 @@ Temperature controls randomness in responses:
 let code_reviewer = PaladinBuilder::new(llm_adapter)
     .system_prompt("Review Rust code for safety and best practices.")
     .temperature(0.2)
-    .build()?;
+    .build().await?;
 
 // Content Writer - Creative
 let writer = PaladinBuilder::new(llm_adapter)
     .system_prompt("Write engaging blog posts about technology.")
     .temperature(0.9)
-    .build()?;
+    .build().await?;
 
 // Customer Support - Balanced
 let support = PaladinBuilder::new(llm_adapter)
     .system_prompt("Help customers with product questions.")
     .temperature(0.7)
-    .build()?;
+    .build().await?;
 ```
 
 ## Stop Words and Termination
@@ -241,7 +244,7 @@ Control when a Paladin stops generating:
 ```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .add_stop_word("END").add_stop_word("STOP").add_stop_word("###")
-    .build()?;
+    .build().await?;
 ```
 
 ### Use Cases
@@ -297,7 +300,7 @@ use std::time::Duration;
 
 let paladin = PaladinBuilder::new(llm_adapter)
     .timeout_seconds(60)  // 60 second timeout
-    .build()?;
+    .build().await?;
 ```
 
 **Recommended Timeouts:**
@@ -310,13 +313,22 @@ let paladin = PaladinBuilder::new(llm_adapter)
 ```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .retry_attempts(3)                        // Retry up to 3 times
-    .build()?;
+    .build().await?;
 ```
 
 ### Error Handling
 
+Reaching `max_loops` is not an error -- there is no `PaladinError::MaxLoopsExceeded` variant.
+Execution returns `Ok(PaladinResult { stop_reason: StopReason::MaxLoops, .. })` instead
+(`crates/paladin-core/src/platform/container/execution_result.rs:38`); check `stop_reason` on the
+success path rather than matching an `Err` arm for it:
+
 ```rust,ignore
 match paladin.execute(input).await {
+    Ok(response) if response.stop_reason == StopReason::MaxLoops => {
+        eprintln!("Max reasoning loops exceeded");
+        // Increase max_loops or refine system prompt
+    }
     Ok(response) => println!("Success: {}", response.content),
     Err(PaladinError::Timeout(secs)) => {
         eprintln!("Request timed out after {} seconds", secs);
@@ -326,10 +338,6 @@ match paladin.execute(input).await {
         eprintln!("LLM error: {}", msg);
         // Check API key, rate limits, model availability
     }
-    Err(PaladinError::MaxLoopsExceeded) => {
-        eprintln!("Max reasoning loops exceeded");
-        // Increase max_loops or refine system prompt
-    }
     Err(e) => eprintln!("Other error: {}", e),
 }
 ```
@@ -338,26 +346,36 @@ match paladin.execute(input).await {
 
 ### Configuration from File
 
-```rust,ignore
-use paladin::config::ApplicationSettings;
+There is no `paladin:` top-level section in `config.yml`, and no `ApplicationSettings` type or
+`PaladinBuilder::from_config()` method (`src/config/settings.rs` -- the real top-level type is
+`Settings`, with no `paladin` field). A single Paladin is always configured via the
+`PaladinBuilder` fluent API shown throughout this guide, not loaded from a config-file section.
 
-let config = ApplicationSettings::load_from("config.yml")?;
-let paladin = PaladinBuilder::from_config(&config.paladin)?;
+The one config-driven path that does exist is different in shape and purpose: the HTTP service
+host (`paladin-server`) loads a *list* of agents from `Settings.agents: Vec<AgentDefinition>`
+(`src/config/agents.rs:209`), keyed by `id` rather than `name`, and with a narrower field set
+(`id`, `model`, `system_prompt`, optional `provider`/`temperature`/`max_loops`/`timeout_seconds`,
+`stop_words`, `allowed_roles` -- no `retry_attempts`):
+
+```rust,ignore
+use paladin::config::Settings;
+
+let config = Settings::load_from_file("config.yml")?;
+// config.agents: Vec<AgentDefinition> -- the HTTP service host's agent registry
 ```
 
 `config.yml`:
 ```yaml
-paladin:
-  name: "Assistant"
-  system_prompt: "You are a helpful assistant."
-  model: "gpt-4"
-  temperature: 0.7
-  max_loops: 5
-  timeout_seconds: 120
-  retry_attempts: 3
-  stop_words:
-    - "END"
-    - "STOP"
+agents:
+  - id: "assistant"
+    model: "gpt-4"
+    system_prompt: "You are a helpful assistant."
+    temperature: 0.7
+    max_loops: 5
+    timeout_seconds: 120
+    stop_words:
+      - "END"
+      - "STOP"
 ```
 
 ### Environment-Based Configuration
@@ -372,30 +390,34 @@ let temperature = std::env::var("PALADIN_TEMPERATURE")
 let paladin = PaladinBuilder::new(llm_adapter)
     .model(&model)
     .temperature(temperature)
-    .build()?;
+    .build().await?;
 ```
 
 ### Dynamic Configuration
+
+`PaladinBuilder::build()` is `async` (`paladin_builder.rs:1267`), so a synchronous factory method
+cannot return its result directly -- both methods below need `async fn` and `.await`:
 
 ```rust,ignore
 struct PaladinFactory;
 
 impl PaladinFactory {
-    fn create_for_task(task_type: &str, llm_adapter: Arc<dyn LlmPort>) -> Result<Paladin> {
+    async fn create_for_task(task_type: &str, llm_adapter: Arc<dyn LlmPort>) -> Result<Paladin, PaladinError> {
         match task_type {
-            "code_review" => Self::create_code_reviewer(llm_adapter),
-            "creative_writing" => Self::create_writer(llm_adapter),
-            "data_analysis" => Self::create_analyst(llm_adapter),
-            _ => Self::create_default(llm_adapter),
+            "code_review" => Self::create_code_reviewer(llm_adapter).await,
+            "creative_writing" => Self::create_writer(llm_adapter).await,
+            "data_analysis" => Self::create_analyst(llm_adapter).await,
+            _ => Self::create_default(llm_adapter).await,
         }
     }
 
-    fn create_code_reviewer(llm_adapter: Arc<dyn LlmPort>) -> Result<Paladin> {
+    async fn create_code_reviewer(llm_adapter: Arc<dyn LlmPort>) -> Result<Paladin, PaladinError> {
         PaladinBuilder::new(llm_adapter)
             .system_prompt("Expert Rust code reviewer")
             .temperature(0.2)
             .model("gpt-4")
             .build()
+            .await
     }
 
     // ... other factory methods
@@ -404,13 +426,18 @@ impl PaladinFactory {
 
 ### Configuration Validation
 
+Validation happens inside `.build()` (`PaladinBuilder::validate`,
+`src/application/services/paladin/paladin_builder.rs:1116`, private to the builder) -- `build()`
+itself is the only validation entry point. There is no public `paladin.validate()` on the built
+`Paladin` for re-validating after construction:
+
 ```rust,ignore
 let paladin = PaladinBuilder::new(llm_adapter)
     .temperature(0.7)
-    .build()?;  // Validates configuration
+    .build()
+    .await;  // Validates configuration as part of build()
 
-// Manual validation
-if let Err(e) = paladin.validate() {
+if let Err(e) = paladin {
     eprintln!("Invalid configuration: {}", e);
 }
 ```
@@ -440,7 +467,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
     .temperature(0.7)
     .max_loops(1)
     .timeout_seconds(30)
-    .build()?;
+    .build().await?;
 ```
 
 ### For Quality
@@ -452,7 +479,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
     .temperature(0.5)
     .max_loops(10)
     .timeout_seconds(300)
-    .build()?;
+    .build().await?;
 ```
 
 ### For Cost Efficiency
@@ -463,7 +490,7 @@ let paladin = PaladinBuilder::new(llm_adapter)
     .model("deepseek-chat")
     .temperature(0.7)
     .max_loops(3)
-    .build()?;
+    .build().await?;
 ```
 
 ## Next Steps
