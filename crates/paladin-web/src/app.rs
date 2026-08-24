@@ -66,7 +66,7 @@ pub fn create_app_router(
 /// Build the application router and additionally mount the agent-execution API.
 ///
 /// This is [`create_app_router`] plus the `/agents/*` routes from
-/// [`agent_router`](crate::agent_controller::agent_router), merged in. It is the
+/// [`agent_router`], merged in. It is the
 /// composition entry point for the HTTP service-host topology (Milestone 12): the
 /// server binary (Epic 2) builds the [`AgentApiState`] — including the concrete
 /// executor and optional provisioner — and passes it here.

@@ -11,7 +11,7 @@
 //! - [`MarkdownHerald`] — Markdown terminal output. Always available; its *coloured* rendering
 //!   path requires the `color` feature (gates the `colored` dependency) — with the feature off,
 //!   it renders the same plain-text path it already takes when `include_colors` is `false`.
-//! - [`TableHerald`] — compact table output. Requires the `table` feature (gates the
+//! - `TableHerald` — compact table output. Requires the `table` feature (gates the
 //!   `comfy-table` dependency).
 //!
 //! Each implements `paladin_core::platform::container::herald::Herald` and can be used

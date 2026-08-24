@@ -2,8 +2,8 @@
 //!
 //! The spec is **derived from the handlers** (`#[utoipa::path]`) and DTOs (`ToSchema`) via
 //! `utoipa-axum`, so the served API and the published contract come from one source.
-//! [`build_openapi`] assembles the `/v1` agent API document and decorates it with API info
-//! and the two security schemes (API key + opaque bearer token); [`docs_router`] serves it at
+//! `build_openapi` assembles the `/v1` agent API document and decorates it with API info
+//! and the two security schemes (API key + opaque bearer token); `docs_router` serves it at
 //! `GET /openapi.json` with a Swagger UI at `/docs`.
 //!
 //! Exposure is gated by the binary on `http.docs.enabled` — when disabled, the docs router

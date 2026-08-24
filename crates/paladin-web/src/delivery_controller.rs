@@ -5,11 +5,11 @@
 //!
 //! | Method & path | Handler | Description |
 //! |---------------|---------|-------------|
-//! | `POST /api/delivery/deliver` | [`deliver_content`] | Deliver a content payload now |
-//! | `GET /api/delivery/status/{delivery_id}` | [`get_delivery_status`] | Look up a delivery by id |
-//! | `GET /api/delivery/stats` | [`get_delivery_stats`] | Aggregate delivery statistics |
+//! | `POST /api/delivery/deliver` | `deliver_content` | Deliver a content payload now |
+//! | `GET /api/delivery/status/{delivery_id}` | `get_delivery_status` | Look up a delivery by id |
+//! | `GET /api/delivery/stats` | `get_delivery_stats` | Aggregate delivery statistics |
 //!
-//! Build the router with [`create_delivery_routes`] and merge it into the application router.
+//! Build the router with `create_delivery_routes` and merge it into the application router.
 //! A success body is the serialized domain type; failures use the unified
 //! [`ApiError`](crate::error::ApiError) envelope (`{ "error": { "code", "message", "details" } }`).
 
