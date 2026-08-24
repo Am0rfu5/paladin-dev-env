@@ -12,6 +12,18 @@ use std::time::{Duration, Instant};
 use tokio::time::timeout;
 
 /// Service for executing Maneuver workflows
+///
+/// # Examples
+///
+/// ```
+/// use paladin_battalion::maneuver::service::ManeuverExecutionService;
+/// use paladin_ports::output::paladin_port::PaladinPort;
+/// use std::sync::Arc;
+///
+/// fn build(paladin_port: Arc<dyn PaladinPort>) -> ManeuverExecutionService {
+///     ManeuverExecutionService::new(paladin_port)
+/// }
+/// ```
 pub struct ManeuverExecutionService {
     paladin_port: Arc<dyn PaladinPort>,
 }

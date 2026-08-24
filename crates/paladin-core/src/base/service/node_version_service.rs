@@ -91,6 +91,27 @@ pub trait NodeVersionRepository<T> {
 
 /// Node Version Service
 /// Core service for managing node versioning
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::base::service::node_version_service::{
+///     NodeVersion, NodeVersionRepository, NodeVersionService, VersioningError,
+/// };
+/// use std::sync::Arc;
+/// use uuid::Uuid;
+///
+/// fn latest_version<T>(
+///     repository: Arc<dyn NodeVersionRepository<T> + Send + Sync>,
+///     node_id: Uuid,
+/// ) -> Result<Option<NodeVersion<T>>, VersioningError>
+/// where
+///     T: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>,
+/// {
+///     let service = NodeVersionService::new(repository, None);
+///     service.get_current_version(node_id)
+/// }
+/// ```
 pub struct NodeVersionService<T> {
     repository: Arc<dyn NodeVersionRepository<T> + Send + Sync>,
     config: VersioningConfig,

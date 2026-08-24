@@ -41,7 +41,7 @@ pub struct CouncilResult {
 /// Orchestrates turn-based discussions between multiple Paladins, managing
 /// conversation flow, turn-taking logic, and termination conditions.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// use paladin_battalion::council_service::CouncilExecutionService;

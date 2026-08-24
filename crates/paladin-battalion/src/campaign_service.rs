@@ -49,7 +49,7 @@ use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 /// - Fan-out/fan-in patterns for complex workflows
 /// - Output transformations on edges
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// let service = CampaignExecutionService::new(paladin_port);

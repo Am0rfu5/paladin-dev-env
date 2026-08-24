@@ -86,7 +86,7 @@ struct RoutingResponse {
 /// Routes incoming tasks to specialized Paladins using various routing strategies
 /// (keyword matching, semantic similarity, LLM-based routing).
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// use paladin_battalion::grove_service::GroveExecutionService;

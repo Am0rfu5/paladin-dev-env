@@ -23,7 +23,7 @@ use paladin_ports::output::paladin_port::{PaladinPort, PaladinResult};
 /// Orchestrates parallel expert execution with retry logic, formats their outputs
 /// for the aggregator, and synthesizes the final result.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// use std::sync::Arc;
