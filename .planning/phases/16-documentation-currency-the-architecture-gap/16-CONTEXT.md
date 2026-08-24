@@ -137,8 +137,8 @@ amended in place per D-00d rather than silently dropped.
   `docs/src/architecture/` or cross-linking `docs/src/appendix/sentinel.md` from it. Recorded
   metric restatement: FR-26.1's "8 of 15+ → 15+ of 15+" becomes **18 of 19 → 19 of 19** against the
   live chapter, with the re-anchoring stated explicitly.
-- **D-03: FR-26.1's four-Mermaid-diagram clause is withdrawn, with the reason and a mapping
-  recorded.** The four named diagrams are overall hexagonal system architecture; Battalion
+- **D-03: FR-26.1's four-Mermaid-diagram clause is withdrawn.** The reason and a mapping are
+  recorded. The four named diagrams are overall hexagonal system architecture; Battalion
   orchestration patterns; data flow through a Paladin execution cycle; Arsenal/MCP tool integration
   flow. Record which of the six existing SVGs in `docs/src/assets/`
   (`ArchitectureOverview`, `LayerArchitecture`, `ComponentInteractionFlow`,
@@ -195,8 +195,8 @@ amended in place per D-00d rather than silently dropped.
   is **one artifact — not 26 tasks**, which DOCS-01 explicitly forbids. A "current" verdict must be
   worded so it cannot be mistaken for "unchecked".
   — **Reversibility:** reversible.
-- **D-10: Install the doc toolchain locally, review the real linkcheck report, and make the install
-  survive a devcontainer rebuild.** Run `mdbook build docs/` locally and read the actual linkcheck
+- **D-10: Install the doc toolchain locally and review the real linkcheck report.** The install must
+  also survive a devcontainer rebuild. Run `mdbook build docs/` locally and read the actual linkcheck
   output, recording it verbatim — `docs/book.toml` sets `warning-policy = "error"` with
   `follow-web-links = false`, so the run is offline and deterministic. **Citing CI's pass/fail
   signal is not sufficient**: task 1.2 asks for the report to be *reviewed*.

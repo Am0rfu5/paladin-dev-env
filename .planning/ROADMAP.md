@@ -1130,20 +1130,42 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
 **Plans**: 14 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 16-01-PLAN.md — TRACER: pinned doc toolchain (local + both devcontainer images), verbatim linkcheck report, the D-09 verdict record, and `cicd.md` settled by content
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 16-02-PLAN.md — DOCS-01 sweep A: orchestration, maneuver-flow-dsl, memory-management
-- [ ] 16-03-PLAN.md — DOCS-01 sweep B: tool-integration, paladin-configuration, output-formatting (closes the user-guides group)
-- [ ] 16-04-PLAN.md — DOCS-01 sweep C: docker, kubernetes, production (closes the deployment group)
-- [ ] 16-05-PLAN.md — DOCS-01 sweep D: the four operations pages, end-state linkcheck re-review, and two in-place ledger amendments
 - [ ] 16-06-PLAN.md — DOCS-02: ADR-0047, the archive banner, Sentinel in the live chapter, PROMOTION.md → 0048
 - [ ] 16-07-PLAN.md — DOCS-03: clear the 20 `cargo doc` warnings, uniform `missing_docs` posture, ADR-0033 amended
 - [ ] 16-08-PLAN.md — DOCS-03: the D-05 entry-point enumeration, `scripts/check-public-api-examples.sh`, the D-06 heading rule
-- [ ] 16-09-PLAN.md — DOCS-03: executable `# Examples` on the `paladin-ports` trait surface
-- [ ] 16-10-PLAN.md — DOCS-03: executable `# Examples` on paladin-core, memory, battalion, herald
-- [ ] 16-11-PLAN.md — DOCS-03: executable `# Examples` on the five zero-example crates and the facade
-- [ ] 16-12-PLAN.md — DOCS-03: heading normalisation on the enumeration, both gates green, closing evidence
 - [ ] 16-13-PLAN.md — DOCS-04: recorder toolchain in both images, behind a blocking supply-chain checkpoint
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 16-03-PLAN.md — DOCS-01 sweep B: tool-integration, paladin-configuration, output-formatting (closes the user-guides group)
+- [ ] 16-09-PLAN.md — DOCS-03: executable `# Examples` on the `paladin-ports` trait surface
 - [ ] 16-14-PLAN.md — DOCS-04: four `.tape`-driven recordings, `docs/DEMOS.md`, one README line, requirement amendments
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 16-04-PLAN.md — DOCS-01 sweep C: docker, kubernetes, production (closes the deployment group)
+- [ ] 16-10-PLAN.md — DOCS-03: executable `# Examples` on paladin-core, memory, battalion, herald
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 16-05-PLAN.md — DOCS-01 sweep D: the four operations pages, end-state linkcheck re-review, and two in-place ledger amendments
+- [ ] 16-11-PLAN.md — DOCS-03: executable `# Examples` on the five zero-example crates and the facade
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 16-12-PLAN.md — DOCS-03: heading normalisation on the enumeration, both gates green, closing evidence
+
+**Cross-cutting constraints:**
+
+- `mdbook build docs/` exits 0 after the edits, and no file outside the three named pages is modified (D-12)
+- The violation count reported by scripts/check-public-api-examples.sh is strictly lower at the end of this plan than at its start, and both figures are recorded
 
 **Provider Expansion**
 

@@ -4,15 +4,15 @@ milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
 current_phase: 16
 current_phase_name: Documentation Currency & the Architecture Gap
-status: planning
+status: executing
 stopped_at: Phase 16 context gathered
-last_updated: "2026-08-24T00:10:48.277Z"
+last_updated: "2026-08-24T01:40:03.294Z"
 last_activity: 2026-08-23
 last_activity_desc: Phase 17 complete, transitioned to Phase 16
 progress:
   total_phases: 14
   completed_phases: 13
-  total_plans: 135
+  total_plans: 149
   completed_plans: 135
 ---
 
@@ -41,7 +41,7 @@ provider, transport, or storage implementation.
 
 Phase: 16 — Documentation Currency & the Architecture Gap
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
   5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
   test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
   2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
