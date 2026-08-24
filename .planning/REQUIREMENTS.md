@@ -3425,6 +3425,30 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-asciinema-demos (FR-26.4; G4), REQ-readme-landing-page (M11 Epic 5);
       `intel/code-verification.md` run-5 verified-open finding 4.*
 
+      **Amended 2026-08-24 (Phase 16, plan 16-14, D-00d/M-08).** The live-key premise above is
+      **measured false**. All four named scenarios have shipped examples that run entirely
+      offline on mock backends — `basic_paladin` and `council_discussion` use `MockLlmAdapter`;
+      `formation_sequential` and `grove_routing` wire an inline mock `PaladinPort`
+      implementation — none calls a real LLM provider. `cargo run --example basic_paladin` (and
+      its three siblings, `formation_sequential`, `council_discussion`, `grove_routing`) were each
+      run and verified at **exit 0, offline, with no credentials**, immediately before recording.
+      Consequence: the recordings sit **inside** the offline gate, not outside it, so DOCS-04
+      closes on its own terms rather than being withdrawn on a premise this phase found untrue.
+
+      **Amended 2026-08-24 (Phase 16, plan 16-14, D-00d/M-09).** The `docs/assets/` state above is
+      **misstated**. The directory did **not** exist at all before this phase (matching the Phase
+      16 hand-off's D-13(e) finding above, not the "exists and is empty" premise this entry itself
+      states) — `docs/src/assets/` is a different, unrelated path, holding six pre-existing
+      architecture SVGs owned by DOCS-02, untouched by this amendment. This phase populated
+      `docs/assets/recordings/` with the four demos' `.tape` sources and their `.gif`/`.cast`
+      artifacts, so the "populated or removed" done-condition above is met by population.
+
+      **Also recorded 2026-08-24 (plan 16-14).** FR-26.4's README-embedding clause is **adapted,
+      not dropped**, per D-15: the README it targeted was rewritten by Milestone 11 Epic 5 into a
+      concise landing page with no demos section (as this entry and the Phase 16 hand-off above
+      both already note), so the four demos are indexed at `docs/DEMOS.md` instead, and the
+      README carries a single added line pointing at it.
+
 ---
 
 ## v1 Requirements — Provider Expansion (Phase 17)
