@@ -215,6 +215,26 @@ pub struct LogHealthCheck {
 }
 
 /// Port defining the logging interface
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::log_port::{LogPort, LogQuery, LogResult};
+/// use paladin_core::platform::container::log::{LogDestination, LogEntryBuilder, LogLevel};
+/// use paladin_core::base::entity::message::Location;
+///
+/// async fn write_and_count(logger: &dyn LogPort) -> LogResult<u64> {
+///     let entry = LogEntryBuilder::new_entry(
+///         Location::service("orchestrator"),
+///         LogDestination::System,
+///         LogLevel::Info,
+///         "Paladin execution started".to_string(),
+///     );
+///
+///     logger.write_entry(entry).await?;
+///     logger.count_entries(LogQuery::default()).await
+/// }
+/// ```
 #[async_trait]
 pub trait LogPort: Send + Sync {
     /// Write a single log entry

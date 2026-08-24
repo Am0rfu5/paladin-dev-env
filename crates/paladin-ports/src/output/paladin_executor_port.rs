@@ -40,7 +40,7 @@ use paladin_core::platform::container::paladin_error::PaladinError;
 ///
 /// Implementations must be `Send + Sync` to allow sharing across async tasks.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust,no_run
 /// use paladin_ports::output::paladin_executor_port::PaladinExecutorPort;

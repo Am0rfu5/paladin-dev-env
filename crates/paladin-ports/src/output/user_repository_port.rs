@@ -8,6 +8,35 @@ use paladin_core::platform::container::user::{User, UserError};
 use uuid::Uuid;
 
 /// Repository port for [`User`] persistence.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::user_repository_port::UserRepositoryPort;
+/// use paladin_core::platform::container::user::{User, UserData, UserError, UserProfile, UserRole, Email};
+///
+/// async fn register_user(
+///     repo: &dyn UserRepositoryPort,
+///     username: &str,
+///     email: &str,
+/// ) -> Result<User, UserError> {
+///     if repo.email_exists(email).await? {
+///         return Err(UserError::InvalidEmail(email.to_string()));
+///     }
+///
+///     let data = UserData {
+///         username: username.to_string(),
+///         email: Email::new(email.to_string())?,
+///         password_hash: "hashed-password".to_string(),
+///         is_active: true,
+///         is_verified: false,
+///         role: UserRole::User,
+///         profile: UserProfile::default(),
+///     };
+///
+///     repo.save(User::new(data, None)).await
+/// }
+/// ```
 #[async_trait]
 pub trait UserRepositoryPort: Send + Sync {
     /// Find a user by their UUID.

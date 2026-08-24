@@ -53,6 +53,28 @@ pub enum AuthError {
 ///
 /// Implementations must be safe to share across threads (`Send + Sync`) so that
 /// they can be held behind an `Arc` in asynchronous request handlers.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::auth_port::AuthPort;
+/// use paladin_core::platform::container::user::UserRole;
+/// use uuid::Uuid;
+///
+/// async fn login_and_verify(
+///     auth: &dyn AuthPort,
+///     user_id: Uuid,
+/// ) -> Result<bool, paladin_ports::output::auth_port::AuthError> {
+///     let issued = auth.issue_token(user_id, UserRole::User).await?;
+///     let claims = auth.verify_token(&issued.token).await?;
+///     let is_same_user = claims.user_id == user_id;
+///
+///     // Revoking makes the token immediately invalid.
+///     auth.revoke_token(&issued.token).await?;
+///
+///     Ok(is_same_user)
+/// }
+/// ```
 #[async_trait]
 pub trait AuthPort: Send + Sync {
     /// Issues a new token for the given user and role.

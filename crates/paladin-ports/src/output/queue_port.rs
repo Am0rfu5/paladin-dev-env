@@ -613,6 +613,27 @@ pub trait QueuePort: Send + Sync {
 
 /// Specialized queue port for typed queue operations
 /// This provides type-safe operations for specific queue types
+///
+/// # Examples
+///
+/// Generic methods (`enqueue_typed`, `process_with_handler`) make this trait not
+/// object-safe, so implementors are reached through a generic bound rather than `dyn`.
+///
+/// ```rust
+/// use paladin_ports::output::queue_port::{TypedQueuePort, QueueError};
+/// use paladin_core::platform::container::queue_item::QueueItem;
+/// use paladin_core::base::entity::message::{Location, Message};
+///
+/// async fn enqueue_typed_task<S>(queue: &S, task: String) -> Result<(), QueueError>
+/// where
+///     S: TypedQueuePort<String>,
+/// {
+///     let message = Message::new(Location::service("caller"), Location::system("queue"), task);
+///     let item = QueueItem::new("typed-tasks".to_string(), message, None);
+///     queue.enqueue_typed("typed-tasks", item).await?;
+///     Ok(())
+/// }
+/// ```
 #[async_trait]
 pub trait TypedQueuePort<T>: Send + Sync
 where
@@ -637,6 +658,37 @@ where
 }
 
 /// Batch queue operations port
+///
+/// # Examples
+///
+/// Generic methods make this trait not object-safe, so implementors are reached through a
+/// generic bound rather than `dyn`.
+///
+/// ```rust
+/// use paladin_ports::output::queue_port::{BatchQueuePort, QueueError};
+/// use paladin_core::platform::container::queue_item::QueueItem;
+/// use paladin_core::base::entity::message::{Location, Message};
+/// use uuid::Uuid;
+///
+/// async fn enqueue_report_batch<S>(
+///     queue: &S,
+///     reports: Vec<String>,
+/// ) -> Result<Vec<Uuid>, QueueError>
+/// where
+///     S: BatchQueuePort,
+/// {
+///     let items: Vec<_> = reports
+///         .into_iter()
+///         .map(|report| {
+///             let message =
+///                 Message::new(Location::service("caller"), Location::system("queue"), report);
+///             QueueItem::new("reports".to_string(), message, None)
+///         })
+///         .collect();
+///
+///     queue.enqueue_batch("reports", items).await
+/// }
+/// ```
 #[async_trait]
 pub trait BatchQueuePort: Send + Sync {
     /// Enqueue multiple items at once
@@ -674,6 +726,30 @@ pub trait BatchQueuePort: Send + Sync {
 }
 
 /// Priority queue operations port
+///
+/// # Examples
+///
+/// The generic `enqueue_with_priority` method makes this trait not object-safe, so
+/// implementors are reached through a generic bound rather than `dyn`.
+///
+/// ```rust
+/// use paladin_ports::output::queue_port::{PriorityQueuePort, QueueError};
+/// use paladin_core::platform::container::queue_item::QueueItem;
+/// use paladin_core::base::entity::message::{Location, Message, MessagePriority};
+///
+/// async fn enqueue_urgent_task<S>(queue: &S, task: String) -> Result<(), QueueError>
+/// where
+///     S: PriorityQueuePort,
+/// {
+///     let message = Message::new(Location::service("caller"), Location::system("queue"), task);
+///     let item = QueueItem::new("tasks".to_string(), message, None);
+///
+///     queue
+///         .enqueue_with_priority("tasks", item, MessagePriority::Critical)
+///         .await?;
+///     Ok(())
+/// }
+/// ```
 #[async_trait]
 pub trait PriorityQueuePort: Send + Sync {
     /// Enqueue with explicit priority override
@@ -701,6 +777,19 @@ pub trait PriorityQueuePort: Send + Sync {
 }
 
 /// Monitoring and management port for queue operations
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::queue_port::{QueueManagementPort, QueueError};
+///
+/// async fn pause_and_purge(queue: &dyn QueueManagementPort) -> Result<usize, QueueError> {
+///     queue.pause_queue("nightly-jobs").await?;
+///     let purged = queue.purge_failed("nightly-jobs").await?;
+///     queue.resume_queue("nightly-jobs").await?;
+///     Ok(purged)
+/// }
+/// ```
 #[async_trait]
 pub trait QueueManagementPort: Send + Sync {
     /// Pause processing for a queue
@@ -741,6 +830,26 @@ pub trait QueueManagementPort: Send + Sync {
 
 /// Combined queue port that includes all queue operations
 /// This is the main port that application services should depend on
+///
+/// # Examples
+///
+/// This combinator trait declares no methods of its own — it is a bound that grants access to
+/// every constituent port's methods at once. [`QueuePort`], [`BatchQueuePort`],
+/// [`PriorityQueuePort`] and [`QueueManagementPort`] each document their own call pattern above.
+/// Because two of those supertraits have generic methods, `FullQueuePort` is also not
+/// object-safe, so implementors are reached through a generic bound rather than `dyn`.
+///
+/// ```rust
+/// use paladin_ports::output::queue_port::{FullQueuePort, QueueError};
+///
+/// async fn queue_health_summary<S: FullQueuePort>(queue: &S) -> Result<bool, QueueError> {
+///     // From `QueuePort` (base capability).
+///     let healthy = queue.health_check().await?;
+///     // From `QueueManagementPort` (combined capability).
+///     queue.pause_queue("maintenance").await?;
+///     Ok(healthy)
+/// }
+/// ```
 pub trait FullQueuePort:
     QueuePort + BatchQueuePort + PriorityQueuePort + QueueManagementPort + Send + Sync
 {
