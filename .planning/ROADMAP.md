@@ -1140,7 +1140,7 @@ Plans:
 - [x] 16-06-PLAN.md — DOCS-02: ADR-0047, the archive banner, Sentinel in the live chapter, PROMOTION.md → 0048
 - [x] 16-07-PLAN.md — DOCS-03: clear the 20 `cargo doc` warnings, uniform `missing_docs` posture, ADR-0033 amended
 - [x] 16-08-PLAN.md — DOCS-03: the D-05 entry-point enumeration, `scripts/check-public-api-examples.sh`, the D-06 heading rule
-- [ ] 16-13-PLAN.md — DOCS-04: recorder toolchain in both images, behind a blocking supply-chain checkpoint
+- [x] 16-13-PLAN.md — DOCS-04: recorder toolchain in both images, behind a blocking supply-chain checkpoint
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
