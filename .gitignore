@@ -24,3 +24,6 @@ docs/mermaid-init.js
 # Kubernetes secrets (real values — keep out of VCS; .example files are tracked)
 k8s/**/secret.yaml
 k8s/secret.yaml
+
+# GSD research web-fetch cache — transient artifacts, not project record
+.planning/research/.cache/
