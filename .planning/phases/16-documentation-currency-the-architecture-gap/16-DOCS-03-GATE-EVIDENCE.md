@@ -295,9 +295,52 @@ by `git diff -U0 -- '*.rs' | grep -c '^+.*allow(rustdoc'` → `0` and
 `git diff -U0 -- '*.rs' | grep -c '^+.*```rust,ignore'` → `0`.
 `git diff --exit-code .github/workflows/` → exit `0` (no workflow file touched).
 
-## After (task 2, final) — the missing-docs bar flipped
+## After (task 2, final) — 2026-08-24, `paladin-herald`'s missing-docs bar flipped
 
-Recorded in the "Final recorded state" section below, appended after task 2's
-`paladin-herald` attribute flip.
+**`cargo doc -p paladin-herald --no-deps` after flipping
+`crates/paladin-herald/src/lib.rs:20` from `#![allow(missing_docs)]` to
+`#![warn(missing_docs)]`:**
 
-<!-- gsd:write-continue -->
+```
+    Checking paladin-ai-core v0.8.0 (.../crates/paladin-core)
+ Documenting paladin-herald v0.8.0 (.../crates/paladin-herald)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.73s
+   Generated .../target/doc/paladin_herald/index.html
+```
+
+`grep -c "warning:" /tmp/doc-output.txt` → `0`. This matches M-07's
+research-session measurement exactly: flipping the attribute produces zero
+additional warnings.
+
+**Final recorded state — full workspace gate, flip applied, this plan's last recorded run:**
+
+**Command:** `cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt`
+**Exit status:** `0` (gate passes)
+
+```
+    Checking paladin-herald v0.8.0 (.../crates/paladin-herald)
+ Documenting paladin-herald v0.8.0 (.../crates/paladin-herald)
+    Checking paladin-ai v0.8.0 (.../workspace/.claude/worktrees/agent-a58f2fdcc23350adc)
+ Documenting paladin-ai v0.8.0 (.../workspace/.claude/worktrees/agent-a58f2fdcc23350adc)
+ Documenting paladin-doc-examples v0.8.0 (.../crates/doc-examples)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.80s
+   Generated .../target/doc/paladin/index.html and 12 other files
+```
+
+`grep -c "warning:" /tmp/doc-output.txt` → `0`. The exact `ci.yml:63` command
+exits `0` with the flipped attribute in place, confirming the gate holds with
+the missing-docs bar now uniform across all ten library crates and the
+facade.
+
+## Summary
+
+| Run | Command exit | Warnings |
+|---|---|---|
+| Before (unmodified tree) | 1 | 20 (24 `warning:` lines incl. 4 per-crate summaries) |
+| After task 1 (link/HTML-tag fixes; herald attribute unchanged) | 0 | 0 |
+| After task 2 (herald `missing_docs` flipped to `warn`) | 0 | 0 |
+
+DOCS-03's "adds the CI gate" clause was already satisfied by `ci.yml:63`
+before this plan ran (D-00u) — this plan applies the already-ratified bar to
+the tree and proves the gate green; it does not create the gate mechanism.
+No `.github/workflows/` file was modified by this plan.

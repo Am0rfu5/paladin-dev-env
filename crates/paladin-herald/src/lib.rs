@@ -17,7 +17,7 @@
 //! Each implements `paladin_core::platform::container::herald::Herald` and can be used
 //! anywhere a `dyn Herald` is expected.
 
-#![allow(missing_docs)]
+#![warn(missing_docs)]
 
 pub mod json_herald;
 pub mod markdown_herald;
