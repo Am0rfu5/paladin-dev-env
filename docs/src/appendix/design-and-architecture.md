@@ -1,5 +1,13 @@
 # Paladin Framework: Design and Architecture Outline
 
+> **Archived — historical document.** This page is superseded and is retained only as a historical
+> record; it is not maintained. For the current, maintained architecture documentation, see the
+> [Architecture](../architecture/overview.md) chapter — it covers Commander, Sanctum, Maneuver,
+> Council, Conclave and Grove. For the Sentinel Vision System (multimodal capabilities), see
+> [Sentinel](sentinel.md). This disposition, the metric re-anchoring, and the withdrawal of this
+> page's originally-planned diagram clause are recorded in ADR-0047
+> (`.planning/decisions/0047-architecture-appendix-disposition.md`).
+
 ## Table of Contents
 1. [Executive Summary](#executive-summary)
 2. [Architecture Overview](#architecture-overview)
