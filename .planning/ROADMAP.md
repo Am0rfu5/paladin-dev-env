@@ -1127,7 +1127,23 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
   3. `cargo doc` has one bar across the workspace, CI enforces it, and every public item in `src/` carries documentation with at least one example on each entry point — so the framework's primary integration contract is documented to a standard that three milestones previously set three different ways.
   4. `docs/assets/` either holds the demo recordings or does not exist — an empty directory and a missing `docs/DEMOS.md` stop implying work in flight, and the decision to record or withdraw the demos is on record along with the reason.
 
-**Plans**: TBD
+**Plans**: 14 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — TRACER: pinned doc toolchain (local + both devcontainer images), verbatim linkcheck report, the D-09 verdict record, and `cicd.md` settled by content
+- [ ] 16-02-PLAN.md — DOCS-01 sweep A: orchestration, maneuver-flow-dsl, memory-management
+- [ ] 16-03-PLAN.md — DOCS-01 sweep B: tool-integration, paladin-configuration, output-formatting (closes the user-guides group)
+- [ ] 16-04-PLAN.md — DOCS-01 sweep C: docker, kubernetes, production (closes the deployment group)
+- [ ] 16-05-PLAN.md — DOCS-01 sweep D: the four operations pages, end-state linkcheck re-review, and two in-place ledger amendments
+- [ ] 16-06-PLAN.md — DOCS-02: ADR-0047, the archive banner, Sentinel in the live chapter, PROMOTION.md → 0048
+- [ ] 16-07-PLAN.md — DOCS-03: clear the 20 `cargo doc` warnings, uniform `missing_docs` posture, ADR-0033 amended
+- [ ] 16-08-PLAN.md — DOCS-03: the D-05 entry-point enumeration, `scripts/check-public-api-examples.sh`, the D-06 heading rule
+- [ ] 16-09-PLAN.md — DOCS-03: executable `# Examples` on the `paladin-ports` trait surface
+- [ ] 16-10-PLAN.md — DOCS-03: executable `# Examples` on paladin-core, memory, battalion, herald
+- [ ] 16-11-PLAN.md — DOCS-03: executable `# Examples` on the five zero-example crates and the facade
+- [ ] 16-12-PLAN.md — DOCS-03: heading normalisation on the enumeration, both gates green, closing evidence
+- [ ] 16-13-PLAN.md — DOCS-04: recorder toolchain in both images, behind a blocking supply-chain checkpoint
+- [ ] 16-14-PLAN.md — DOCS-04: four `.tape`-driven recordings, `docs/DEMOS.md`, one README line, requirement amendments
 
 **Provider Expansion**
 
