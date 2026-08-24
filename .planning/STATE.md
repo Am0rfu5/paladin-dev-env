@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
-current_phase: 17
-current_phase_name: Additional LLM Provider Adapters
-status: planning
-stopped_at: Phase 16 context gathered
+current_phase: null
+current_phase_name: null
+status: milestone-ready
+stopped_at: null
 last_updated: "2026-08-24T15:58:06.397Z"
 last_activity: 2026-08-24
-last_activity_desc: Phase 16 complete, transitioned to Phase 17
+last_activity_desc: Phase 16 complete and verified — all 17 roadmap phases now complete
 progress:
   total_phases: 14
   completed_phases: 14
@@ -25,28 +25,41 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 16 — documentation-currency-the-architecture-gap
+**Current focus:** None — all 17 roadmap phases complete. Next decision is the v0.7.2 milestone close.
 
-**Progress:** [████████████████████] 113/113 plans (100%)
+**Progress:** [████████████████████] 149/149 plans (100%) · 17/17 phases complete
 
-> ⚠ **Milestone-boundary discrepancy — needs a decision.** STATE tracks milestone v0.7.2 as
-> 7 phases (5-11), now 7/7 complete. The ROADMAP `## Milestones` table still scopes
-> **Milestone 2-3 close-out to phases 5-6** and marks the **Milestone 4-6 (7-8)** and
-> **Milestone 7-8 (9-11)** blocks "Not started", even though phases 7, 8, 10 and 11 are all
-> checked complete. Phase 12 opens the **Milestone 9-12 + Deferred-QA** block, so it is a
-> milestone boundary either way. Decide whether to close v0.7.2 with `/gsd-complete-milestone`
-> and refresh the Milestones table's status cells before planning Phase 12.
+> ⚠ **Milestone-boundary discrepancy — still open, now the only outstanding decision.**
+> *(Refreshed 2026-08-24 at Phase 16 close; the prior text pointed at "before planning Phase 12",
+> which has long since shipped.)* All **17** roadmap phases are checked complete and all
+> **149** plans have SUMMARYs, but the ROADMAP `## Milestones` table has not kept up — the
+> **Milestone 4-6 (7-8)**, **Milestone 7-8 (9-11)** and **Milestone 9-12 + Deferred-QA (12-16)**
+> blocks, and the **Provider Expansion (17-)** row, still read "Not started" against phases that
+> are all `[x]`. Nothing is unbuilt; the table's status cells are stale. Close v0.7.2 with
+> `/gsd-complete-milestone` and refresh those cells as part of it. Left as a flagged decision
+> rather than edited here, because milestone scoping is the user's call and spans phases outside
+> Phase 16's remit.
 
 ## Current Position
 
-Phase: 17 — Additional LLM Provider Adapters
-Plan: Not started
-Status: Ready to plan
+Phase: None — all 17 roadmap phases complete
+Plan: None outstanding — 149/149 plans have SUMMARYs
+Status: Milestone v0.7.2 ready to close
+
+Phase 16 (Documentation Currency & the Architecture Gap) closed 2026-08-24: 14 plans across
+6 waves, `16-VERIFICATION.md` passed 4/4 on its second pass, DOCS-01…DOCS-04 all ticked. Note
+Phase 17 completed earlier (2026-08-23) — 16 ran last, so "next phase" routing does not apply.
+Carried forward, none blocking: FR-26.3's "79 entry points" is not reproducible from the tree
+(76 is; attributed to a stale figure in 16-DOCS-03-ENTRY-POINTS.md); the Charm APT signing key
+behind the vhs install is owner-authorised with its independent-corroboration gap open; the vhs
+Chromium-library devcontainer fix is unproven by a clean image rebuild (docker unavailable);
+and the examples gate proves headings, not that all 76 examples compile (8 pre-existing
+`ignore` fences, out of scope per the roadmap).
   5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
   test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
   2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
   PROV-04 blocked on the unmeasured coverage floor.
-Last activity: 2026-08-24 — Phase 16 complete, transitioned to Phase 17
+Last activity: 2026-08-24 — Phase 16 complete and verified; all 17 phases done
 
 ## Performance Metrics
 
