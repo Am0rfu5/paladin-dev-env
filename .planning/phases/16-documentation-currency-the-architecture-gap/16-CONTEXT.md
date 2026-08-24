@@ -231,6 +231,18 @@ amended in place per D-00d rather than silently dropped.
   mdbook tooling (D-11).
   — **Reversibility:** reversible — re-recording in another format is mechanical from the `.tape`
   sources.
+  — **Amended 2026-08-24 (plan-phase, per D-00d — superseded text retained above).** The clause
+  "Emit `.gif` … and `.cast` … " is **not satisfiable by VHS alone**: VHS's `Output` command
+  supports only `.gif`, `.mp4`, `.webm` and PNG-frame directories — `.cast` is asciinema's native
+  format and VHS has no case for it (verified from VHS's own README `### Output` section during
+  Phase 16 research; see `16-RESEARCH.md` Pitfall 4 and assumption A2). **Resolution, chosen by
+  the user this session: pair the two tools.** VHS renders the primary **`.gif`** from each
+  `.tape`; a scripted, non-interactive `asciinema rec -c "<the same command the .tape drives>"`
+  produces the **`.cast`** from the identical underlying command, so both artifacts stay
+  regenerable from checked-in source and neither is a hand-performed take. **`asciinema` is
+  therefore a named dependency of D-14** and is provisioned in both devcontainer images alongside
+  `vhs`, `ttyd`, `ffmpeg` and the mdbook tooling (D-11). D-14's tool choice is otherwise
+  unchanged — VHS is still the recorder of record and `.tape` is still the source of truth.
 - **D-15: `docs/DEMOS.md` is the index; the README gets one link to it.** Create `docs/DEMOS.md`
   with the four demos embedded, and add a **single line** to the README pointing at it. This
   honours FR-26.4's embedding clause without re-inflating the landing page Milestone 11 Epic 5
