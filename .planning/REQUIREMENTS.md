@@ -4616,6 +4616,35 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 - Mapped to phases: 90
 - Unmapped: 0 ✓
 - Duplicated across phases: 0 ✓
+- Phases carrying no requirement ID: **1 — Phase 15.1 (Git & CI Governance), deliberately** (see
+  immediately below)
+
+**Phase 15.1 mints no requirement identifier, by decision rather than by oversight.** *(Recorded
+here 2026-08-24 by the v0.8.0 milestone audit; the decision itself is Phase 15.1's, dated
+2026-08-14.)* Every other phase in this roadmap contributes IDs to the table above, so a reader
+checking coverage phase-by-phase would otherwise find Phase 15.1 simply missing and be unable to
+tell an omission from a choice. It is a choice. Plan `15.1-10` amended the phase's ROADMAP entry
+under D-00f, superseding its original `Requirements: TBD — minted during /gsd-discuss-phase 15.1`
+line with this reasoning: this document is corpus-wide rather than phase-local, and retroactively
+inventing `REQ-*` identifiers for an inserted phase would create entries with no upstream
+requirement text and no consumer pointing at them.
+
+What a later reader traces instead:
+
+- **The seven success criteria** in `ROADMAP.md`'s Phase 15.1 entry, each carrying its own dated
+  amendment where execution superseded the criterion's original premise.
+- **`.planning/decisions/0043-github-flow-trunk-and-trigger-surface.md`** and
+  **`.planning/decisions/0044-branch-protection-posture.md`**, whose `Downstream Consumers`
+  sections name the concrete artifacts that depend on each decision — the trigger-policy register
+  in `docs/src/contributing/branching-model.md`, `scripts/check-workflow-triggers.sh` and its
+  `CLAUSE_CONTEXT` 44-context assertion, `release.yml`'s `verify-tag-source` ancestry guard, and
+  `docs/src/appendix/branch-protection.md`.
+- **`.planning/phases/15.1-git-ci-governance/15.1-VERIFICATION.md`**, which verifies all seven
+  criteria `achieved` (status `passed`, amended 2026-08-15).
+
+The `90 total` figure above is therefore complete for the identifiers it counts and silent about
+Phase 15.1's seven criteria, which are verified but not identified. Do not close this by minting
+IDs — that would overturn a recorded decision.
 
 **No run-4 requirement duplicates an existing one.** Three earlier requirements were **extended in
 place** rather than duplicated, per the Roadmap Extension Protocol: ARCH-01 (pending crate

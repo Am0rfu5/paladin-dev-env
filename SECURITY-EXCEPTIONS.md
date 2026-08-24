@@ -41,12 +41,22 @@ and security-advisory UI, aimed at a security researcher disclosing a *new* find
 developer auditing an *existing* suppression — is a separate deliverable for a different audience,
 and is deliberately not addressed by this file.
 
-## The ten live suppressions
+## The eleven live suppressions
 
 Five vulnerability-class advisories (mirrored exactly between `.cargo/audit.toml` and `deny.toml`)
-and five unmaintained-class advisories (`deny.toml` only). This is the tree-verified live set, not
+and six unmaintained-class advisories (`deny.toml` only). This is the tree-verified live set, not
 the fifteen the corpus's own record remembers — see the note immediately below the payload for why
 four advisories that appear in `deny.toml`'s history are absent from this register on purpose.
+
+*(Count corrected 2026-08-24 by the v0.8.0 milestone audit. This heading and paragraph read "ten"
+and "five unmaintained-class" from the moment Phase 9 authored them (commit `a587e5a1`, plan
+09-02), when both figures were true. Phase 15.1 added the eleventh row — `RUSTSEC-2026-0249`
+(`smartstring`, transitive via `rxml`/`minidom` under `rust-s3`'s optional `s3` feature) — under
+its own D-11, updating the machine-readable payload below but not this prose above it (commit
+`d955998a`, plan 15.1-01). No gate was ever affected: `scripts/check-advisory-register.sh` parses
+`deny.toml` and `.cargo/audit.toml` directly and never reads these words, and it reports "11
+register row(s) checked against 11 deny.toml and 5 .cargo/audit.toml ignore entries; all clauses
+satisfied", exit 0. Only the register's account of itself was stale.)*
 
 <!-- BEGIN MACHINE-READABLE REGISTER -->
 ```toml
