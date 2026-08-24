@@ -137,3 +137,10 @@ None - no external service configuration required.
 ---
 *Phase: 16-documentation-currency-the-architecture-gap*
 *Completed: 2026-08-24*
+
+## Self-Check: PASSED
+
+All 4 claimed files verified present on disk (`docs/src/user-guides/orchestration.md`,
+`docs/src/user-guides/maneuver-flow-dsl.md`, `docs/src/user-guides/memory-management.md`,
+this SUMMARY). All three commit hashes (`048826a`, `0e3fef4`, `12942b8`) verified present in
+`git log --oneline --all`.
