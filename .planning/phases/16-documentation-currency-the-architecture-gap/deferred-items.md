@@ -37,3 +37,34 @@ sections with accurate content (there is no live Docker-publish workflow and no 
 security-scanning workflow to document — `ci.yml`'s own `security-audit`/`cargo-deny`/`osv-scanner`
 jobs, `ci.yml:83,103,155`, are the closest real equivalents) or explicitly mark them as
 illustrative/aspirational examples rather than descriptions of this repository's actual CI.
+
+---
+
+## RESOLVED 2026-08-24 — both `cicd.md` deferrals closed (phase-16 verification gap closure)
+
+Plan 16-01 correctly logged these two findings as outside its own acceptance criteria rather than
+fixing them silently. Phase verification (`16-VERIFICATION.md`) then flagged that deferring them
+had left `docs/src/deployment/cicd.md` as the **only** swept file carrying unflagged fabricated
+content — every other file settled with a known remaining gap (`monitoring.md`,
+`troubleshooting.md`, `performance-tuning.md`, `output-formatting.md`) had an inline
+reader-facing correction banner, and `cicd.md` had none. A reader consulting the live page saw
+fabricated, governance-contradicting content presented as fact.
+
+Both are now fixed in place, not merely flagged:
+
+1. **"Docker Build Pipeline" / `docker-publish.yml`** — the workflow does not exist and never did.
+   Replaced with the real mechanism: the `build-docker` job in `.github/workflows/release.yml:157`
+   (ghcr.io registry at `release.yml:21`, multi-arch via `setup-qemu-action@v3` +
+   `setup-buildx-action@v3`, `metadata-action@v5` tagging, `<version>` and `latest` tags at
+   `release.yml:146-147`).
+
+2. **"Security Scanning" / `security.yml` with a `snyk` job** — the workflow does not exist, and
+   the Snyk step contradicted a recorded project decision (`security.instructions.md`: Snyk
+   evaluated and **removed 2026-08-18**, no meaningful Rust coverage, a clean result means nothing
+   was analysed). Replaced with the three real jobs — `security-audit` (`ci.yml:83`), `cargo-deny`
+   (`ci.yml:103`), `osv-scanner` (`ci.yml:155`) — plus the local `make audit`/`deny`/`security`/
+   `sbom` equivalents, and the project's own "no Rust SAST" gap stated plainly rather than papered
+   over. The stale `SNYK_TOKEN` entry was removed from the required-secrets list.
+
+Both replacements carry a dated correction banner naming what was fabricated, matching the
+disclosure pattern the rest of the phase used. `mdbook build docs/` exits 0 with no broken links.

@@ -143,72 +143,32 @@ jobs:
 
 ## Docker Build Pipeline
 
-### docker-publish.yml
+> **Corrected 2026-08-24 (Phase 16 / DOCS-01).** This section previously documented a
+> `docker-publish.yml` workflow with a full YAML sample. **No such workflow exists** in
+> `.github/workflows/` and none ever did in this repository — the sample was fabricated.
+> Docker image building and publishing is part of the release pipeline, described below and
+> in [Release Pipeline](#release-pipeline).
 
-```yaml
-name: Docker
+Container images are built and published by the **`build-docker`** job in
+[`.github/workflows/release.yml`](https://github.com/Am0rfu5/paladin/blob/main/.github/workflows/release.yml)
+(`release.yml:157`), not by a standalone workflow.
 
-on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ main ]
+| Aspect | Actual configuration | Source |
+|---|---|---|
+| Registry | `ghcr.io` | `release.yml:21` (`REGISTRY`) |
+| Multi-architecture | QEMU + Buildx | `docker/setup-qemu-action@v3`, `docker/setup-buildx-action@v3` |
+| Authentication | `docker/login-action@v3` | `release.yml:175` |
+| Tagging | `docker/metadata-action@v5` | `release.yml:183` |
+| Published tags | `<version>` and `latest` | `release.yml:146-147` |
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+Pull a published image with:
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+```bash
+docker pull ghcr.io/<owner>/<image>:<version>
+docker pull ghcr.io/<owner>/<image>:latest
 ```
+
+The Dockerfiles themselves are described in [Docker Deployment](docker.md).
 
 ## Release Pipeline
 
@@ -385,57 +345,37 @@ jobs:
 
 ## Security Scanning
 
-### security.yml
+> **Corrected 2026-08-24 (Phase 16 / DOCS-01).** This section previously documented a
+> `security.yml` workflow containing a **Snyk** job (`snyk/actions/rust@master` with a
+> `SNYK_TOKEN` secret). **No such workflow exists**, and the Snyk step in particular
+> contradicts a recorded project decision: Snyk was evaluated and **removed on 2026-08-18**
+> because it has no meaningful Rust coverage — a "clean" Snyk result on this workspace means
+> *nothing was analysed*, which is worse than no scan because it reads as assurance. See
+> [`.github/instructions/security.instructions.md`](https://github.com/Am0rfu5/paladin/blob/main/.github/instructions/security.instructions.md).
+> **Do not reintroduce a Snyk step.** The real security jobs are listed below.
 
-```yaml
-name: Security
+Security scanning runs as three jobs inside
+[`.github/workflows/ci.yml`](https://github.com/Am0rfu5/paladin/blob/main/.github/workflows/ci.yml):
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 0 * * 1'  # Weekly on Monday
+| Job | Name | What it checks | Location |
+|---|---|---|---|
+| `security-audit` | Security Audit | `cargo audit` against the RustSec advisory database, with exceptions declared in `.cargo/audit.toml` | `ci.yml:83` |
+| `cargo-deny` | License & Dependency Policy | Licences, bans, sources and advisories via `cargo-deny`, plus the repository's own policy scripts (changelogs, crate names, advisory register, workflow suppressions and triggers) | `ci.yml:103` |
+| `osv-scanner` | OSV Scanner | Open Source Vulnerabilities database scan | `ci.yml:155` |
 
-jobs:
-  audit:
-    name: Cargo Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Run the dependency checks locally with the same tools CI uses:
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-
-      - name: Run cargo audit
-        run: cargo audit
-
-  deny:
-    name: Cargo Deny
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
-
-      - name: Run cargo deny
-        run: cargo deny check
-
-  snyk:
-    name: Snyk Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run Snyk
-        uses: snyk/actions/rust@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
+```bash
+make audit      # cargo-audit (RustSec advisory DB)
+make deny       # cargo-deny (licenses, bans, sources, advisories)
+make security   # both of the above
+make sbom       # cargo-cyclonedx dependency inventory
 ```
+
+**Known gap, stated plainly:** there is no static taint analysis (SAST) for first-party Rust in
+this pipeline. `cargo-audit` and `cargo-deny` scan *dependencies*; `clippy` is a lint. Evaluating
+a Rust-capable SAST is open work. Until then, credential-handling code is reviewed by hand per the
+manual checklist in `security.instructions.md`.
 
 ## Deployment Automation
 
@@ -518,7 +458,6 @@ Store secrets in GitHub repository settings:
 # Required secrets
 GITHUB_TOKEN          # Auto-provided
 OPENAI_API_KEY        # For integration tests
-SNYK_TOKEN            # For security scanning
 KUBE_CONFIG           # For K8s deployment
 ```
 
