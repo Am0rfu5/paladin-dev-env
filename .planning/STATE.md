@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
 current_phase: 16
-current_phase_name: Documentation Currency & the Architecture Gap
+current_phase_name: documentation-currency-the-architecture-gap
 status: executing
 stopped_at: Phase 16 context gathered
-last_updated: "2026-08-24T01:40:03.294Z"
-last_activity: 2026-08-23
-last_activity_desc: Phase 17 complete, transitioned to Phase 16
+last_updated: "2026-08-24T12:09:55.203Z"
+last_activity: 2026-08-24
+last_activity_desc: Phase 16 execution started
 progress:
   total_phases: 14
   completed_phases: 13
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 17 — additional-llm-provider-adapters
+**Current focus:** Phase 16 — documentation-currency-the-architecture-gap
 
 **Progress:** [████████████████████] 113/113 plans (100%)
 
@@ -39,14 +39,14 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 16 — Documentation Currency & the Architecture Gap
-Plan: Not started
-Status: Ready to execute
+Phase: 16 (documentation-currency-the-architecture-gap) — EXECUTING
+Plan: 1 of 14
+Status: Executing Phase 16
   5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
   test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
   2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
   PROV-04 blocked on the unmeasured coverage floor.
-Last activity: 2026-08-23 — Phase 17 complete, transitioned to Phase 16
+Last activity: 2026-08-24 — Phase 16 execution started
 
 ## Performance Metrics
 

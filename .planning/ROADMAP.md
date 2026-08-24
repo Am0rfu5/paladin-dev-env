@@ -1132,7 +1132,7 @@ paths filter, and closed structurally by a new `CLAUSE_REACHABILITY` in
 Plans:
 **Wave 1**
 
-- [ ] 16-01-PLAN.md — TRACER: pinned doc toolchain (local + both devcontainer images), verbatim linkcheck report, the D-09 verdict record, and `cicd.md` settled by content
+- [x] 16-01-PLAN.md — TRACER: pinned doc toolchain (local + both devcontainer images), verbatim linkcheck report, the D-09 verdict record, and `cicd.md` settled by content
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
