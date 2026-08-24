@@ -174,6 +174,14 @@ After:  319
 - The five live architecture-chapter pages are **not** audited for currency by this plan (explicitly out of scope per `16-CONTEXT.md` Deferred Ideas) — a future phase auditing them inherits the 19-of-19 baseline this plan establishes.
 - No blockers for the rest of Phase 16 (DOCS-01, DOCS-03, DOCS-04 plans are independent of this one).
 
+## Self-Check: PASSED
+
+- `.planning/decisions/0047-architecture-appendix-disposition.md` — FOUND
+- `.planning/phases/16-documentation-currency-the-architecture-gap/16-06-SUMMARY.md` — FOUND
+- Commit `d5585e7` (Task 1: ADR-0047 + PROMOTION.md) — FOUND in `git log --oneline --all`
+- Commit `9fb9f79` (Task 2: banner + Sentinel section + SUMMARY.md TOC label) — FOUND in `git log --oneline --all`
+- Commit `2d6d9ac` (this SUMMARY.md) — FOUND in `git log --oneline --all`
+
 ---
 *Phase: 16-documentation-currency-the-architecture-gap*
 *Completed: 2026-08-24*
