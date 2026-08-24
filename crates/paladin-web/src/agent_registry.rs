@@ -2,12 +2,12 @@
 //!
 //! The [`AgentRegistry`] keeps a set of named agents resident in one long-running
 //! process so HTTP handlers can look an agent up by id and run it concurrently. Each
-//! entry pairs a [`Paladin`] with its own [`PaladinExecutorPort`] implementation
+//! entry pairs a `Paladin` with its own `PaladinExecutorPort` implementation
 //! (a *per-agent executor*), so different agents may be backed by different execution
 //! wiring (circuit breakers, RAG, herald, …).
 //!
 //! Per the project's dependency-flow rule, this module depends only on the
-//! [`PaladinExecutorPort`] *trait* (`paladin-ports`) and the [`Paladin`] entity
+//! `PaladinExecutorPort` *trait* (`paladin-ports`) and the `Paladin` entity
 //! (`paladin-core`) — never on the `paladin-ai` facade that holds the concrete
 //! `PaladinExecutionService`. The concrete executor (and the concrete
 //! [`AgentProvisioner`]) are injected at composition time by the server binary

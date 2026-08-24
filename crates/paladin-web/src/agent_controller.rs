@@ -648,7 +648,7 @@ pub async fn enqueue_job(
 
 /// `GET /agents/{id}/jobs/{job_id}` — poll an async job's status and result.
 ///
-/// Returns `200 OK` with the [`JobRecord`](crate::job_store::JobRecord), or `404` if no
+/// Returns `200 OK` with the [`JobRecord`], or `404` if no
 /// job is found under `job_id` (jobs are ephemeral and may have been evicted).
 #[utoipa::path(
     get,

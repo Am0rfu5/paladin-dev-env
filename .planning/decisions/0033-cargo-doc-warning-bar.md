@@ -26,6 +26,35 @@ carry `#![warn(missing_docs)]` (`src/lib.rs:116` and each `crates/*/src/lib.rs`)
 posture is not a proposal — it is what ships today, in a job every merge must pass. This ADR
 ratifies a shipped answer; it does not adjudicate an open one.
 
+**Amendment, 2026-08-24, Phase 16 / plan 16-07:** Finding 1 above states, verbatim, "All ten
+library crates plus the facade carry `#![warn(missing_docs)]` (`src/lib.rs:116` and each
+`crates/*/src/lib.rs`), so the zero-warning posture is not a proposal — it is what ships today."
+**That sentence was inaccurate when written.** `crates/paladin-herald/src/lib.rs:20` carried
+`#![allow(missing_docs)]` — the opt-out form, not the warn form — from crate creation (the
+2026-06-04 facade-cleanup reconciliation) until this plan flipped it. Nine of the ten library
+crates plus the facade carried the warn form on 2026-08-08; `paladin-herald` did not. The
+original sentence is retained above, unedited, rather than silently rewritten (D-00d); this note
+is the correction.
+
+Plan 16-07 flipped `crates/paladin-herald/src/lib.rs:20` to `#![warn(missing_docs)]`, matching the
+other nine library crates and the facade verbatim in form (confirmed byte-identical to
+`crates/paladin-storage/src/lib.rs:18`). The flip was measured twice: once during this phase's
+research session (M-07, "flipping the attribute and rebuilding produced zero additional warnings,"
+working tree restored so the measurement left no diff) and once by this plan's own execution
+(`cargo doc -p paladin-herald --no-deps` after the flip landed: `0` warnings). Both measurements
+agree — the bar is now genuinely uniform across all ten library crates and the facade, at zero
+remediation cost.
+
+**The eleventh crate, `crates/doc-examples`, carries neither `#![warn(missing_docs)]` nor
+`#![allow(missing_docs)]`, and this amendment records that disposition explicitly rather than
+leaving it as a silent, undocumented eleventh case.** It is `publish = false` and `doctest =
+false` (`crates/doc-examples/Cargo.toml:5,9`); its entire public surface is `// ANCHOR:` regions
+(`crates/doc-examples/src/lib.rs:1-6`) pulled into the mdBook guide via `{{#include}}`. The
+documentation *for* those items is the guide page that includes them, not rustdoc's own generated
+page — requiring `missing_docs` compliance on example fixtures would generate rustdoc prose no
+reader ever visits. `crates/doc-examples` is therefore recorded **out of scope for the
+`missing_docs` bar**, by disposition rather than oversight, and no attribute was added to it.
+
 **Finding 2 — the gate's configuration and the gate's current result are two different claims, and
 only the first was previously verified.** This task ran the exact CI command above against this
 plan's own HEAD (commit `c048938`) and it **exits 1**:

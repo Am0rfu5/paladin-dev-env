@@ -5,7 +5,7 @@
 //! - **API key** via the `X-API-Key` header, matched (constant-time) against a configured
 //!   map of key → [`Principal`];
 //! - **Opaque server-issued bearer token** via `Authorization: Bearer <token>`, verified by
-//!   the injected [`AuthPort`] against the server's own in-process token store — not a
+//!   the injected `AuthPort` against the server's own in-process token store — not a
 //!   signed or self-describing token.
 //!
 //! On success a [`Principal`] (role + identifier) is attached to the request for the
