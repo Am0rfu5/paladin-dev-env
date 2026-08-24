@@ -159,7 +159,7 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 - [x] **Phase 13: Milestone 9-12 Ground Truth & Recorded Account** - Record what the orchestrator, release-automation, documentation and Web API milestones delivered, and turn two recorded defaults into decisions (completed 2026-08-10)
 - [x] **Phase 14: API Contract Truthfulness** - Make every capability the project advertises through an interface one it actually has — the token mechanism, the multi-replica store, and the LLM capability flag (completed 2026-08-12)
 - [x] **Phase 15: Coverage & CI Quality Gates** - Build the quality gates Deferred-QA Epic 25 specified and nobody started, then close the coverage register those gates measure (completed 2026-08-13)
-- [ ] **Phase 16: Documentation Currency & the Architecture Gap** - Settle Milestone 11's fourteen content-currency files by content, and decide whether the 311-line architecture document is archive or deliverable
+- [x] **Phase 16: Documentation Currency & the Architecture Gap** - Settle Milestone 11's fourteen content-currency files by content, and decide whether the 311-line architecture document is archive or deliverable (completed 2026-08-24)
 
 **Provider Expansion** — first forward work beyond the ingest (added 2026-08-15)
 
@@ -1373,7 +1373,7 @@ through it. Recorded here so neither side gets planned twice:
 | 13. Milestone 9-12 Ground Truth & Recorded Account | M9-12 | 13/13 | Complete    | 2026-08-10 |
 | 14. API Contract Truthfulness | M9-12 | 8/8 | Complete    | 2026-08-12 |
 | 15. Coverage & CI Quality Gates | M9-12 | 10/10 | Complete    | 2026-08-13 |
-| 16. Documentation Currency & the Architecture Gap | M9-12 | 0/TBD | Not started | - |
+| 16. Documentation Currency & the Architecture Gap | M9-12 | 14/14 | Complete    | 2026-08-24 |
 
 ## Not In This Roadmap
 

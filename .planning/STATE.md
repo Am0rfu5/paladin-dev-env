@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
-current_phase: 16
-current_phase_name: documentation-currency-the-architecture-gap
-status: executing
+current_phase: 17
+current_phase_name: Additional LLM Provider Adapters
+status: planning
 stopped_at: Phase 16 context gathered
-last_updated: "2026-08-24T12:09:55.203Z"
+last_updated: "2026-08-24T15:58:06.397Z"
 last_activity: 2026-08-24
-last_activity_desc: Phase 16 execution started
+last_activity_desc: Phase 16 complete, transitioned to Phase 17
 progress:
   total_phases: 14
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 149
-  completed_plans: 135
+  completed_plans: 149
 ---
 
 # Project State
@@ -39,20 +39,20 @@ provider, transport, or storage implementation.
 
 ## Current Position
 
-Phase: 16 (documentation-currency-the-architecture-gap) — EXECUTING
-Plan: 1 of 14
-Status: Executing Phase 16
+Phase: 17 — Additional LLM Provider Adapters
+Plan: Not started
+Status: Ready to plan
   5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
   test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
   2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
   PROV-04 blocked on the unmeasured coverage floor.
-Last activity: 2026-08-24 — Phase 16 execution started
+Last activity: 2026-08-24 — Phase 16 complete, transitioned to Phase 17
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 148
+- Total plans completed: 162
 - Average duration: —
 - Total execution time: —
 
@@ -74,6 +74,7 @@ Last activity: 2026-08-24 — Phase 16 execution started
 | 14 | 8 | - | - |
 | 15 | 10 | - | - |
 | 17 | 22 | - | - |
+| 16 | 14 | - | - |
 
 *Updated after each plan completion*
 

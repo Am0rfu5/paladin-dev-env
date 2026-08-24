@@ -3326,7 +3326,7 @@ threshold configuration and the local targets. Scope accordingly.
 
 ### Documentation currency & the architecture gap (DOCS)
 
-- [ ] **DOCS-01**: Milestone 11's 26 open items are settled **by content**, not by presence. This is
+- [x] **DOCS-01**: Milestone 11's 26 open items are settled **by content**, not by presence. This is
       **the only checkbox count in all 542 that survives verification as genuinely open work.** The
       items, all in `tasks-content-rewrite.md`: **task 6.0** — six user-guide in-place updates
       (orchestration, maneuver-flow-dsl, memory-management, tool-integration, paladin-configuration,
@@ -3358,7 +3358,7 @@ threshold configuration and the local targets. Scope accordingly.
       checkbox above is intentionally left unticked by this plan — requirement closure is the
       phase-close step's job, not a plan's.
 
-- [ ] **DOCS-02**: `design-and-architecture.md` is **either archive material or a live deliverable,
+- [x] **DOCS-02**: `design-and-architecture.md` is **either archive material or a live deliverable,
       and it says which.** It cannot be both, and it has been invisible for two milestones.
       The file ships at `docs/src/appendix/design-and-architecture.md` at **exactly 311 lines** —
       the identical figure the February 2026 PRD cites as the *pre-rewrite* state ("the current
@@ -3388,7 +3388,7 @@ threshold configuration and the local targets. Scope accordingly.
       (M11 Epic 3); `intel/code-verification.md` run-5 verified-open finding 4; INGEST-CONFLICTS
       run-5 warning on the relocated architecture document.*
 
-- [ ] **DOCS-03**: One `cargo doc` bar, applied, with the public API documented to it.
+- [x] **DOCS-03**: One `cargo doc` bar, applied, with the public API documented to it.
       **Three positions on one command across three milestones**: M7 Epic 4 §4.4.3 and M7 Epic 1
       §4.6.4 require **zero** `cargo doc --workspace --no-deps` warnings; M8 Epic 5 FR-19 relaxes
       the same command to "**warnings acceptable**; must not fail"; Deferred-QA FR-26.2 requires
@@ -3408,7 +3408,7 @@ threshold configuration and the local targets. Scope accordingly.
       REQ-doc-example-compile-gate (M11 Epic 3); couples to HARD-07 (Phase 10) and DEBT-03
       (Phase 8).*
 
-- [ ] **DOCS-04**: The demos have a decision, and `docs/assets/` stops implying pending work.
+- [x] **DOCS-04**: The demos have a decision, and `docs/assets/` stops implying pending work.
       FR-26.4 requires four `asciinema` recordings — **Basic Paladin Execution** (30-60 s),
       **Battalion Formation** (45-90 s), **Council Discussion** (60-120 s) and **Grove Routing**
       (45-90 s) — saved as `.cast` under `docs/assets/recordings/`, optionally converted to
@@ -4598,10 +4598,10 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | DEFER-01 | Phase 15 | Complete |
 | DEFER-02 | Phase 15 | Complete |
 | DEFER-03 | Phase 15 | Complete |
-| DOCS-01 | Phase 16 | Pending |
-| DOCS-02 | Phase 16 | Pending |
-| DOCS-03 | Phase 16 | Pending |
-| DOCS-04 | Phase 16 | Pending |
+| DOCS-01 | Phase 16 | Complete |
+| DOCS-02 | Phase 16 | Complete |
+| DOCS-03 | Phase 16 | Complete |
+| DOCS-04 | Phase 16 | Complete |
 | PROV-01 | Phase 17 | Complete |
 | PROV-02 | Phase 17 | Complete |
 | PROV-03 | Phase 17 | Complete |
