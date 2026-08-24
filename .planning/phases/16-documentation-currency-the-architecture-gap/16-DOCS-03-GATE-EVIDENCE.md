@@ -463,3 +463,74 @@ The delta equals exactly the 6 enumerated rows this plan changed (`PaladinBuilde
 `ArsenalRegistryService`, `ArsenalExecutionService`, `HandoffService`, `PaladinExecutionService`,
 `EncryptionService`) — confirming the roughly 219 remaining non-enumerated singular-heading sites
 were left untouched by design (D-06), not merely by accident.
+
+---
+
+## Post-review gate hardening — 2026-08-24 (phase-16 execution orchestrator)
+
+The advisory code review (`16-REVIEW.md`) raised one Critical and one Warning against
+`scripts/check-public-api-examples.sh`, the gate that produced this record's evidence. Both are
+fixed in commit `306d20c4`. **The material question was whether either defect had produced a false
+"76 OK" reading — it had not.** Recorded here because a gate's own evidence is only as good as the
+gate.
+
+### CR-01 (Critical) — unanchored heading match
+
+`heading_spelling()` matched `#{1,2} Examples\b` anywhere in the doc text, so prose merely
+*mentioning* the phrase mid-sentence counted as a real heading. The reviewer reproduced this with a
+throwaway crate in which a fully undocumented `pub trait *Port` passed the gate. This is the
+"silently passes when it should fail" failure mode — the worst kind of gate defect.
+
+Fixed by anchoring to the start of a doc-comment line. The anchor must allow the `///` / `//!`
+prefix, because the text arriving at this function still carries it:
+
+```
+^[[:space:]]*(///|//!)[[:space:]]*#{1,2} Examples\b
+```
+
+**Impact on this phase's evidence: none.** Before committing the fix, a probe copy with the
+corrected regex was run against the whole tree and diffed against the shipped gate's output:
+classifications were **byte-identical, 76 OK / 0 MISSING / 0 SINGULAR**. No entry point was ever
+certified on a prose false-positive. (A first attempt anchoring to `^[[:space:]]*#` reported 0 OK /
+76 MISSING — that anchor was wrong, not the tree, because it forbade the `///` prefix. Recorded
+because the wrong fix briefly looked like a catastrophic finding.)
+
+### WR-01 (Warning) — walk-up never reached the workspace root
+
+`is_unpublished_crate()`'s `while [[ "${dir}" != "." ... ]]` loop terminated *before* inspecting
+`.`, so the workspace-root `Cargo.toml` — which governs the entire `src/**` tree — was never read.
+No live impact today (the root manifest sets no `publish = false`), but the exclusion was silently
+inert for that whole tree. The loop now tests the directory before deciding whether to stop.
+
+### WR-02 (Warning) — heading presence is not example compilation: ACCEPTED, NOT FIXED
+
+The gate checks that an entry point carries an `# Examples` heading; it does not check that the
+fence beneath it compiles. Eight D-05 entries — `campaign_service.rs`, `conclave_execution_service.rs`,
+`council_service.rs`, `formation_service.rs`, `grove_service.rs`, `phalanx_service.rs`,
+`battalion/council.rs`, `battalion/grove.rs` — carry ```` ```ignore ```` blocks that satisfy the gate
+while never being compiled by `cargo test --doc`.
+
+**Measured provenance: these fences are pre-existing, not introduced by this phase.** The phase-16
+diff over those paths adds exactly two fences, both bare ```` ``` ```` (compile-and-run):
+
+```bash
+git diff 8b463c3..HEAD -- crates/paladin-battalion/src/ crates/paladin-core/src/platform/container/battalion/ \
+  | grep -E '^\+.*```' | sed 's/^+[[:space:]]*//' | sort | uniq -c
+#   2 /// ```
+```
+
+Remediating them is **explicitly prohibited for this phase** by the roadmap, which lists "auditing
+the 87 pre-existing `ignore`/`no_run`/`text` fences in `paladin-ports`" among the phase's
+prohibitions. So this is recorded as a known limitation of the gate and a candidate for future work,
+not closed here. Stated plainly: **"76/76 carry an `# Examples` heading" is what this gate proves.
+It does not prove all 76 examples compile.** The separate `cargo test --doc --workspace` figure —
+318 passing, 0 failing — is what covers compilation, and it covers only the non-ignored fences.
+
+### WR-03 (Warning) — one non-doc line in a doc-only phase
+
+`crates/paladin-herald/src/lib.rs` flips `#![allow(missing_docs)]` → `#![warn(missing_docs)]`. That
+is a compiler lint attribute, not a doc comment, and is the single line in the 57-file source diff
+falling outside this phase's "doc-comment-only" characterisation. It is 16-07's deliberate
+`missing_docs`-uniformity work, recorded in the amended ADR-0033, and the reviewer verified it does
+not break `cargo clippy -p paladin-herald -- -D warnings` under any feature combination. Accurate
+characterisation: doc-comment-only **plus one intentional lint-posture change**, not doc-only.
