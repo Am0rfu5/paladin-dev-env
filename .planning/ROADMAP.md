@@ -1155,8 +1155,8 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 16-05-PLAN.md — DOCS-01 sweep D: the four operations pages, end-state linkcheck re-review, and two in-place ledger amendments
-- [ ] 16-11-PLAN.md — DOCS-03: executable `# Examples` on the five zero-example crates and the facade
+- [x] 16-05-PLAN.md — DOCS-01 sweep D: the four operations pages, end-state linkcheck re-review, and two in-place ledger amendments
+- [x] 16-11-PLAN.md — DOCS-03: executable `# Examples` on the five zero-example crates and the facade
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
