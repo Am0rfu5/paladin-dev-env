@@ -26,6 +26,30 @@ pub use paladin_core::platform::manager::user_service::{
 };
 
 /// Concrete implementation of UserService
+///
+/// # Examples
+///
+/// ```
+/// use paladin::application::services::notification_orchestrator::NotificationService;
+/// use paladin::core::base::service::message_service::{MessageService, MessageServiceConfig};
+/// use paladin::core::platform::container::notification::NotificationServiceConfig;
+/// use paladin::core::platform::manager::user_service::UserService;
+/// use paladin_ports::output::log_port::LogPort;
+/// use paladin_ports::output::user_repository_port::UserRepositoryPort;
+/// use std::sync::Arc;
+///
+/// fn build(
+///     user_repository: Arc<dyn UserRepositoryPort>,
+///     log_port: Arc<dyn LogPort>,
+/// ) -> UserService {
+///     let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+///     let notification_service = Arc::new(NotificationService::new(
+///         NotificationServiceConfig::default(),
+///         message_service,
+///     ));
+///     UserService::new(user_repository, log_port, notification_service)
+/// }
+/// ```
 pub struct UserService {
     user_repository: Arc<dyn UserRepositoryPort>,
     log_port: Arc<dyn LogPort>,

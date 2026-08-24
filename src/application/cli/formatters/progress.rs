@@ -56,6 +56,17 @@ impl Spinner {
 }
 
 /// Progress bar builder
+///
+/// # Examples
+///
+/// ```
+/// use paladin::application::cli::formatters::progress::ProgressBarBuilder;
+///
+/// let pb = ProgressBarBuilder::new(100)
+///     .with_message("Processing")
+///     .build();
+/// pb.finish_and_clear();
+/// ```
 pub struct ProgressBarBuilder {
     total: u64,
     message: String,

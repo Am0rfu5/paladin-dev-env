@@ -66,6 +66,26 @@ impl MessageHandler<Event> for EventMessageHandler {
 /// This service provides a high-level interface for event-driven communication
 /// within the paladin system. It handles event routing, subscription management,
 /// and integrates with the underlying MessageService for transport.
+///
+/// # Examples
+///
+/// `EventService::new` registers its handler with an in-memory
+/// [`MessageService`] — no network or filesystem I/O — so the example runs
+/// to completion.
+///
+/// ```
+/// use paladin::core::base::service::message_service::{MessageService, MessageServiceConfig};
+/// use paladin::core::platform::manager::event_manager::EventService;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let message_service = Arc::new(MessageService::new(MessageServiceConfig::default()));
+/// let event_service = EventService::new(message_service).await?;
+/// # let _ = event_service;
+/// # Ok(())
+/// # }
+/// ```
 pub struct EventService {
     message_service: Arc<MessageService>,
     subscribers: EventHandlerMap,
