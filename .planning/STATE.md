@@ -5,12 +5,12 @@ milestone_name: Milestone 2-3 close-out
 current_phase: 16
 current_phase_name: Documentation Currency & the Architecture Gap
 status: planning
-stopped_at: Phase 17 context gathered
-last_updated: "2026-08-23T19:00:05.106Z"
+stopped_at: Phase 16 context gathered
+last_updated: "2026-08-24T00:10:48.277Z"
 last_activity: 2026-08-23
 last_activity_desc: Phase 17 complete, transitioned to Phase 16
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 13
   total_plans: 135
   completed_plans: 135
@@ -730,14 +730,14 @@ requirement.
 
 ## Session Continuity
 
-**Stopped at:** Phase 17 context gathered
+**Stopped at:** Phase 16 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-16T22:14:45.500Z
-Resume file: .planning/phases/17-additional-llm-provider-adapters/17-CONTEXT.md
+Last session: 2026-08-24T00:10:48.208Z
+Resume file: .planning/phases/16-documentation-currency-the-architecture-gap/16-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
