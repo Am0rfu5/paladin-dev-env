@@ -25,7 +25,7 @@ use std::collections::HashMap;
 /// Orchestrates sequential Paladin execution where output from one Paladin
 /// flows to the next, with configurable error handling and retry logic.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// use paladin_battalion::formation_service::FormationExecutionService;
