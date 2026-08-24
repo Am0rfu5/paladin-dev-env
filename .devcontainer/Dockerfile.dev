@@ -154,9 +154,12 @@ RUN cargo install --locked cargo-nextest || echo "cargo-nextest installation fai
 # vhs shells out to ffmpeg to encode GIF/mp4/webm output. asciinema produces the .cast
 # format vhs has no Output case for. The vhs/ttyd supply chain sits outside the
 # automated package-legitimacy gate's ecosystem coverage entirely (no crates.io/npm/PyPI
-# registry for either) and was human-verified out-of-band — repository URL, key
-# fingerprint, and ttyd release provenance — before this block was added. See
-# .planning/phases/16-documentation-currency-the-architecture-gap/16-DOCS-04-TOOLCHAIN.md.
+# registry for either), so no automated check can evaluate it. The project owner
+# reviewed the gathered evidence and authorised this block on 2026-08-24. Note that
+# the Charm signing-key fingerprint could NOT be corroborated against any source
+# independent of repo.charm.sh itself — that gap is open and accepted, not closed.
+# ttyd's release tag and SHA256 are pinned and checked at build time (below).
+# See .planning/phases/16-documentation-currency-the-architecture-gap/16-DOCS-04-TOOLCHAIN.md.
 
 # ttyd: no package registry exists for it at all — the only documented install path is
 # a binary download from GitHub releases. Pinned to release tag 1.7.7 (not "latest"),

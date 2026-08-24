@@ -233,7 +233,16 @@ architecture- not distro-specific, and `ffmpeg`/`asciinema` are both present in 
 repository under the same package names. Each RUN block's comment names: what the tools are for
 (the D-14 demo recordings), that `ttyd`/`ffmpeg` are vhs's own runtime dependencies rather than
 independent choices, that `asciinema` produces the `.cast` vhs cannot emit, and that the vhs/ttyd
-provenance was human-verified with a pointer to this file.
+provenance was authorised by the project owner — with the fingerprint's uncorroborated sourcing
+named as an open, accepted gap rather than a closed check — with a pointer to this file.
+
+> **Correction, 2026-08-24 (phase-16 execution orchestrator).** The Dockerfile comments as first
+> written stated the supply chain "was human-verified out-of-band — repository URL, key
+> fingerprint, and ttyd release provenance". That overstated what this record itself establishes:
+> no source independent of `repo.charm.sh` was ever reached for the fingerprint. Both Dockerfiles
+> were corrected in place to record an owner authorisation with the gap named as still open. The
+> record above was always accurate; the Dockerfile comment was not, and it is the artifact most
+> developers actually read.
 
 **Deviation from strict pinning, recorded per the plan's requirement:** `ffmpeg` and `asciinema`
 are installed via plain `apt-get install` with no explicit version, pinned only to whatever the
