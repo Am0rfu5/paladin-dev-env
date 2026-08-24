@@ -237,6 +237,21 @@ pub struct IngestionStats {
 }
 
 /// Default implementation of ContentIngestionService
+///
+/// # Examples
+///
+/// ```
+/// use paladin::application::services::content::content_ingestion_service::{
+///     ContentRepository, DefaultContentIngestionService, IngestionConfig,
+/// };
+/// use paladin::application::services::orchestration::Orchestrator;
+/// use std::sync::Arc;
+///
+/// fn build(repository: Arc<dyn ContentRepository>) -> DefaultContentIngestionService {
+///     let orchestrator = Arc::new(Orchestrator::new());
+///     DefaultContentIngestionService::new(IngestionConfig::default(), orchestrator, repository)
+/// }
+/// ```
 pub struct DefaultContentIngestionService {
     config: IngestionConfig,
     sources: Arc<RwLock<HashMap<Uuid, ContentSource>>>,

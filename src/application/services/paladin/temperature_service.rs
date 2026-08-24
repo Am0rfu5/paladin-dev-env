@@ -48,6 +48,18 @@ impl Default for TemperatureConfig {
 }
 
 /// Service for adaptive temperature selection based on task type
+///
+/// # Examples
+///
+/// ```
+/// use paladin::application::services::paladin::temperature_service::TemperatureService;
+/// use paladin_ports::output::llm_port::LlmPort;
+/// use std::sync::Arc;
+///
+/// fn build(llm_port: Arc<dyn LlmPort>) -> TemperatureService {
+///     TemperatureService::new(llm_port)
+/// }
+/// ```
 pub struct TemperatureService {
     llm_port: Arc<dyn LlmPort>,
     config: TemperatureConfig,
