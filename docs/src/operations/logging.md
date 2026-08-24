@@ -20,61 +20,70 @@ Paladin uses the Rust `tracing` crate for structured, async-aware logging with:
 - **Multiple outputs**: Console, file, and external systems
 - **Dynamic filtering**: Runtime log level adjustment
 
+> **Scope note (2026-08-24, D-09/D-12 currency sweep).** The paragraph above and most of the
+> code fences on this page describe logging via the `tracing` ecosystem (spans, `#[instrument]`,
+> `tracing-subscriber` layers, `tracing-loki`, `tracing-elastic`, `tracing-appender`). That is
+> **not** what is shipped. The live logging facade is the `log` crate
+> (`Cargo.toml:14`, `log = "0.4.21"`) with `env_logger` for configuration and output
+> (`src/main.rs:2,24`; `src/bin/paladin-server.rs:40`), wrapped by an application-layer
+> `LogOrchestrator` (`src/application/services/log_orchestrator/mod.rs`) that routes typed
+> `LogEntry` values to one of five `LogDestination`s — `System`, `Access`, `Error`, `Security`,
+> `Performance`, or `Custom(name)` (`crates/paladin-core/src/platform/container/log.rs:76-89`) —
+> through a `LogPort` implemented by `SystemLogAdapter`
+> (`src/infrastructure/adapters/logs/system_log_adapter.rs`). `tracing-subscriber` is listed as
+> a dependency (`Cargo.toml:119`) but has **zero** call sites anywhere in this workspace
+> (`grep -rl 'tracing::\|tracing_subscriber' src/ crates/` returns no files); no crate here calls
+> `tracing::info!`, uses `#[instrument]`, or registers a `tracing-subscriber` layer. `rand = "0.8"`
+> (used in the Sampling snippet below) is a real dependency (`Cargo.toml:15`); `tracing-loki`,
+> `tracing-elastic`, and `tracing-appender` are not dependencies anywhere in this workspace
+> (`grep -n 'tracing-loki\|tracing-elastic\|tracing-appender' Cargo.toml` → 0 hits). Where this
+> page's claims are independently checkable against the real facade (environment variables,
+> `config.yml`), they are corrected in place below. The remaining `tracing`-shaped code fences
+> are left as illustrative patterns rather than fully rewritten, per D-12's no-restructure guard —
+> this note is the standing correction for all of them.
+
 ## Configuration
 
 ### Environment Variables
 
-```bash
-# Set log level
-export RUST_LOG=info,paladin=debug
+`env_logger` reads the standard `log`-crate directive syntax, so module-level filters work as
+shown; `RUST_LOG_FORMAT` below was fabricated (`grep -rn RUST_LOG_FORMAT src/` → 0 hits) and has
+been removed. `SYSTEM_LOG_LEVEL` is a real fallback, read only when `RUST_LOG` is unset
+(`SystemLogAdapterConfig::from_env`, `src/infrastructure/adapters/logs/system_log_adapter.rs:59-61`).
 
-# Detailed format
-export RUST_LOG_FORMAT=json
+```bash
+# Set log level (read by env_logger, via the `log` crate's directive syntax)
+export RUST_LOG=info,paladin=debug
 
 # Enable specific modules
 export RUST_LOG=paladin::core=debug,paladin::infrastructure=info
+
+# Fallback used only when RUST_LOG is unset
+export SYSTEM_LOG_LEVEL=info
 ```
 
 ### config.yml
 
-```yaml
-logging:
-  # Global log level
-  level: "info"
+**Fabricated — corrected 2026-08-24.** No `logging:` key exists anywhere in the `Settings`
+struct or any of its per-domain config types (`grep -n logging src/config/settings.rs` → 0
+hits); log configuration is not YAML-driven at all. It is set via the environment variables
+above, plus the programmatic `SystemLogAdapterConfig`
+(`src/infrastructure/adapters/logs/system_log_adapter.rs:31-41`):
 
-  # Format: json, pretty, compact
-  format: "json"
-
-  # Outputs
-  outputs:
-    - type: "stdout"
-      level: "info"
-
-    - type: "file"
-      path: "/app/logs/paladin.log"
-      level: "debug"
-      rotation:
-        max_size: "100MB"
-        max_age: "7d"
-        max_backups: 10
-
-    - type: "loki"
-      url: "http://loki:3100"
-      labels:
-        app: "paladin"
-        environment: "production"
-
-  # Module-specific levels
-  modules:
-    paladin::core: "debug"
-    paladin::infrastructure::adapters: "info"
-    paladin::application: "debug"
-
-  # Sampling (for high-volume logs)
-  sampling:
-    enabled: true
-    rate: 0.1  # Log 10% of debug messages
+```rust,ignore
+pub struct SystemLogAdapterConfig {
+    pub log_level: String,  // from RUST_LOG / SYSTEM_LOG_LEVEL
+    pub format: LogFormat,  // Text (default) | Json | Structured(String)
+    pub target: String,     // defaults to "paladin"
+    pub structured: bool,
+}
 ```
+
+There is no Loki output, no rotation config, and no per-module or sampling YAML anywhere in the
+tree — the `outputs:`/`modules:`/`sampling:` keys previously shown here did not correspond to any
+real config surface. Structured routing by category is done in code via `LogDestination`
+(`System`, `Access`, `Error`, `Security`, `Performance`, `Custom(name)` —
+`crates/paladin-core/src/platform/container/log.rs:76-89`), not YAML.
 
 ## Log Levels
 
@@ -214,6 +223,11 @@ match llm_port.generate(model, messages, temperature).await {
 
 ## Log Aggregation
 
+**Note:** `tracing-loki` and `tracing-elastic` are not dependencies anywhere in this workspace
+(`grep -n 'tracing-loki\|tracing-elastic' Cargo.toml` → 0 hits), and no such integration file
+exists in this tree. The snippets below are illustrative of a pattern for wiring one up, not
+shipped code.
+
 ### Loki Integration
 
 ```rust,ignore
@@ -221,7 +235,7 @@ match llm_port.generate(model, messages, temperature).await {
 [dependencies]
 tracing-loki = "0.2"
 
-// src/infrastructure/logging/loki.rs
+// illustrative only — no such file exists in this tree
 use tracing_loki::Layer as LokiLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -476,12 +490,18 @@ debug!(info = ?expensive_debug_info, "Debug information");
 
 ### 7. Log Rotation
 
+`tracing-appender` is not a dependency anywhere in this workspace
+(`grep -n tracing-appender Cargo.toml` → 0 hits), and the real `src/main.rs` initializes
+`env_logger`, not this. `env_logger` itself has no built-in rotation
+(`src/infrastructure/adapters/logs/system_log_adapter.rs:412`, "env_logger doesn't support
+rotation — would need external log management"). This snippet is illustrative only.
+
 ```toml
 # Cargo.toml
 [dependencies]
 tracing-appender = "0.2"
 
-# src/main.rs
+# illustrative only — real src/main.rs uses env_logger, not tracing-appender
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
 let file_appender = RollingFileAppender::new(
@@ -493,14 +513,12 @@ let file_appender = RollingFileAppender::new(
 
 ### 8. Production Log Level
 
-```yaml
-# Production: Reduce log volume
-logging:
-  level: "warn"  # Only warnings and errors
+There is no `logging:` YAML key (see the config.yml correction above). The real equivalent is
+the `RUST_LOG` directive syntax:
 
-  # Enable debug for specific modules
-  modules:
-    paladin::core::platform: "debug"
+```bash
+# Production: reduce log volume, keep debug for one module
+export RUST_LOG=warn,paladin::core::platform=debug
 ```
 
 ### 9. Correlation IDs

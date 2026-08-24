@@ -15,9 +15,25 @@ Complete guide for monitoring Paladin with Prometheus, Grafana, and observabilit
 
 ## Overview
 
-Paladin exposes Prometheus metrics on `/metrics` endpoint (default port 9090) for comprehensive observability. The Kubernetes deployment also exposes a dedicated metrics service on port 9090 (`paladin-metrics`).
+**Corrected 2026-08-24 (D-09/D-12 currency sweep).** No `/metrics` endpoint exists in this
+codebase today: `prometheus` and `opentelemetry` are not dependencies anywhere in the workspace
+(`grep -rn 'prometheus\|opentelemetry' Cargo.toml crates/*/Cargo.toml` → 0 hits), and no route
+named `/metrics` is registered anywhere (`grep -rn '"/metrics"' src/ crates/` → 0 hits). The
+Dockerfile does `EXPOSE 8080 9090` (`Dockerfile:68`) and the shipped `k8s/service.yaml` test
+fixture does declare a `paladin-metrics` service on port 9090, but nothing listens on 9090 for
+metrics — the port and service name are reserved, not wired up (consistent with 16-04's
+`docker.md`/`production.md` findings). The two endpoints that actually exist are liveness and
+readiness, both unauthenticated (`crates/paladin-web/src/health.rs`):
+- `GET /health` → always `200 {"status": "ok"}`
+- `GET /ready` → `200 {"status": "ready", "agents": N}` once the registry is built (a shallow
+  check, no network I/O)
 
-**Monitoring Stack:**
+Everything below this point (Prometheus, Grafana, Alertmanager, Jaeger) describes a monitoring
+stack that is not implemented in this codebase — treat it as an illustrative target
+architecture, not a description of shipped code. Per D-12 the sections are left in place with
+this standing correction rather than rewritten line by line.
+
+**Monitoring Stack (target architecture, not yet implemented):**
 - **Prometheus**: Metrics collection and storage
 - **Grafana**: Visualization and dashboards
 - **Alertmanager**: Alert routing and notification
@@ -397,35 +413,24 @@ pub fn init_tracing(service_name: &str) -> Result<()> {
 
 ### Health Endpoint
 
+**Corrected 2026-08-24.** The struct below was fabricated — no `HealthStatus`/`ComponentHealth`
+type exists anywhere in this tree, and neither endpoint reports per-component (LLM/Garrison/
+Arsenal/queue) health or `uptime`. The real handlers are in
+`crates/paladin-web/src/health.rs`:
+
 ```rust,ignore
-#[derive(Serialize)]
-pub struct HealthStatus {
-    status: String,
-    version: String,
-    uptime: u64,
-    components: ComponentHealth,
+/// `GET /health` — liveness probe. Always `200 { "status": "ok" }`; depends on nothing.
+pub async fn health() -> (StatusCode, Json<Value>) {
+    (StatusCode::OK, Json(json!({ "status": "ok" })))
 }
 
-#[derive(Serialize)]
-pub struct ComponentHealth {
-    llm: String,
-    garrison: String,
-    arsenal: String,
-    queue: String,
-}
-
-pub async fn health_check() -> Json<HealthStatus> {
-    Json(HealthStatus {
-        status: "healthy".into(),
-        version: env!("CARGO_PKG_VERSION").into(),
-        uptime: get_uptime(),
-        components: ComponentHealth {
-            llm: check_llm_health().await,
-            garrison: check_garrison_health().await,
-            arsenal: check_arsenal_health().await,
-            queue: check_queue_health().await,
-        },
-    })
+/// `GET /ready` — readiness probe. `200 { "status": "ready", "agents": N }` once the
+/// registry is built. Performs no network I/O (shallow check).
+pub async fn ready(State(state): State<AgentApiState>) -> (StatusCode, Json<Value>) {
+    (
+        StatusCode::OK,
+        Json(json!({ "status": "ready", "agents": state.registry.len() })),
+    )
 }
 ```
 
