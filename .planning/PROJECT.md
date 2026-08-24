@@ -103,58 +103,91 @@ Reported test totals are deliberately excluded from the metric: across the corpu
 999 → 1,292 → 1,674 → 1,628 → 853, i.e. not a monotonic series, so no single figure is
 trustworthy enough to anchor a gate.
 
-## Current Milestone: v0.7.2 Milestone 2-3 close-out
+## Current Milestone: v0.9.0 Security Tooling
 
-**Goal:** Convert the Milestone 2-3 record from component-level claims into `file:line` verdicts,
-settle the four contested definitions Epics 11-24 left open, and close whatever verification proves
-genuinely outstanding.
+**Goal:** Close the one gap the v0.8.0 audit named as genuinely open — this project has no static
+taint analysis for first-party Rust — either by adopting a scanner that provably finds real defects
+in this tree, or by recording, with evidence, that no candidate does.
 
-**Phases:** 5-6 (numbering continues; Phases 1-4 shipped as v0.7.1)
+**Phases:** 18 (numbering continues; Phases 1-4 shipped as v0.7.1, Phases 5-17 as v0.8.0)
 
 **Target features:**
 
-- **A truthful Milestone 2-3 ledger** — all 118 run-2 requirements carrying a `file:line` verdict
-  (satisfied / diverged / partial / genuinely outstanding) instead of a PRD path that predates the
-  workspace decomposition (VERIFY-01)
-- **Verdicts, not checkbox arithmetic, for the last three unverified blocks** — Epic 22 (81 open),
-  Epic 14 (45), Epic 24 (29). A written verdict per block; 23 ledger rows currently route here
-  (VERIFY-02)
-- **The Milestone 3 epic-numbering defect fixed at source**, with the two release-notes claims
-  verified absent from the tree corrected or withdrawn (VERIFY-03)
-- **The two vision surfaces recorded as deliberate coexistence**, and an answer on whether Epic 13's
-  encryption-at-rest requirement was consciously dropped (VERIFY-04)
-- **One coverage number and one scope** surviving across all four competing positions, with the two
-  module-scoped gates placed relative to it (VERIFY-05)
-- **One recorded answer for live-API test behaviour when keys are missing** — loud failure or clean
-  skip — with the harness matching it (VERIFY-06)
-- **Grove routing honours its configured provider** — the hardcoded `model: "gpt-4"` at
-  `grove_service.rs:537` gone, with a test proving a non-OpenAI model reaches the LLM call (CLOSE-01)
-- **Everything verification proves outstanding closed or deferred with a reason** (CLOSE-02), and
-  the Phase 5 answers with code consequences applied (CLOSE-03)
+- **A scanner measured before it is adopted, never after** — the four-vulnerability Rust probe that
+  disqualified Snyk, re-run against each candidate, with the finding count recorded either way. A
+  zero-finding result satisfies the requirement by disqualifying the tool (SAST-01)
+- **A scan that cannot be path-filtered into silence** — `pull_request` with no path filter, plus
+  `push` on `main` and a schedule (SAST-02)
+- **Promotion on measured behaviour** — a recorded non-blocking window reporting false-positive rate
+  and wall-clock against 385 `.rs` files and ~142k lines, before any merge gate; then the
+  required-check set updated in all four places it is written down (SAST-03)
+- **The "Known gap: no Rust SAST" section rewritten to match the evidence**, narrowed rather than
+  deleted, with the manual credential-handling review keeping whatever it still owns (SAST-04)
 
 **Key context carried in:**
 
-- **Phase 5's only hard dependency is Phase 1 (RECON-07), which shipped in v0.7.1** — this milestone
-  is runnable now, out of numeric order relative to Phases 7-16.
-- **Two of Phase 6's three requirements have undefined scope until Phase 5 runs.** CLOSE-02's size is
-  set by Phase 5's verdicts, not by the 155 open checkboxes; it closes with a recorded "no work
-  required" verdict if all three blocks prove satisfied. This is deliberate containment — Phase 5
-  discovers, Phase 6 absorbs, both inside this milestone.
-- **Inbound from the v0.7.1 close-out:** `src/bin/paladin-server.rs` at 0.00% coverage and `minio.rs`
-  sitting outside ADR-0006's default-feature scope both land on VERIFY-05; WARN-01 (Herald
-  unreachable from Campaign, Chain of Command and the Commander router) is a candidate for Phase 6.
-- **One forward coupling out:** VERIFY-05's coverage number is what PIPE-02 (Phase 15) must land on,
-  or record why the CI gate differs.
-- **One open-ended risk:** if VERIFY-04 finds Epic 13's encryption-at-rest requirement was *not*
-  consciously dropped, that is new security work with no phase home anywhere in Phases 5-16.
-- **Deliberately deferred to a later milestone:** Phase 9's RustSec exception reconciliation, which
-  carries the corpus's only dated item — a risk acceptance expiring **2026-09-30**, roughly eight
-  weeks from this milestone's start — and Phase 12's 18-line duplicate-audit-job deletion. Plan the
-  next milestone before that date lapses.
+- **Primary candidate is CodeQL.** Its Rust support left public preview and reached general
+  availability in October 2025, is supported in default and advanced setup, and carries real Rust
+  queries. The repository is public, so code scanning and CodeQL carry no licence cost, and
+  `github/codeql-action/upload-sarif@v3` is already wired into `ci.yml` for OSV results — code
+  scanning is enabled today, and unlike Snyk no token or vendor account is needed.
+- **Semgrep is a complement, not the primary.** It is pattern matching rather than interprocedural
+  taint analysis, and thin Rust rule coverage is the same failure shape as Snyk.
+- **The Snyk lesson is the governing constraint.** A probe carrying a hardcoded credential, command
+  injection, path traversal and SQL injection returned **0 findings** in Rust while the identical
+  four in JavaScript returned 3. A clean result there meant nothing was analysed — worse than no
+  scan, because it read as assurance. `.github/instructions/security.instructions.md` forbids
+  reintroducing Snyk or recording a phase as blocked on it.
+- **Three backwards couplings constrain the wiring.** Phase 9/12 built the advisory register and
+  its enforcing guard, the governance shape new findings must fit; Phase 15.1 applied the three
+  GitHub rulesets and wrote `scripts/check-workflow-triggers.sh`, whose `CLAUSE_CONTEXT` and
+  reachability clauses constrain how a required check may be added; Phase 16 removed the last
+  `SNYK_TOKEN` references, so this milestone starts from a clean documentation state.
+- **Inbound from the v0.8.0 close-out, not owned by this milestone:** the local
+  coverage-reproduction walkthrough (owner: repo maintainer) and Nyquist validation left
+  unreconciled across all 14 archived phases (`/gsd-validate-phase <N>`).
 
 ## Requirements
 
 ### Validated
+
+**Milestone 2-12 close-out & Provider Expansion — shipped v0.8.0, 2026-08-24** (Phases 5-17,
+149 plans, 65/65 requirements verified). Archive: `.planning/milestones/v0.8.0-ROADMAP.md`.
+Requirements: `.planning/milestones/v0.8.0-REQUIREMENTS.md`. Audit:
+`.planning/milestones/v0.8.0-MILESTONE-AUDIT.md` (status `tech_debt`).
+
+- ✓ Milestone 2-3 recorded as 118 `file:line` verdicts, the three unverified blocks verdicted, and
+  the Milestone 3 epic-numbering defect fixed at source (VERIFY-01 … VERIFY-06) — v0.8.0
+- ✓ Grove routing honours its configured provider, with the no-fallback guarantee reachable from
+  `GroveExecutionService::execute()` rather than only from an internal helper (CLOSE-01 … CLOSE-03)
+  — v0.8.0
+- ✓ The workspace's real shape recorded — ten library crates plus `doc-examples` plus the root
+  facade — with four variant pairs and two policy questions answered, and every binary target given
+  a documented purpose (ARCH-01 … ARCH-07) — v0.8.0
+- ✓ Five verified defects closed: the broken API-surface CI job, missing deprecations, disabled
+  `paladin-ports` doctests, leaked CLI dependencies, and duplicate `TokenUsage` collapsed to one
+  canonical definition (DEBT-01 … DEBT-05) — v0.8.0
+- ✓ Four divergent RustSec exception sets reconciled into one register with a mechanically enforcing
+  guard, the licence posture settled, and the duplicate audit job deleted (SEC-01 … SEC-05,
+  SUPPLY-01 … SUPPLY-03) — v0.8.0
+- ✓ Milestones 7-8 and 9-12 recorded — 86 and 120 cited rows — with the 2026-06-04 reconciliation
+  made authoritative and thirteen "never implement as written" entries made unmissable
+  (HARD-01 … HARD-07, ORCH-01 … ORCH-05) — v0.8.0
+- ✓ Every deferred item and removed feature given a decision rather than a rating, and the
+  Milestone 9 candidate list triaged (FACADE-01 … FACADE-04) — v0.8.0
+- ✓ The agent API's advertised capabilities made real — the token mechanism, the multi-replica
+  store warning, and the LLM capability flag (WEB-01 … WEB-04) — v0.8.0
+- ✓ The quality gates Deferred-QA Epic 25 specified and nobody started, now built and measuring:
+  `coverage`, `cli-tests`, `bench-check`, `actionlint`, with the 82% floor single-sourced
+  (PIPE-01 … PIPE-05, DEFER-01 … DEFER-03) — v0.8.0
+- ✓ Milestone 11's documentation currency settled by content, and the 311-line architecture
+  document dispositioned by ADR-0047 (DOCS-01 … DOCS-04) — v0.8.0
+- ✓ Six new feature-gated LLM provider adapters — Kimi, Qwen, Grok, Ollama, Gemini and a generic
+  operator-configured OpenAI-compatible provider — each meeting the full `LlmPort` contract, taking
+  the shipped set from three providers to nine (PROV-01 … PROV-04) — v0.8.0
+- ✓ Branch protection applied and verified live: three rulesets, `main` protected with 44 required
+  contexts and no bypass on the merge gate, after a fast-forward reconciled a trunk 921 commits
+  behind (Phase 15.1, SC1-SC7 — no REQ-IDs by recorded decision) — v0.8.0
 
 **Milestone 1 close-out — shipped v0.7.1, 2026-08-04** (Phases 1-4, 38 plans, 25/25 requirements
 verified). Archive: `.planning/milestones/v0.7.1-ROADMAP.md`. Audit:
@@ -1465,3 +1498,7 @@ requirements, ten deferred items carrying named owners. Prior updates below.*
 documents covered — 199 classified plus 64 task lists measured deterministically — 554
 requirements, 86 forward requirements across 16 phases, 60 variant entries across 30 groups,
 69 warnings, 0 locked decisions, 0 blockers, 11 ADR candidates**)*
+
+---
+*Last updated: 2026-08-24 after the v0.8.0 milestone close (14 phases, 149 plans,
+65/65 requirements). v0.9.0 Security Tooling is open with Phase 18.*

@@ -1,5 +1,71 @@
 # Milestones
 
+## v0.8.0 Milestone 2-12 close-out & Provider Expansion (Shipped: 2026-08-24)
+
+**Phases completed:** 14 phases (5-17, including inserted 15.1), 149 plans
+**Requirements:** 65/65 satisfied (VERIFY-01…06, CLOSE-01…03, ARCH-01…07, DEBT-01…05,
+SEC-01…05, HARD-01…07, FACADE-01…04, SUPPLY-01…03, ORCH-01…05, WEB-01…04, PIPE-01…05,
+DEFER-01…03, DOCS-01…04, PROV-01…04)
+**Timeline:** 2026-08-04 → 2026-08-24 (21 days, 1,014 commits)
+**Git range:** `be2ff05` → `48ac11a5`
+**Closeout type:** override_closeout — 0 verification overrides (all 14 phases `passed`), 1 open
+artifact acknowledged; see STATE.md *Deferred Items*
+**Audit:** `milestones/v0.8.0-MILESTONE-AUDIT.md` (status `tech_debt` — all requirements
+satisfied, no critical blockers, 25 debt items recorded with owners)
+
+**Delivered:** The four remaining ingest-derived milestone blocks are closed out and the planning
+record now describes the shipped tree across all twelve historical milestones — every contested
+position answered by an evidence-cited ADR, every verified defect fixed, the quality gates that
+were only ever specified now built and measuring, and the first forward work beyond the ingest
+shipped as six new LLM provider adapters.
+
+**Key accomplishments:**
+
+- **The record now matches the tree across twelve milestones.** Five as-shipped ledgers carry 554
+  `REQ-*` rows with `file:line` verdicts — 118 for Milestone 2-3, 115 for Milestone 4-6, 86 for
+  Milestone 7-8, 120 for Milestone 9-12 — replacing PRD paths that predate the workspace
+  decomposition. Phases 5, 7, 10 and 13 touched zero `.rs` files, each boundary independently
+  re-measured at close.
+
+- **The quality gates Deferred-QA Epic 25 specified and nobody started now exist and run.** The
+  `coverage`, `cli-tests`, `bench-check` and `actionlint` CI jobs are wired and green, with the 82%
+  line-coverage floor single-sourced across `ci.yml`, the `Makefile` and ADR-0006. Two previously
+  blind modules measure 94.21% and 96.90%.
+
+- **Nine LLM providers ship where three did.** Kimi, Qwen, Grok, Ollama, Gemini and a generic
+  operator-configured OpenAI-compatible adapter join OpenAI, Anthropic and DeepSeek — five on a
+  shared extracted `CompatEngine`, Gemini on Google's own `generateContent` protocol. Live
+  four-vendor testing found and closed four real defects, including Grok rejecting every request
+  because the shared engine sent `presence_penalty` unconditionally.
+
+- **Security governance became mechanical rather than asserted.** Four divergent RustSec exception
+  sets collapsed to one register with an enforcing guard (`scripts/check-advisory-register.sh`),
+  the duplicate `cargo audit` job that falsified a completed milestone's success metric was
+  deleted, and every suppression carries an owner and a review date.
+
+- **Branch protection went from nothing to enforced.** Three GitHub rulesets are applied and
+  verified live — `main` protected with 44 required contexts and no bypass on the merge gate —
+  after a 994-commit fast-forward reconciled a trunk that sat 921 commits behind an integration
+  branch being used as `develop`.
+
+- **Snyk was measured and removed rather than trusted.** A probe carrying four deliberate
+  vulnerabilities returned 0 findings in Rust while the identical four in JavaScript returned 3.
+  The mandate was unsatisfiable and had blocked verification in six plans. The resulting honest
+  gap — no static taint analysis for first-party Rust — is now owned by Phase 18 in v0.9.0.
+
+### Known Gaps
+
+- **No Rust SAST.** `cargo-audit`/`cargo-deny` scan dependencies; clippy is a lint. Owned by
+  Phase 18 (`SAST-01`…`SAST-04`), v0.9.0.
+- **Local coverage reproduction unverified.** CI's 82.39% is confirmed (run `31727496744`); the
+  documented local procedure has never been walked on a Docker-capable machine. Owner: repo
+  maintainer.
+- **Nyquist validation unreconciled** for all 14 phases — every `VALIDATION.md` reads
+  `status: draft`, so `nyquist_compliant` is not authoritative (#2117). Phase 06 has none at all.
+  A coverage TODO, not a compliance failure.
+- **No git tag was cut.** v0.8.0 ships through the normal release process from `main`; this
+  milestone closed on an unmerged branch, and the repository enforces main-only tags.
+
 ## v0.7.1 Milestone 1 close-out (Shipped: 2026-08-04)
 
 **Phases completed:** 4 phases, 38 plans, 88 tasks
@@ -23,23 +89,28 @@ version, edition, dependency and documentation posture made coherent.
   minimum Paladin count, provider-aware temperature range, the `Herald` trait signature, the
   coverage gate, battalion cancellation, workspace version, and Rust edition. `.planning/decisions/`
   and `.planning/ledgers/` were stood up as new document classes to hold them.
+
 - **The Phase 1 decisions were applied in code, not just recorded.** `ProviderCapabilities` gained
   `temperature_range: Option<(f32, f32)>` (making DeepSeek's 0.0–2.0 reachable through
   `PaladinBuilder`), Formation now constructs from a single Paladin, and the citadel placeholder was
   renamed `BattalionCheckpointConfig` across all consumers — including two the plan's own research
   had missed.
+
 - **A real multi-byte panic was found and fixed behind a self-confirming test.**
   `TableHerald::truncate_text` sliced by byte index and panicked on multi-byte UTF-8; it now
   measures by Unicode scalar values, along with the two adjacent panic paths (`format_error`, and a
   `usize` underflow at sub-ellipsis widths) that shared the same defective helper.
+
 - **Coverage was measured offline and gated on one number.** A fully offline
   `rustc -C instrument-coverage` → `llvm-profdata` → `llvm-cov` pipeline (no `cargo-llvm-cov`, no
   network, no Docker) measured 84.79%, which became ADR-0006's single 84% hard-fail floor; Phase 3
   reproduced it verbatim at 85.56% entry and 85.92% exit, closing 4 of 5 zero-coverage files.
+
 - **Previously dead tests were compiled and run for the first time.** 25 `tests/unit/llm/` functions
   and 37 `tests/cli/` tests had never been wired into any test target; all were activated and fixed
   without deleting one. Four `#[ignore]`d Commander stubs became real error-path tests driven by a
   new `FaultyPaladinPort` harness.
+
 - **The release was made coherent and provably green.** All twelve manifests converged on version
   0.7.0 and edition 2024, `cargo audit`/`cargo deny` verdicts were recorded to a provenance
   standard, and the gate suite was measured — 2,924 tests passing, 185 doc tests, all 47 example

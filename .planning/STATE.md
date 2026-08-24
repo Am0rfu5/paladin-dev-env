@@ -1,19 +1,19 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.7.2
-milestone_name: Milestone 2-3 close-out
-current_phase_name: null
+milestone: v0.9.0
+milestone_name: Security Tooling
 status: milestone-ready
 stopped_at: null
-last_updated: "2026-08-24T22:49:06.973Z"
+last_updated: "2026-08-24T23:44:35.806Z"
 last_activity: 2026-08-24
-last_activity_desc: Phase 16 complete and verified; all 17 phases done
+last_activity_desc: Milestone v0.8.0 completed and archived
 progress:
-  total_phases: 15
-  completed_phases: 14
-  total_plans: 149
-  completed_plans: 149
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 current_phase: null
+current_phase_name: null
 ---
 
 # Project State
@@ -25,41 +25,33 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** None — all 17 roadmap phases complete. Next decision is the v0.7.2 milestone close.
+**Current focus:** v0.9.0 Security Tooling — Phase 18 (Rust SAST: evaluate and adopt CodeQL),
+not yet discussed or planned.
 
-**Progress:** [████████████████████] 149/149 plans (100%) · 17/17 phases complete
+**Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
 
-> ⚠ **Milestone-boundary discrepancy — still open, now the only outstanding decision.**
-> *(Refreshed 2026-08-24 at Phase 16 close; the prior text pointed at "before planning Phase 12",
-> which has long since shipped.)* All **17** roadmap phases are checked complete and all
-> **149** plans have SUMMARYs, but the ROADMAP `## Milestones` table has not kept up — the
-> **Milestone 4-6 (7-8)**, **Milestone 7-8 (9-11)** and **Milestone 9-12 + Deferred-QA (12-16)**
-> blocks, and the **Provider Expansion (17-)** row, still read "Not started" against phases that
-> are all `[x]`. Nothing is unbuilt; the table's status cells are stale. Close v0.7.2 with
-> `/gsd-complete-milestone` and refresh those cells as part of it. Left as a flagged decision
-> rather than edited here, because milestone scoping is the user's call and spans phases outside
-> Phase 16's remit.
+**Previous milestone:** v0.8.0 shipped 2026-08-24 — 14 phases, 149 plans, 65/65 requirements,
+1,014 commits (`be2ff05..48ac11a5`). Archived to `milestones/v0.8.0-ROADMAP.md`,
+`v0.8.0-REQUIREMENTS.md`, `v0.8.0-MILESTONE-AUDIT.md` and `v0.8.0-phases/`.
+
+> ✅ **The milestone-boundary discrepancy flagged at Phase 16 close is resolved.** The ROADMAP
+> `## Milestones` table's four stale "Not started" cells — Milestone 4-6 (7-8), Milestone 7-8
+> (9-11), Milestone 9-12 + Deferred-QA (12-16) and Provider Expansion (17) — were refreshed to
+> "Shipped v0.8.0" as part of this close, and all five blocks were scoped into one milestone. The
+> version identity is settled too: the milestone is labelled **v0.8.0**, matching every Cargo
+> manifest and the dated CHANGELOG section, rather than the `v0.7.2` the roadmap had carried.
 
 ## Current Position
 
-Phase: None — all 17 roadmap phases complete
-Plan: None outstanding — 149/149 plans have SUMMARYs
-Status: Milestone v0.7.2 ready to close
+Phase: 18 — Rust SAST: Evaluate and Adopt CodeQL (not started)
+Plan: None — run `/gsd-discuss-phase 18`, then `/gsd-plan-phase 18`
+Status: v0.9.0 Security Tooling open; v0.8.0 closed and archived 2026-08-24
+Last activity: 2026-08-24 — Milestone v0.8.0 completed and archived
 
-Phase 16 (Documentation Currency & the Architecture Gap) closed 2026-08-24: 14 plans across
-6 waves, `16-VERIFICATION.md` passed 4/4 on its second pass, DOCS-01…DOCS-04 all ticked. Note
-Phase 17 completed earlier (2026-08-23) — 16 ran last, so "next phase" routing does not apply.
-Carried forward, none blocking: FR-26.3's "79 entry points" is not reproducible from the tree
-(76 is; attributed to a stale figure in 16-DOCS-03-ENTRY-POINTS.md); the Charm APT signing key
-behind the vhs install is owner-authorised with its independent-corroboration gap open; the vhs
-Chromium-library devcontainer fix is unproven by a clean image rebuild (docker unavailable);
-and the examples gate proves headings, not that all 76 examples compile (8 pre-existing
-`ignore` fences, out of scope per the roadmap).
-  5 items in 17-UAT.md need a human/CI environment: Snyk scan, 82% coverage floor, Ollama Docker
-  test, live vendor smoke test, new CI job on a real runner. Code review round 3: 0 Critical,
-  2 Warning, 3 Info. REQUIREMENTS.md PROV-01..03 evidenced and ready to tick at phase close;
-  PROV-04 blocked on the unmeasured coverage floor.
-Last activity: 2026-08-24 — Phase 16 complete and verified; all 17 phases done
+Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
+`REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
+SAST actually analyses this tree — a zero-finding probe result disqualifies the tool and is a
+valid outcome, not a failure.
 
 ## Performance Metrics
 
@@ -688,6 +680,21 @@ requirement.
 - Phase 18 added: Rust SAST: evaluate and adopt CodeQL — new Security Tooling milestone; SAST-01..04 minted at roadmap time
 
 ## Deferred Items
+
+### Acknowledged at v0.8.0 milestone close (2026-08-24)
+
+**Verification overrides: 0** — all 14 phases (05-17) report `phase_complete: true` and
+`verification_status: passed`. **Open artifacts acknowledged: 1.** Closeout type
+`override_closeout`, on the strength of the pending todo below rather than any unverified phase.
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| Testing | `2026-08-13-verify-local-coverage-reproduction` | Open — owner: repo maintainer. Verifies that the documented local procedure (`make services-up`, then `make coverage`) reproduces CI's measured 82.39% on a Docker-capable machine. The CI half is confirmed (run `31727496744` at commit `e9e3267`); the local half has never been walked end-to-end, because no authoring environment in Phase 15 had Docker or `cargo-llvm-cov`, and none is available at close. **Acknowledged rather than closed by design:** the todo deliberately carries no `resolves_phase` tag precisely so that a phase close cannot silently absorb it | v0.8.0 close |
+| Testing | Nyquist validation never reconciled for Phases 05-17 | All 13 `VALIDATION.md` files read `status: draft` — seeded by plan-phase, never promoted by validate-phase, so `nyquist_compliant` is not authoritative. Phase 06 has no `VALIDATION.md` at all. Coverage TODO, not a compliance failure (#2117). Run `/gsd-validate-phase <N>` | v0.8.0 close |
+| Security | No static taint analysis for first-party Rust | Snyk was measured and removed 2026-08-18 (0 findings on a four-vulnerability Rust probe vs 3 for identical JavaScript). `cargo-audit`/`cargo-deny` scan dependencies; clippy is a lint. **Not deferred indefinitely — owned by Phase 18 (SAST-01…04) in the v0.9.0 Security Tooling milestone** | v0.8.0 close |
+
+The full debt inventory — 25 recorded items across 10 phases, plus 12 open and 4 waived
+`WINDOWS.md` rows — is in `.planning/milestones/v0.8.0-MILESTONE-AUDIT.md`, not duplicated here.
 
 ### Acknowledged at v0.7.1 milestone close (2026-08-04)
 
