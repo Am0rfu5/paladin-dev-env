@@ -2636,6 +2636,20 @@ inherits — nothing further will re-derive these findings.**
    corrected by, this phase's three documentation edits (`sidecar.md`, `http-service-host.md`,
    `overview.md`) — no phase owns fixing them yet.
 
+   **Amended 2026-08-24 (Phase 16, plan 16-05, D-00d/M-05).** Both links recorded above were
+   already repaired before Phase 16 began: **Phase 15.1 fixed them in commit `d87d11e`**,
+   "repair mdbook links breaking the Build MDBook required check," verified by `mdbook build`
+   reporting "No broken links found" at exit 0. Phase 16 therefore inherited a green book and did
+   not need to re-fix either link. (16-01's own first `mdbook build docs/` run, captured in
+   `16-LINKCHECK-REPORT.md` Run 1, did fail at exit 101 — but for a third, unrelated link,
+   `getting-started/configuration.md:176` linking outside the book root, which 16-01 found and
+   fixed itself; that failure is independent evidence the *rest* of the book, including both
+   links named above, was clean, since `mdbook-linkcheck` reports every broken link it finds in
+   one pass and reported only the one. Run 2, immediately after 16-01's own fix, reports "No
+   broken links found" across the whole book at exit 0, and every run through this phase's
+   closing Run 4 stays green.) The original text above is retained unmodified; this note
+   supersedes its "no phase owns fixing them yet" conclusion only, not the underlying discovery.
+
 5. **`REQ-rustdoc-zero-warnings` and `REQ-public-api-doc-audit`**, both carrying DOCS-03: the
    `cargo doc` zero-warning bar is already ratified (ADR-0033, Phase 10) and the measured 20-warning
    residue is already assigned to Phase 16 by that ADR — DOCS-03 applies the already-decided bar, it
@@ -3332,6 +3346,17 @@ threshold configuration and the local targets. Scope accordingly.
       *Derives: REQ-user-guides-rewrite, REQ-deployment-operations-docs-update,
       REQ-doc-link-repair-linkcheck, REQ-mdbook-final-review; `intel/task-completion-state.md`
       Milestone 11; INGEST-CONFLICTS run-5 warning on the 26 items needing content review.*
+
+      **Updated 2026-08-24 (plan 16-05).** All fourteen per-file content verdicts and the
+      linkcheck report's end-state review now live at
+      `.planning/phases/16-documentation-currency-the-architecture-gap/16-DOCS-01-VERDICTS.md`
+      (fourteen rows, zero `pending`, a closure statement, and an out-of-scope observations
+      section) and
+      `.planning/phases/16-documentation-currency-the-architecture-gap/16-LINKCHECK-REPORT.md`
+      (opening and closing `mdbook build docs/` runs, both reviewed in prose, not just cited
+      pass/fail). This pointer names where the evidence lives rather than inlining it; the
+      checkbox above is intentionally left unticked by this plan — requirement closure is the
+      phase-close step's job, not a plan's.
 
 - [ ] **DOCS-02**: `design-and-architecture.md` is **either archive material or a live deliverable,
       and it says which.** It cannot be both, and it has been invisible for two milestones.
