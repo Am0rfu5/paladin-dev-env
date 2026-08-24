@@ -133,6 +133,13 @@ RUN cargo install --locked --version 1.1.2 cargo-release
 RUN cargo install --locked --version 0.19.8 cargo-deny
 RUN cargo install --locked --version 0.5.9 cargo-cyclonedx
 
+# Install the doc-build toolchain (pinned) — mirrors .github/workflows/docs.yml:44-54
+# exactly, so `mdbook build docs/` run in this container and in CI cannot disagree on
+# tooling. Consumer: `mdbook build docs/` (no `make` target).
+RUN cargo install --locked --version 0.4.40 mdbook
+RUN cargo install --locked --version 0.13.0 mdbook-mermaid
+RUN cargo install --locked --version 0.7.7 mdbook-linkcheck
+
 # Install sqlx-cli for database migrations
 RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysql
 

@@ -173,7 +173,7 @@ are using.
 The full LLM environment-variable surface — every credential, base-URL, model, timeout
 and (for the generic `openai-compatible` provider) capability/temperature override the
 adapters read — is documented as a first-class configuration path, alongside the YAML
-above, in [`.env.example`](../../../.env.example) at the repository root. Copy it to
+above, in `.env.example` at the repository root. Copy it to
 `.env` and fill in the credentials you need; unset variables fall back to the defaults
 shown in this guide.
 
