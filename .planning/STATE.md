@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.7.2
 milestone_name: Milestone 2-3 close-out
-current_phase: null
 current_phase_name: null
 status: milestone-ready
 stopped_at: null
-last_updated: "2026-08-24T15:58:06.397Z"
+last_updated: "2026-08-24T22:49:06.973Z"
 last_activity: 2026-08-24
-last_activity_desc: Phase 16 complete and verified — all 17 roadmap phases now complete
+last_activity_desc: Phase 16 complete and verified; all 17 phases done
 progress:
-  total_phases: 14
+  total_phases: 15
   completed_phases: 14
   total_plans: 149
   completed_plans: 149
+current_phase: null
 ---
 
 # Project State
@@ -685,6 +685,7 @@ requirement.
 
 - Phase 15.1 inserted after Phase 15: Git & CI Governance — branch protection, trigger surface, gitflow model, docs/BRANCH_PROTECTION.md (URGENT)
 - Phase 17 added: Additional LLM Provider Adapters — provider-selection study (PROV-01) then feature-gated adapters for survivors (PROV-02..04); first forward phase beyond the ingest
+- Phase 18 added: Rust SAST: evaluate and adopt CodeQL — new Security Tooling milestone; SAST-01..04 minted at roadmap time
 
 ## Deferred Items
 

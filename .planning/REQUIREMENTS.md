@@ -3552,6 +3552,62 @@ build before the study reports.
 
 ---
 
+## v1 Requirements — Security Tooling (Phase 18)
+
+*Added 2026-08-24. Forward work, not ingest-derived — opened by the v0.8.0 milestone audit, which
+records the absence of first-party Rust static analysis as the milestone's one genuinely open item.
+`SAST-*` is the nineteenth prefix; per Roadmap Extension Protocol item 3 no earlier prefix is
+recycled. These IDs are minted at roadmap time rather than during execution, which is the lesson
+from Phase 15.1 carrying `Requirements: TBD` into execution and settling it retroactively.*
+
+### Rust static analysis (SAST)
+
+- [ ] **SAST-01**: A candidate Rust SAST is **measured against a deliberate-vulnerability probe on
+      this tree before any adoption decision**, and the finding count is recorded either way.
+      The probe is the one that disqualified Snyk, reused verbatim so the results are comparable: a
+      Rust fixture carrying a hardcoded credential, command injection via `sh -c`, path traversal
+      and SQL injection. Snyk Code returned **0 findings** on that fixture while the identical four
+      in JavaScript returned 3 (HIGH/MEDIUM/LOW), which is what proved the scanner and credentials
+      worked and the Rust analysis did not — see `.github/instructions/security.instructions.md`.
+      **A zero-finding result satisfies this requirement**: it disqualifies the tool, and the
+      verdict plus its evidence is the deliverable. What does not satisfy it is adopting a scanner
+      without running the probe.
+      Primary candidate: **CodeQL**, whose Rust support left public preview and reached general
+      availability in October 2025, is supported in both default and advanced setup, and carries
+      real Rust queries rather than file ingestion alone. Secondary: **Semgrep**, which is pattern
+      matching rather than interprocedural taint analysis and is therefore evaluated as a
+      complement, not as the primary control.
+
+- [ ] **SAST-02**: If a scanner qualifies under SAST-01, it **runs on every pull request and cannot
+      be path-filtered into silence.**
+      Its workflow triggers on `pull_request` with no path filter, plus `push` on `main` and a
+      schedule. This is a hard constraint rather than a preference: `scripts/check-workflow-triggers.sh`
+      Clause 4 exists because a required context living in a path-filtered workflow never reports
+      on a PR touching no matching path, and that PR is then unmergeable forever with no failing
+      check to point at. Cost note for planning: the repository is public, so GitHub code scanning
+      and CodeQL carry no licence cost, and `github/codeql-action/upload-sarif@v3` is already wired
+      into `ci.yml` for OSV results — code scanning is enabled today. Unlike Snyk, no token or
+      vendor account is required.
+
+- [ ] **SAST-03**: The scanner **runs non-blocking first, and is promoted on measured behaviour.**
+      A recorded observation window reports its false-positive rate and wall-clock cost against
+      this tree's real size (385 `.rs` files, ~141,717 lines). Only then may it become a required
+      check — and promotion updates all four places the required set is written down in a single
+      change: the context is added to `.github/rulesets/protect-main-branch.json` (44 → 45), the
+      live ruleset `20868126` is re-applied, `docs/src/appendix/branch-protection.md`'s context
+      table is brought to match, and `scripts/check-workflow-triggers.sh` passes. Pinning an
+      unmeasured scanner as a 45th required check is how a gate ends up permanently red or
+      routinely bypassed — the defect class Phase 12 deleted when it removed the duplicate audit
+      job.
+
+- [ ] **SAST-04**: `.github/instructions/security.instructions.md`'s **"Known gap: no Rust SAST"
+      section is rewritten to match the measured outcome**, stating what the adopted tool does and
+      does not cover and what the manual credential-handling review still owns.
+      The section is narrowed or replaced by evidence, never deleted to imply coverage the probe
+      did not establish. If SAST-01 disqualifies every candidate, this requirement is satisfied by
+      updating the section to record which tools were measured, on what date, with what result —
+      so the next person to ask does not repeat the evaluation blind.
+
 ## Competing variants (preserved unmerged)
 
 **30 variant groups, 60 entries**, carried verbatim in scope from `.planning/intel/requirements.md`
@@ -4606,14 +4662,19 @@ Forward (v1) requirements only. Shipped requirements are tracked in the two ledg
 | PROV-02 | Phase 17 | Complete |
 | PROV-03 | Phase 17 | Complete |
 | PROV-04 | Phase 17 | Complete |
+| SAST-01 | Phase 18 | Pending |
+| SAST-02 | Phase 18 | Pending |
+| SAST-03 | Phase 18 | Pending |
+| SAST-04 | Phase 18 | Pending |
 
 **Coverage:**
 
-- v1 requirements: **90 total** (25 Milestone-1 close-out + 9 Milestone 2-3 close-out +
+- v1 requirements: **94 total** (25 Milestone-1 close-out + 9 Milestone 2-3 close-out +
   12 Milestone 4-6 close-out + 16 Milestone 7-8 close-out + 24 Milestone 9-12 + Deferred-QA
-  close-out + 4 Provider Expansion, Phase 17)
+  close-out + 4 Provider Expansion, Phase 17 + 4 Security Tooling, Phase 18)
+  *(90 → 94 on 2026-08-24: `SAST-01`…`SAST-04` minted with Phase 18.)*
 
-- Mapped to phases: 90
+- Mapped to phases: 94
 - Unmapped: 0 ✓
 - Duplicated across phases: 0 ✓
 - Phases carrying no requirement ID: **1 — Phase 15.1 (Git & CI Governance), deliberately** (see

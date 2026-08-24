@@ -101,6 +101,7 @@ frozen at 311 lines that two milestones made invisible.
 | **Milestone 7-8 close-out** | 9-11 | Not started | Ingest run 4 — `.project/Milestone_7-Production-Hardening` + `.project/Milestone_8-Facade-Cleanup-Shim-Resolution` (40 docs) |
 | **Milestone 9-12 + Deferred-QA close-out** | 12-16 | Not started | Ingest run 5 (FINAL) — `.project/Milestone_9-Classic-Orchestrator-Completion` + `.project/Milestone_10-CI-Hardening-Release-Automation` + `.project/Milestone_11-Documentation-Overhaul-Publish` + `.project/Milestone_12-Web-API` + `.project/Deferred-QA-CICD-Completion` + `.project/project-management` (46 docs) |
 | **Provider Expansion** | 17- | Not started | Forward work — not ingest-derived. Added 2026-08-15 per *Roadmap Extension Protocol* item 1. |
+| **Security Tooling** | 18- | ◆ **Current — v0.9.0, started 2026-08-24** | Forward work — not ingest-derived. Added 2026-08-24 per *Roadmap Extension Protocol* item 1, closing the Rust-SAST gap the v0.8.0 milestone audit left as its one genuinely open item. |
 
 **The ingest is complete.** All 263 documents in `.project/` are covered — 199 classified across
 five runs and 64 `tasks-*.md` measured deterministically by `intel/task-completion-state.md`. There
@@ -164,6 +165,10 @@ Phase artifacts: `milestones/v0.7.1-phases/`
 **Provider Expansion** — first forward work beyond the ingest (added 2026-08-15)
 
 - [x] **Phase 17: Additional LLM Provider Adapters** - Decide which additional providers qualify against recorded criteria, then ship each survivor as a feature-gated adapter meeting the full `LlmPort` contract (completed 2026-08-23)
+
+**Security Tooling** — forward work opened by the v0.8.0 milestone audit (added 2026-08-24)
+
+- [ ] **Phase 18: Rust SAST — Evaluate and Adopt CodeQL** - Prove a Rust-capable SAST actually analyses this tree before adopting it, then wire it as a non-blocking scan and only afterwards as a required check
 
 ## Phase Details
 
@@ -1513,6 +1518,42 @@ Deliberate omissions, so a later reader does not mistake them for oversights.
 - **The `paladin-core` / `paladin-ports` dependency allowlists** — declared 6 and 7, shipping 14 and
   10. The architectural invariant holds; this is document-versus-code drift needing ARCH-03(b) to
   choose a direction.
+
+### Phase 18: Rust SAST — Evaluate and Adopt CodeQL
+
+**Goal**: This project stops having to say "there is no static taint analysis for first-party Rust" — either because a scanner is running that provably finds real defects in *this* tree, or because the evaluation proved it does not and that verdict is recorded with its evidence. The failure mode this phase exists to prevent is the Snyk one: a scan that reads as assurance while analysing nothing.
+
+**Depends on**: Nothing hard. The v0.8.0 milestone audit (`.planning/v0.8.0-MILESTONE-AUDIT.md`) names this as the milestone's one genuinely open item. Three soft couplings run backwards: **Phase 9/12** built `SECURITY-EXCEPTIONS.md` and `scripts/check-advisory-register.sh`, the governance shape any new scanner's findings must fit; **Phase 15.1** applied the three GitHub rulesets and wrote `scripts/check-workflow-triggers.sh`, whose `CLAUSE_CONTEXT` and reachability clauses constrain how a new required check may be added; and **Phase 16** removed the last `SNYK_TOKEN` references, so this phase starts from a clean documentation state rather than correcting one.
+
+**Requirements**: SAST-01, SAST-02, SAST-03, SAST-04
+
+  **New prefix, minted 2026-08-24 per *Roadmap Extension Protocol* item 3.** Nineteen prefixes are
+  now spent (`RECON-*`, `GAP-*`, `QUAL-*`, `REL-*`, `VERIFY-*`, `CLOSE-*`, `ARCH-*`, `DEBT-*`,
+  `SEC-*`, `HARD-*`, `FACADE-*`, `SUPPLY-*`, `ORCH-*`, `WEB-*`, `PIPE-*`, `DEFER-*`, `DOCS-*`,
+  `PROV-*`, `SAST-*`). These IDs are minted **now, at roadmap time**, deliberately: Phase 15.1
+  carried `Requirements: TBD` into execution and had to settle the question retroactively, which
+  the v0.8.0 audit then had to record as a traceability silence (TRACE-01). This phase does not
+  repeat that.
+
+**Success Criteria** (what must be TRUE):
+
+  1. **The scanner is proven against a deliberate-vulnerability probe before it is adopted, not after.** A Rust fixture carrying a hardcoded credential, command injection via `sh -c`, path traversal and SQL injection is scanned, and the finding count is recorded. This is the same probe methodology that disqualified Snyk (`.github/instructions/security.instructions.md`: 0 findings in Rust against 3 for the identical JavaScript, proving the scanner ran and the Rust analysis did not). **A zero-finding result is a valid and publishable outcome of this phase** — it disqualifies the tool and the manual review stays the control. Adoption without this probe is out of bounds.
+
+  2. **If a scanner qualifies, it runs on every pull request and cannot be path-filtered into silence.** Its workflow triggers on `pull_request` with no path filter, plus `push` on `main` and a schedule. This is not stylistic: `scripts/check-workflow-triggers.sh`'s reachability clause exists because a pinned context in a path-filtered workflow never reports, leaving the PR unmergeable forever with no failing check to point at.
+
+  3. **It runs non-blocking first, and the observation window produces numbers.** Before the scan can gate any merge, a recorded window measures its false-positive rate and its wall-clock cost against this tree's real size (385 `.rs` files, ~142k lines). A scanner is pinned as a required check on the strength of measured behaviour, never on the strength of its vendor's claims.
+
+  4. **Promotion to a required check updates every place the check-set is written down, in one change.** The context is added to `.github/rulesets/protect-main-branch.json` (44 → 45), the live ruleset `20868126` is re-applied, `docs/src/appendix/branch-protection.md`'s context table is updated to match, and `scripts/check-workflow-triggers.sh` passes. A required-check set that disagrees with itself across those four places is the defect this criterion forbids.
+
+  5. **`security.instructions.md`'s "Known gap: no Rust SAST" section is rewritten to match the outcome**, stating plainly what the adopted tool does and does not cover and what the manual credential-handling review still owns. The section is narrowed or replaced by evidence — never deleted to imply coverage the phase did not establish.
+
+  6. **Nothing in this phase makes a green result mean less than it says.** If the scan is advisory, it is described as advisory. If it gates, it gates. No `continue-on-error` step is left reporting success on a job that did not run, and no documentation claims automated coverage the probe in criterion 1 did not demonstrate.
+
+**Plans**: TBD — run `/gsd-discuss-phase 18` then `/gsd-plan-phase 18`
+
+Plans:
+
+- [ ] TBD (run `/gsd-plan-phase 18` to break down)
 
 ## Roadmap Extension Protocol
 
