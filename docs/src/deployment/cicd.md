@@ -30,12 +30,12 @@ Paladin uses GitHub Actions for CI/CD with the following pipelines:
 ```
 .github/
 ├── workflows/
-│   ├── ci.yml                    # Main CI pipeline (lint, test, audit)
+│   ├── benchmarks.yml            # Performance benchmark tracking
+│   ├── ci.yml                    # Main CI pipeline (lint, test, integration, audit)
 │   ├── docs.yml                  # MDBook build + GitHub Pages deploy
-│   ├── release.yml               # Release automation
-│   ├── integration-tests.yml     # Integration testing
 │   ├── feature-flags.yml         # Feature-flag matrix tests
-│   └── pre-commit.yml            # Pre-commit checks
+│   ├── pre-commit.yml            # Pre-commit checks
+│   └── release.yml               # Release automation
 └── dependabot.yml                # Dependency updates
 ```
 
@@ -50,17 +50,18 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ '**' ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, 'release/**' ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
-  check:
-    name: Check
+  lint:
+    name: Code Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -314,19 +315,13 @@ jobs:
 
 ## Integration Testing
 
-### integration-tests.yml
+### ci.yml — `integration-tests` job
+
+Integration testing runs as the `integration-tests` job inside `ci.yml`, absorbed from the
+former standalone `integration-tests` workflow file (deleted in commit `2cf9919`). It shares
+`ci.yml`'s trigger shown above rather than defining its own `on:` block.
 
 ```yaml
-name: Integration Tests
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
-
 jobs:
   integration-tests:
     name: Integration Tests
