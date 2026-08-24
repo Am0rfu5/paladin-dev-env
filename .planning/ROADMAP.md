@@ -1160,7 +1160,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 16-12-PLAN.md — DOCS-03: heading normalisation on the enumeration, both gates green, closing evidence
+- [x] 16-12-PLAN.md — DOCS-03: heading normalisation on the enumeration, both gates green, closing evidence
 
 **Cross-cutting constraints:**
 
