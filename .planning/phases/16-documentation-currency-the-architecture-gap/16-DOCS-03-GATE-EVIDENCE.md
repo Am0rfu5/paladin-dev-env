@@ -344,3 +344,122 @@ DOCS-03's "adds the CI gate" clause was already satisfied by `ci.yml:63`
 before this plan ran (D-00u) — this plan applies the already-ratified bar to
 the tree and proves the gate green; it does not create the gate mechanism.
 No `.github/workflows/` file was modified by this plan.
+
+## Closing — 2026-08-24, plan 16-12, HEAD `ca5ee92d` (D-06 heading normalisation applied)
+
+This section records the phase's three closing checks, run after 16-12's Task 1 (the last 6
+SINGULAR-heading D-05 entry points normalised to the plural `# Examples` spelling). Per D-00e each
+command is quoted character for character and its output/exit status recorded verbatim.
+
+### 1. The bar — `ci.yml:63`'s exact command
+
+**Command:** `cargo doc --workspace --no-deps 2>&1 | tee /tmp/doc-output.txt && ! grep -q "warning:" /tmp/doc-output.txt`
+**Exit status:** `0` (gate passes)
+
+```
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+   Generated /workspace/.claude/worktrees/agent-a34f96445f1c4de6d/target/doc/paladin/index.html and 12 other files
+```
+
+`grep -c "warning:" /tmp/doc-output.txt` → `0`. **Compared to 16-07's opening figure: 20 warnings
+across four crates (paladin-battalion 3, paladin-web 13, paladin-herald 1, paladin-ai/facade 3) →
+0 warnings.** The bar opened red and closes green, and has held green through every intervening
+plan in this phase (16-07 through 16-12) without regression.
+
+### 2. The examples gate — `scripts/check-public-api-examples.sh`, default gating mode
+
+**Command:** `bash scripts/check-public-api-examples.sh`
+**Exit status:** `0` (gate passes)
+
+```
+All 76 D-05 public API entry points carry a plural '# Examples' heading.
+```
+
+Report-mode totals for the same closing state (`bash scripts/check-public-api-examples.sh --list`,
+`MODE` always exits 0, printed here for the per-row breakdown the gate mode omits):
+
+```
+TOTAL: 76 entry points -- 76 OK, 0 MISSING, 0 SINGULAR
+```
+
+This is the terminal state of the D-05/D-06 gate: 0 MISSING (closed by 16-09 → 16-11) and 0
+SINGULAR (closed by this plan's Task 1) — 76/76 OK.
+
+### 3. Executability — `cargo test --workspace --doc`
+
+**Command:** `cargo test --workspace --doc`
+**Exit status:** `0` (all doctests pass)
+
+```
+   Doc-tests paladin
+test result: ok. 101 passed; 0 failed; 17 ignored; 0 measured; 0 filtered out; finished in 0.03s
+   Doc-tests paladin_core
+test result: ok. 57 passed; 0 failed; 38 ignored; 0 measured; 0 filtered out; finished in 0.03s
+   Doc-tests paladin_battalion
+test result: ok. 29 passed; 0 failed; 50 ignored; 0 measured; 0 filtered out; finished in 0.02s
+   Doc-tests paladin_content
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_doc_examples
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_herald
+test result: ok. 0 passed; 0 failed; 6 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_llm
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_memory
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_notifications
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_ports
+test result: ok. 116 passed; 0 failed; 94 ignored; 0 measured; 0 filtered out; finished in 0.02s
+   Doc-tests paladin_storage
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests paladin_web
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+**Total: 318 passed, 0 failed, 205 ignored, across 12 doctest-bearing crates.** This is the same
+318-passing figure recorded as the pre-existing tree state at this plan's spawn (prior-wave
+context), confirming plan 16-12's heading-only edits added zero new doctests and broke none —
+consistent with the change being a heading-text swap, not a new code example. The 205 ignored
+doctests are the pre-existing `no_run`/`ignore`-fenced examples this phase's scope explicitly
+excludes from being audited or converted (94 of them in `paladin-ports` alone, per the phase-wide
+prohibition recorded in 16-12's prior-wave context).
+
+**Coupling check (paladin-web OpenAPI baseline):** none of this plan's 6 touched files
+(`src/application/services/arsenal/{arsenal_execution_service,arsenal_registry_service}.rs`,
+`src/application/services/paladin/{handoff_service,paladin_builder,paladin_execution_service}.rs`,
+`src/infrastructure/security/encryption.rs`) carry a `#[utoipa::path]` attribute (confirmed by
+grep), so the OpenAPI-baseline coupling flagged in this plan's prior-wave context does not apply.
+Run anyway as a sanity check: `cargo test -p paladin-web openapi` → `6 passed; 0 failed`, including
+`openapi_matches_committed_baseline`.
+
+### Two inherited-not-delivered clauses (D-00u, M-02)
+
+Recorded here explicitly, per this plan's own instruction, so the phase's closing record does not
+take credit for either:
+
+- **DOCS-03's "adds the CI gate" clause was already satisfied by `ci.yml:63` before this phase
+  began (D-00u).** No second gate mechanism was added anywhere in phase 16; `git diff --exit-code
+  .github/workflows/` exits `0` across every plan in this phase, this one included. The phase
+  applies the pre-existing, already-required `lint` job's bar to the tree — it does not create the
+  bar or the job.
+- **`missing_docs` was already clean workspace-wide before this phase began (M-02).** FR-26.3's
+  "enumerate every `pub` item in `src/` lacking `///`" half was therefore closed on entry to phase
+  16; the open half this phase actually closed was the `# Examples` requirement — D-05's 76-item
+  enumeration (16-08) and its MISSING/SINGULAR closure across plans 16-09 through 16-12.
+
+### Boundary-held arithmetic (this plan's own scope guard)
+
+Tree-wide count of the singular `# Example` heading form (any `///`/`//!` line matching
+`#{1,2} Example\b` but not `#{1,2} Examples\b`, across `crates/` and `src/`):
+
+| | Singular count | Plural count |
+|---|---|---|
+| Before this plan's Task 1 | 225 | 224 |
+| After this plan's Task 1 | 219 | 230 |
+| Delta | −6 | +6 |
+
+The delta equals exactly the 6 enumerated rows this plan changed (`PaladinBuilder`,
+`ArsenalRegistryService`, `ArsenalExecutionService`, `HandoffService`, `PaladinExecutionService`,
+`EncryptionService`) — confirming the roughly 219 remaining non-enumerated singular-heading sites
+were left untouched by design (D-06), not merely by accident.

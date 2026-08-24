@@ -205,3 +205,44 @@ gap in this derivation.
   (of the 38 that have an example at all) — 4 Builders, 2 Ports, 11 Services. Listed above; every
   one is a candidate for plan 16-12's normalisation sweep, scoped to exactly these 17 sites and no
   others.
+
+## Closing totals — end of phase (after plan 16-12, D-05/D-06 fully closed)
+
+The figures above are D-05's baseline, measured at the start of the `# Examples` wave (plan
+16-08). This section records the end state after plans 16-09 through 16-12 closed both halves of
+the gate — kept below the opening figures, not overwriting them (D-00d's amend-in-place ethic
+applied to a phase record).
+
+- **Entry points enumerated: 76** (11 Builders + 35 `*Port` traits + 30 `*Service` structs) —
+  unchanged; no entry point was added or removed by any plan in this wave.
+- **Carry an example block: 76 of 76 (100%).** Every MISSING row from the 16-08 baseline (38 of
+  76) was closed across plans 16-09 (19), 16-10 (11) and 16-11 (8, the last 8 tree-wide).
+- **Heading spelling — plural `# Examples`: 76 of 76 (100%).** Every SINGULAR row from the
+  post-16-08 baseline was closed across plans 16-09 (2 heading fixes, in `paladin-ports`), 16-10
+  (9 heading fixes, in `paladin-core`/`paladin-memory`/`paladin-battalion`/`paladin-herald`) and
+  16-12 (the last 6, in `src/`: `PaladinBuilder`, `ArsenalRegistryService`,
+  `ArsenalExecutionService`, `HandoffService`, `PaladinExecutionService`, `EncryptionService`).
+  `bash scripts/check-public-api-examples.sh --list` closing run: `TOTAL: 76 entry points -- 76
+  OK, 0 MISSING, 0 SINGULAR`.
+- **Compile-and-run vs. `no_run` split, aggregated across the examples plans 16-09 → 16-11 (the
+  plans that authored new example content; 16-12 only touched headings, adding zero new
+  examples):**
+  - 16-09: 19/19 new examples compile-and-run (0 `no_run`/`ignore`/`text` fences introduced).
+  - 16-10: 11/11 new examples compile-and-run (0 non-running fences introduced).
+  - 16-11: 8/8 new examples compile-and-run (0 non-running fences introduced).
+  - **Total new examples across the wave: 38/38 compile-and-run, 0 non-running.** The
+    pre-existing 87-fence `no_run`/`ignore`/`text` count this phase inherited (ADR-0033 Finding 3)
+    is untouched — none of those pre-existing fences were audited, converted, or counted as part
+    of this wave's closure, per this phase's explicit prohibition on touching
+    `paladin-ports`'s 94 pre-existing ignored doctests.
+- **`cargo test --workspace --doc` at phase close: 318 passed, 0 failed, 205 ignored**, across the
+  12 doctest-bearing crates (`paladin`, `paladin_core`, `paladin_battalion`, `paladin_content`,
+  `paladin_doc_examples`, `paladin_herald`, `paladin_llm`, `paladin_memory`,
+  `paladin_notifications`, `paladin_ports`, `paladin_storage`, `paladin_web`). Verbatim per-crate
+  breakdown recorded in `16-DOCS-03-GATE-EVIDENCE.md`'s Closing section.
+- **`cargo doc --workspace --no-deps`: 0 warnings** at phase close, matching the bar 16-07
+  established and every subsequent plan held.
+- **The 76-vs-79 delta (§"Delta against D-05's 11 / 35 / 33" above) is left unresolved by this
+  plan, as instructed.** Closing DOCS-03 did not surface any new evidence attributing the 2
+  remaining unaccounted `*Service` items; the delta stands recorded, not silently closed by
+  adjusting the expected total to match the observed one.

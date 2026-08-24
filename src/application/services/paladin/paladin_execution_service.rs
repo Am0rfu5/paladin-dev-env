@@ -13,7 +13,7 @@
 //! - Stop word detection
 //! - Execution metadata tracking
 //!
-//! # Example
+//! # Examples
 //!
 //! ```rust,no_run
 //! use paladin::application::services::paladin::paladin_execution_service::PaladinExecutionService;

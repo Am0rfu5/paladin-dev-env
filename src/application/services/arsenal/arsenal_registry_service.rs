@@ -15,7 +15,7 @@ use tokio::sync::RwLock;
 /// of registered tools. It uses `RwLock` for concurrent read access while
 /// ensuring exclusive write access during modifications.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// use paladin::application::services::arsenal::arsenal_registry_service::ArsenalRegistryService;

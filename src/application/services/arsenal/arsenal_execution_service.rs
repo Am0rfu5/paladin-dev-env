@@ -48,7 +48,7 @@ impl McpToolInvoker for MCPClient {
 /// requests against the registry and delegating to the real MCP client that
 /// serves each tool (populated via [`Self::register_client`]).
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust,ignore
 /// use paladin::application::services::arsenal::arsenal_execution_service::ArsenalExecutionService;
