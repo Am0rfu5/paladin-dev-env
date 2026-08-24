@@ -95,15 +95,155 @@ output of all four tools and the final Dockerfile lines.
 same trust boundary as every other `apt-get install` line already in both Dockerfiles. No
 separate provenance check applies.
 
+### Checkpoint 1 resolution — APPROVED
+
+**The project owner approved the vhs/ttyd provenance and the Charm APT repository addition to
+both devcontainer images on 2026-08-24.**
+
+Record exactly what happened and no more: the project owner reviewed the evidence gathered above
+and replied "approved," authorising the `vhs` and `ttyd` installs and the addition of
+`repo.charm.sh` to both `.devcontainer/Dockerfile.dev` and `.devcontainer/Dockerfile`.
+
+**This executor has no information that an independent, out-of-band fingerprint comparison was
+performed against a source other than `repo.charm.sh` and Charm's own GitHub-hosted README.** The
+limitation recorded above under "Independent (non-`repo.charm.sh`) publication check" stands
+unchanged: the `keys.openpgp.org` lookup for this fingerprint returned 404, and the
+`api.github.com` code-search cross-check could not be completed (401, no auth session). The
+approval above is recorded as-is — a project-owner authorization — **not** as confirmation that
+the fingerprint was independently verified, confirmed against a third party, or validated
+out-of-band. That gap remains open; the approval accepts it and proceeds regardless.
+
 ---
 
 ## Checkpoint 2 — Recordings size budget
 
-*Pending.* Recorded here once the human selects an option, before any recording binary exists.
+**Decision: option-a — a per-file size budget, re-record if exceeded.**
+
+**Selected by:** the orchestrator, under explicit delegation from the project owner ("whatever
+you recommend to get our docs in the best possible shape"). Resolved 2026-08-24.
+
+**Budget: 2 MB per committed `.gif`** — a ceiling of roughly 8 MB across the four demos (30-60s,
+45-90s, 60-120s, 45-90s). `.cast` files are small JSON and are not separately budgeted, but should
+stay reasonable.
+
+**Remedy when exceeded:** re-record from the `.tape` at reduced width, lower frame rate, or
+trimmed length. An over-budget GIF is never committed and fixed up afterward — that is precisely
+the one-way outcome this checkpoint exists to prevent.
+
+**Rationale:** committing a binary to git history is not reversible without a history rewrite
+that disrupts every clone, so the bound is set before any binary exists. A README-linked terminal
+demo should be short and tight regardless of any budget, and a `.tape` is cheap to re-record — so
+the budget's cost is low and its protection is permanent. Option b (no budget) was rejected as
+unbounded and unwalkable-back; option c (git-lfs) was rejected as repository-wide infrastructure
+imposed on every contributor and every CI job, well outside a documentation-currency phase's
+scope.
+
+Plan 16-14 (which produces the actual `.tape` scripts and recordings) enforces this budget.
 
 ---
 
 ## Task 3 — Local tool versions and final Dockerfile lines
 
-*Pending checkpoint resolution.* Recorded here once both checkpoints are resolved and the
-recorder toolchain is installed locally and in both devcontainer images.
+**Precondition re-check (2026-08-24, this environment, before install):**
+
+| Host | Check | Result |
+|---|---|---|
+| `https://repo.charm.sh/apt/gpg.key` | `curl -sS -o /dev/null -w '%{http_code}'` | `200` |
+| `https://github.com` | `curl -sS -o /dev/null -w '%{http_code}'` | `200` |
+
+Both re-measured 200; proceeded with the pinned install path as planned (no substitution needed).
+
+**Local install environment:** Debian 12 (bookworm), x86_64, user `vscode` with `sudo`. This
+matches `.devcontainer/Dockerfile.dev`'s base image (`rust:1.97.1-slim-bookworm`) — the image
+`docker-compose.yml` actually builds (`.devcontainer/docker-compose.yml:8`,
+`dockerfile: .devcontainer/Dockerfile.dev`), consistent with 16-01's finding that
+`.devcontainer/Dockerfile` (bullseye) is the file that silently diverges if not updated in
+lockstep.
+
+### ffmpeg / asciinema (base image's own Debian repository)
+
+```
+$ ffmpeg -version | head -1
+ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers
+$ asciinema --version
+asciinema 2.2.0
+```
+
+### ttyd (GitHub release, checksum-verified)
+
+Downloaded `https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64`, verified
+against the recorded checksum before install:
+
+```
+$ echo "8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55  ttyd.x86_64" | sha256sum -c -
+ttyd.x86_64: OK
+```
+
+Installed to `/usr/local/bin/ttyd` (mode 0755):
+
+```
+$ ttyd --version
+ttyd version 1.7.7-40e79c7
+```
+
+### vhs (Charm APT repository, keyring-scoped)
+
+Key fetched from `https://repo.charm.sh/apt/gpg.key` — already ASCII-armored
+(`-----BEGIN PGP PUBLIC KEY BLOCK-----`), so it was installed directly as an armored keyring file
+at `/etc/apt/keyrings/charm.asc` (mode 0644, world-readable), the same pattern
+`.devcontainer/Dockerfile.dev` already uses for the NodeSource key — apt supports armored
+keyrings natively, avoiding a `gnupg` package install just to dearmor the key. No `gpg` binary
+was invoked (none is present in this base image); this reuses the fingerprint already computed
+in the Checkpoint 1 evidence via pure-Python RFC 4880 parsing, not a fresh `gpg --dearmor` re-run.
+
+Repository source line added, scoped to that keyring only:
+```
+deb [signed-by=/etc/apt/keyrings/charm.asc] https://repo.charm.sh/apt/ * *
+```
+
+`apt-cache madison vhs` after `apt-get update` listed versions `0.1.0` through `0.11.0`
+(newest); pinned to the explicit newest version, `0.11.0` — not a floating "latest":
+
+```
+$ apt-get install -y --no-install-recommends vhs=0.11.0
+...
+Setting up vhs (0.11.0) ...
+$ vhs --version
+vhs version v0.11.0 (c6af91a)
+```
+
+### Local verification — all four resolve on PATH
+
+```
+$ command -v vhs && command -v ttyd && command -v ffmpeg && command -v asciinema
+/usr/bin/vhs
+/usr/local/bin/ttyd
+/usr/bin/ffmpeg
+/usr/bin/asciinema
+```
+
+### Dockerfile changes
+
+The identical install block (three `RUN` instructions — ttyd, vhs, ffmpeg+asciinema) was added to
+both `.devcontainer/Dockerfile.dev` (after the `cargo-nextest` install, before the commented-out
+"Optional CLI tools" line) and `.devcontainer/Dockerfile` (same anchor). No difference was forced
+by the two Debian releases (bookworm vs. bullseye): the Charm APT repository's sources entry uses
+a flat `* *` distribution/component that matches any Debian codename, `ttyd`'s binary download is
+architecture- not distro-specific, and `ffmpeg`/`asciinema` are both present in each release's own
+repository under the same package names. Each RUN block's comment names: what the tools are for
+(the D-14 demo recordings), that `ttyd`/`ffmpeg` are vhs's own runtime dependencies rather than
+independent choices, that `asciinema` produces the `.cast` vhs cannot emit, and that the vhs/ttyd
+provenance was human-verified with a pointer to this file.
+
+**Deviation from strict pinning, recorded per the plan's requirement:** `ffmpeg` and `asciinema`
+are installed via plain `apt-get install` with no explicit version, pinned only to whatever the
+base image tag's own Debian repository snapshot provides at build time. Reason: the distro
+repository is already the image's trust root (same boundary as every other unpinned `apt-get
+install` line in both files, e.g. `git`, `curl`, `jq`), and pinning a specific distro package
+version across two different Debian releases (bookworm and bullseye) would produce an
+unsatisfiable constraint in at least one of the two images the moment the two releases' package
+versions diverge.
+
+No recording was produced by this plan — `ls docs/assets/recordings/` finds nothing, confirmed
+after Task 3's changes. Plan 16-14 owns the `.tape` scripts and the artifacts, under the 2 MB
+per-file budget decided above.

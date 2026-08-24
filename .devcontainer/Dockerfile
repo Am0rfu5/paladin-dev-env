@@ -107,6 +107,55 @@ RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysq
 # Install cargo-nextest (optional, can fail without breaking the build)
 RUN cargo install --locked cargo-nextest || echo "cargo-nextest installation failed, skipping"
 
+# Install the demo-recorder toolchain (D-14, DOCS-04) — vhs drives the checked-in
+# .tape scripts that regenerate docs/assets/recordings/*.gif so the demos stay
+# regenerable rather than going stale, which matters in a phase whose entire theme is
+# documentation currency. ttyd and ffmpeg are vhs's own runtime dependencies, not
+# independent tool choices: vhs's README requires ttyd on PATH before it will run, and
+# vhs shells out to ffmpeg to encode GIF/mp4/webm output. asciinema produces the .cast
+# format vhs has no Output case for. The vhs/ttyd supply chain sits outside the
+# automated package-legitimacy gate's ecosystem coverage entirely (no crates.io/npm/PyPI
+# registry for either) and was human-verified out-of-band — repository URL, key
+# fingerprint, and ttyd release provenance — before this block was added. See
+# .planning/phases/16-documentation-currency-the-architecture-gap/16-DOCS-04-TOOLCHAIN.md.
+
+# ttyd: no package registry exists for it at all — the only documented install path is
+# a binary download from GitHub releases. Pinned to release tag 1.7.7 (not "latest"),
+# and its published SHA256 is verified before install; the RUN fails closed if the
+# checksum does not match.
+RUN curl -fsSL -o /tmp/ttyd.x86_64 https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 \
+    && echo "8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55  /tmp/ttyd.x86_64" | sha256sum -c - \
+    && install -m 0755 /tmp/ttyd.x86_64 /usr/local/bin/ttyd \
+    && rm /tmp/ttyd.x86_64
+
+# vhs: third-party APT repository at repo.charm.sh (the flat `* *` distribution/component
+# in the sources entry matches any Debian codename, so this line is identical across
+# bookworm and bullseye). The signing key is stored ASCII-armored as .asc — apt supports
+# armored keyrings natively (same pattern as the nodesource key in Dockerfile.dev),
+# avoiding a gnupg install just to dearmor it — in a dedicated keyring file referenced
+# by signed-by=, so it can authenticate only this repository and never the
+# globally-trusted keyring (the deprecated global-keyring-add path is never used).
+# Pinned to an explicit APT version, never a floating "latest".
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://repo.charm.sh/apt/gpg.key -o /etc/apt/keyrings/charm.asc \
+    && chmod go+r /etc/apt/keyrings/charm.asc \
+    && echo "deb [signed-by=/etc/apt/keyrings/charm.asc] https://repo.charm.sh/apt/ * *" \
+    | tee /etc/apt/sources.list.d/charm.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends vhs=0.11.0 \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# ffmpeg + asciinema: the base image's own Debian repository — the same trust boundary
+# as every other apt-get install line already in this file. Not version-pinned beyond
+# the base image tag: pinning a distro package version across two different Debian
+# releases (bullseye here, bookworm in the other devcontainer image) would produce an
+# unsatisfiable constraint in one of the two.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg asciinema \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
 # Optional CLI tools - uncomment to install:
 # RUN cargo install bat exa ripgrep fd-find tokei hyperfine
 
