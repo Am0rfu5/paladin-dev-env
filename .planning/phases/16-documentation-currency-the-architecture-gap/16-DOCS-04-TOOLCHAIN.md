@@ -256,3 +256,47 @@ versions diverge.
 No recording was produced by this plan — `ls docs/assets/recordings/` finds nothing, confirmed
 after Task 3's changes. Plan 16-14 owns the `.tape` scripts and the artifacts, under the 2 MB
 per-file budget decided above.
+
+---
+
+## Follow-up applied 2026-08-24 — vhs's headless-Chromium runtime dependencies
+
+**Defect.** Plan 16-13's `vhs` install satisfied every check it ran — the package installed, the
+binary resolved on PATH, and `vhs --version` reported `0.11.0` — but it had never actually rendered
+a recording. Plan 16-14 hit this on first real use:
+
+```
+could not launch browser: libatk-1.0.so.0: cannot open shared object file
+```
+
+VHS does not capture the terminal directly. It drives `ttyd` inside a **headless Chromium** via
+go-rod, and go-rod fetches that browser at run time. Nothing in the `vhs` package's own metadata
+therefore depends on Chromium's GTK/at-spi runtime libraries, so `apt` had no way to pull them —
+and `--no-install-recommends` would have skipped them regardless.
+
+This directly contradicted 16-13's own `must_haves` truth that the recorder "survives a
+devcontainer rebuild exactly as the mdbook toolchain does". It installed persistently; it did not
+*work* persistently.
+
+**Fix.** Both `.devcontainer/Dockerfile.dev` and `.devcontainer/Dockerfile` now install the
+Chromium runtime set explicitly alongside `vhs`:
+
+```
+libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcups2 libxcomposite1
+libxdamage1 libxrandr2 libxkbcommon0 libxi6 libxcursor1 libxss1
+```
+
+**Derivation.** Measured, not guessed — this is the set of Chromium/at-spi packages `dpkg` recorded
+as newly installed at the moment vhs first rendered successfully in a live container during 16-14
+(`/var/log/dpkg.log`), with ffmpeg's own transitive dependencies excluded. Every name was confirmed
+resolvable via `apt-cache show` on the running image. Packages that these pull in transitively
+(`at-spi2-common`, `x11-common`, `xkb-data`, `libwayland-*`) are left to apt rather than pinned
+top-level.
+
+**Verification limit — stated plainly.** `docker` is not available in this environment, so **the
+patched images have not been rebuilt and the fix has not been proven end-to-end by an actual
+container build.** What *is* established: the four demo GIFs in `docs/assets/recordings/` were
+rendered by this exact library set in this running container, and every package name resolves. What
+is *not* established: that a clean `docker build` of either image produces a container where `vhs`
+renders on first use. That check belongs to whoever next rebuilds a devcontainer, and it is the one
+thing that would close this conclusively.
