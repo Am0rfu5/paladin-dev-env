@@ -11,7 +11,7 @@ and workflows call each other see the [Agent ↔ Orchestrator Bridge](agent-orch
 For how a Battalion fits among the ways to *run* agents, see
 [Deployment Topologies](../deployment-topologies/overview.md).
 
-> Every code example targets the current **v0.5.0** workspace. The substantive examples are real,
+> Every code example targets the current **v0.8.0** workspace. The substantive examples are real,
 > compiled code pulled from the `paladin-doc-examples` crate via mdBook `{{#include}}`, so they are
 > checked against the live API; a few illustrative fragments are marked `rust,ignore`. The API forms
 > are verified against `crates/paladin-battalion/` and `crates/paladin-ports/`.
@@ -184,7 +184,9 @@ adds ~0–5 ms of overhead; the decision is reported in `result.strategy_selecti
 ### Metadata export
 
 Point the Commander at a directory and it writes one JSON file per execution
-(`{strategy}_{timestamp}_{uuid}.json`) for audit, cost, and performance analysis.
+(`{strategy}_{timestamp}_{uuid_short}.json`, where `uuid_short` is the first 8 characters of the
+Battalion's UUID, e.g. `formation_20250715_143022_a1b2c3d4.json`) for audit, cost, and performance
+analysis.
 
 ```rust,ignore
 use paladin_core::platform::container::battalion::BattalionConfig;
@@ -228,7 +230,7 @@ returns a `JobId` you can use to query status or cancel.
 {{#include ../../../crates/doc-examples/src/orchestration.rs:scheduling}}
 ```
 
-`JobStatus` lifecycle: `Scheduled → Running → Completed` (or `Failed { .. }` / `Cancelled`).
+`JobStatus` lifecycle: `Scheduled → Running → Completed` (or `Failed(String)` / `Cancelled`).
 `JobInfo` (from `get_job_info`) adds `created_at`, `last_run`, `next_run`, `run_count`, and
 `failure_count`.
 
@@ -278,26 +280,23 @@ combine events, triggers, and agent execution.
 
 ## Configuration Reference
 
-All battalion behavior is configurable through the `battalion:` section of `config.yml`:
+Battalion execution behavior is configured programmatically through `BattalionConfig`
+(`paladin_core::platform::container::battalion::BattalionConfig`) — there is no `battalion:`
+section in `config.yml` and no `APP_BATTALION_*` environment-variable convention; `ApplicationSettings`
+does not carry a battalion field at all. Set behavior per-Battalion with the builder:
 
-```yaml
-battalion:
-  default_timeout_seconds: 300     # Per-battalion execution timeout
-  error_strategy: "fail_fast"      # fail_fast | continue_on_error | retry_then_continue
-  max_concurrent_paladins: 10      # Phalanx concurrency limit
-  metadata_output_enabled: false   # Write execution metadata to files
+```rust,ignore
+use paladin_core::platform::container::battalion::{BattalionConfig, ErrorStrategy, RetryPolicy};
 
-  retry:                           # Used when error_strategy = retry_then_continue
-    max_attempts: 3
-    exponential_backoff: true
-    jitter: true
-    base_delay_ms: 100
-    max_delay_seconds: 10
+let config = BattalionConfig::new("audited_battalion")
+    .with_timeout(300)                             // seconds; matches the built-in default
+    .with_error_strategy(ErrorStrategy::FailFast)  // FailFast | ContinueOnError | RetryThenContinue
+    .with_retry_policy(RetryPolicy::default());     // max_attempts: 3, base_delay: 100ms,
+                                                     // max_delay: 10s, exponential_backoff + jitter: true
 ```
 
-Environment overrides follow the `APP_BATTALION_*` convention (e.g.
-`APP_BATTALION_ERROR_STRATEGY`, `APP_BATTALION_MAX_CONCURRENT_PALADINS`). See
-[Configuration](../getting-started/configuration.md) for the full schema.
+Phalanx concurrency is set separately via `Phalanx::with_max_concurrency` (see
+[Phalanx — Parallel](#phalanx--parallel)) — it is not a `BattalionConfig` field.
 
 `BattalionResult` (returned by the Formation/Phalanx/Campaign/Commander services) exposes:
 `final_output: String`, `paladin_results: Vec<PaladinResult>`, `status: BattalionStatus`,
