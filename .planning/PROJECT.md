@@ -1329,6 +1329,35 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-08-24 after **Phase 16: Documentation Currency & the Architecture Gap**
+completed and verified — 14 plans across 6 waves, all four requirements (DOCS-01 … DOCS-04) closed,
+`16-VERIFICATION.md` `passed` on its second pass at 4/4 must-haves. This phase closed the **last
+open checkbox count in the ingest corpus**. Its finding is worth recording because it reframes what
+"documentation currency" meant here: the fourteen files were not stale, they were **fabricated**.
+`logging.md` documented a `tracing` ecosystem with **zero `tracing` call sites** in the tree (the
+real facade is `log` + `env_logger` behind a custom `LogOrchestrator`/`LogPort`); `monitoring.md`
+and `troubleshooting.md` documented a `/metrics` endpoint with no dependency and no route;
+`output-formatting.md` documented two built-in formatters (`HtmlHerald`, `CodeHerald`) that exist
+nowhere; `memory-management.md` fabricated the `GarrisonConfig`/`SqliteGarrison` builder API, a DB
+migration schema, and a `VectorGarrison` type (the real subsystem is Sanctum); `production.md`
+fabricated an OAuth2/three-role RBAC section over the real two-role bearer/`x-api-key` mechanism;
+and both `production.md` and `cicd.md` recommended **Snyk**, the scanner this project measured and
+removed on 2026-08-18. Presence and mtime settled nothing — every one of the fourteen carries an
+evidence-bearing verdict row in `16-DOCS-01-VERDICTS.md` citing the command or `file:line` that
+produced it. [ADR-0047](.planning/decisions/0047-architecture-appendix-disposition.md) settles
+DOCS-02: the 311-line architecture appendix is **archive material**, says so in a banner, and
+points at the live chapter; Sentinel — the one component of 19 missing from that chapter — was
+given a home there rather than rebuilding a second competing architecture document. DOCS-03 holds
+one `cargo doc` bar at **zero warnings** workspace-wide with all **76** D-05 entry points carrying
+`# Examples`, and the 30 new examples are genuinely compile-and-run: **no `no_run`/`ignore`/`text`
+fence was added by any plan**, verified by classifying every fence in every diff. Two items are
+recorded open rather than closed quietly: FR-26.3's "79 entry points" is **not reproducible** from
+the tree (11 + 35 + 30 = 76; the delta is isolated entirely to the `*Service` count and attributed
+to a stale figure, with derivation commands recorded), and the Charm APT signing key behind DOCS-04's
+`vhs` install **could not be corroborated against any source independent of `repo.charm.sh`** — the
+project owner authorised the install accepting that gap, and both devcontainer Dockerfiles were
+corrected after they initially claimed a "human-verified out-of-band" check that never happened.*
+
 *Last updated: 2026-08-23 after **Phase 17: Additional LLM Provider Adapters** completed and
 verified — 22 plans (11 planned, 11 added across three `/gsd-plan-phase 17 --gaps` runs), all four
 requirements (PROV-01 … PROV-04) closed, `17-VERIFICATION.md` `passed` on its **fourth** pass at
