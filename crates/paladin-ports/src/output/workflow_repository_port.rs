@@ -105,6 +105,42 @@ pub enum WorkflowRepositoryError {
 }
 
 /// Repository port for persisting and recovering [`Workflow`] execution state.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::workflow_repository_port::{
+///     WorkflowRepositoryPort, PersistedWorkflow, WorkflowRepositoryError,
+/// };
+/// use paladin_core::platform::container::workflow::{Workflow, WorkflowExecutionOrder};
+/// use paladin_core::platform::container::orchestration_context::OrchestrationContext;
+/// use uuid::Uuid;
+/// use chrono::Utc;
+///
+/// async fn checkpoint_workflow(
+///     repo: &dyn WorkflowRepositoryPort,
+/// ) -> Result<(), WorkflowRepositoryError> {
+///     let workflow = Workflow {
+///         id: Uuid::new_v4(),
+///         name: "nightly-ingest".to_string(),
+///         description: "Ingest and index new content".to_string(),
+///         jobs: vec![],
+///         listeners: vec![],
+///         queues: vec![],
+///         execution_order: WorkflowExecutionOrder::Sequential,
+///         context: OrchestrationContext::new("scheduler".to_string(), "prod".to_string()),
+///         created_at: Utc::now(),
+///         updated_at: Utc::now(),
+///     };
+///
+///     repo.save(&PersistedWorkflow::pending(workflow)).await?;
+///
+///     let incomplete = repo.list_incomplete().await?;
+///     println!("{} workflows still in progress", incomplete.len());
+///
+///     Ok(())
+/// }
+/// ```
 #[async_trait]
 pub trait WorkflowRepositoryPort: Send + Sync {
     /// Insert or overwrite the persisted state for a workflow (upsert).

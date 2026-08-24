@@ -1237,6 +1237,26 @@ pub trait FileStoragePort: Send + Sync {
 }
 
 /// Batch file operations port
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::file_storage_port::{BatchFileStoragePort, FileStorageResult};
+/// use std::path::PathBuf;
+///
+/// async fn upload_report_bundle(
+///     storage: &dyn BatchFileStoragePort,
+///     files: Vec<(PathBuf, Vec<u8>)>,
+/// ) -> FileStorageResult<usize> {
+///     let uploads = files
+///         .into_iter()
+///         .map(|(path, content)| (path, content, None))
+///         .collect();
+///
+///     let uploaded = storage.upload_files(uploads).await?;
+///     Ok(uploaded.len())
+/// }
+/// ```
 #[async_trait]
 pub trait BatchFileStoragePort: Send + Sync {
     /// Upload multiple files
@@ -1260,6 +1280,23 @@ pub trait BatchFileStoragePort: Send + Sync {
 }
 
 /// Advanced file operations port
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::file_storage_port::{AdvancedFileStoragePort, FileStorageResult};
+/// use std::path::Path;
+/// use std::time::Duration;
+///
+/// async fn share_download_link(
+///     storage: &dyn AdvancedFileStoragePort,
+///     path: &Path,
+/// ) -> FileStorageResult<String> {
+///     storage
+///         .generate_download_url(path, Duration::from_secs(3600), None)
+///         .await
+/// }
+/// ```
 #[async_trait]
 pub trait AdvancedFileStoragePort: Send + Sync {
     /// Generate a pre-signed URL for file upload
@@ -1305,6 +1342,23 @@ pub trait AdvancedFileStoragePort: Send + Sync {
 }
 
 /// File versioning port
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::file_storage_port::{FileVersioningPort, FileStorageResult};
+/// use std::path::Path;
+///
+/// async fn upload_new_revision(
+///     storage: &dyn FileVersioningPort,
+///     path: &Path,
+///     content: &[u8],
+/// ) -> FileStorageResult<usize> {
+///     storage.upload_file_version(path, content, None).await?;
+///     let versions = storage.list_file_versions(path).await?;
+///     Ok(versions.len())
+/// }
+/// ```
 #[async_trait]
 pub trait FileVersioningPort: Send + Sync {
     /// Upload a new version of a file
@@ -1338,6 +1392,30 @@ pub trait FileVersioningPort: Send + Sync {
 }
 
 /// Combined file storage port with all capabilities
+///
+/// # Examples
+///
+/// This combinator trait declares no methods of its own — it is a bound that grants access to
+/// every constituent port's methods at once. [`FileStoragePort`], [`BatchFileStoragePort`],
+/// [`AdvancedFileStoragePort`] and [`FileVersioningPort`] each document their own call pattern
+/// above; a `FullFileStoragePort` implementor exposes all of them through one reference.
+///
+/// ```rust
+/// use paladin_ports::output::file_storage_port::{FullFileStoragePort, FileStorageResult};
+/// use std::path::Path;
+///
+/// async fn upload_then_list_versions(
+///     storage: &dyn FullFileStoragePort,
+///     path: &Path,
+///     content: &[u8],
+/// ) -> FileStorageResult<usize> {
+///     // From `FileStoragePort` (base capability).
+///     storage.upload_file(path, content, None).await?;
+///     // From `FileVersioningPort` (combined capability).
+///     let versions = storage.list_file_versions(path).await?;
+///     Ok(versions.len())
+/// }
+/// ```
 pub trait FullFileStoragePort:
     FileStoragePort + BatchFileStoragePort + AdvancedFileStoragePort + FileVersioningPort + Send + Sync
 {

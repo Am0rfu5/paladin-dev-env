@@ -228,6 +228,27 @@ impl Default for BridgePolicy {
 /// Implementations are concrete adapters (in the root crate) that map each
 /// method onto real `Orchestrator` capabilities, enforcing a [`BridgePolicy`]
 /// before performing the underlying call.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::orchestrator_port::{
+///     OrchestratorPort, QueueItemRequest, OrchestratorBridgeError,
+/// };
+/// use uuid::Uuid;
+///
+/// async fn hand_off_to_queue(
+///     bridge: &dyn OrchestratorPort,
+///     payload: serde_json::Value,
+/// ) -> Result<Uuid, OrchestratorBridgeError> {
+///     let request = QueueItemRequest {
+///         queue_name: "agent-followups".to_string(),
+///         payload,
+///     };
+///
+///     bridge.queue_item(request).await
+/// }
+/// ```
 #[async_trait]
 pub trait OrchestratorPort: Send + Sync {
     /// Schedule a job for recurring or one-off execution.

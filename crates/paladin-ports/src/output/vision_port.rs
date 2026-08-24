@@ -59,6 +59,34 @@ pub struct VisionTokenUsage {
 /// Both traits ship deliberately, at different layers of the framework. Neither is legacy, and
 /// no migration between them is planned or recommended for either audience. See the recorded
 /// decision at `.planning/decisions/0011-vision-port-surfaces.md`.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::vision_port::VisionPort;
+/// use paladin_core::platform::container::vision::{VisionContent, VisionError, ImageDetail};
+///
+/// async fn describe_image(
+///     vision: &dyn VisionPort,
+///     image_url: &str,
+/// ) -> Result<String, VisionError> {
+///     let model = "gpt-4-vision";
+///     if !vision.is_vision_model(model) {
+///         return Err(VisionError::ModelNotSupported(model.to_string()));
+///     }
+///
+///     let images = vec![VisionContent::ImageUrl {
+///         url: image_url.to_string(),
+///         detail: ImageDetail::Auto,
+///     }];
+///
+///     let result = vision
+///         .analyze_image("What is in this image?", images, model, Some(300))
+///         .await?;
+///
+///     Ok(result.content)
+/// }
+/// ```
 #[async_trait]
 pub trait VisionPort: Send + Sync {
     /// Analyze one or more images with a text prompt
