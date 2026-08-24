@@ -40,13 +40,17 @@ is_unpublished_crate() {
     local file="$1"
     local dir
     dir="$(dirname "${file}")"
-    while [[ "${dir}" != "." && "${dir}" != "/" ]]; do
+    # Walk up to and INCLUDING the workspace root ("."). Terminating before "."
+    # left the root Cargo.toml — which governs the whole src/** tree — never
+    # inspected, so a `publish = false` there would have been silently inert.
+    while :; do
         if [[ -f "${dir}/Cargo.toml" ]]; then
             if grep -qE '^[[:space:]]*publish[[:space:]]*=[[:space:]]*false' "${dir}/Cargo.toml"; then
                 return 0
             fi
             return 1
         fi
+        [[ "${dir}" == "." || "${dir}" == "/" ]] && break
         dir="$(dirname "${dir}")"
     done
     return 1
@@ -94,9 +98,14 @@ module_doc_block() {
 # singular pattern because "Example" immediately followed by "s" has no \b there.
 heading_spelling() {
     local text="$1"
-    if grep -qE '#{1,2} Examples\b' <<< "${text}"; then
+    # Anchored to the start of a doc-comment line. The text arriving here retains
+    # its `///` / `//!` prefix, so the anchor must allow it — but WITHOUT the anchor
+    # any prose merely mentioning the phrase mid-sentence counted as a real heading,
+    # letting an undocumented item pass the gate (CR-01, 16-REVIEW.md). Verified to
+    # produce classifications identical to the unanchored form on the current tree.
+    if grep -qE '^[[:space:]]*(///|//!)[[:space:]]*#{1,2} Examples\b' <<< "${text}"; then
         printf 'plural'
-    elif grep -qE '#{1,2} Example\b' <<< "${text}"; then
+    elif grep -qE '^[[:space:]]*(///|//!)[[:space:]]*#{1,2} Example\b' <<< "${text}"; then
         printf 'singular'
     else
         printf ''
