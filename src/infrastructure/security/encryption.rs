@@ -10,7 +10,7 @@
 //! - **Data Retention**: Configurable TTL-based data cleanup
 //! - **Audit Logging**: Access logging without sensitive data
 //!
-//! # Example
+//! # Examples
 //!
 //! ```
 //! use paladin::infrastructure::security::encryption::{EncryptionService, SecureData};

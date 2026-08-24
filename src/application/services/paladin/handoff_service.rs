@@ -22,7 +22,7 @@ use tokio::time::{Duration, sleep};
 /// - Max depth enforcement
 /// - Context transfer between agents
 ///
-/// # Example
+/// # Examples
 /// ```
 /// use paladin::application::services::paladin::handoff_service::HandoffService;
 /// use paladin::core::platform::container::autonomous_config::HandoffConfig;

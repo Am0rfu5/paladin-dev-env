@@ -58,7 +58,7 @@ use uuid::Uuid;
 ///   [0.0, 1.0] when the provider declares none — ADR-0004)
 /// - Max loops in range [1, 100]
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust,no_run
 /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
