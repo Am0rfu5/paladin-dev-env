@@ -88,7 +88,7 @@ Paladin images are available from GitHub Container Registry:
 ghcr.io/your-org/paladin:latest
 
 # Specific version
-ghcr.io/your-org/paladin:v0.4.3
+ghcr.io/your-org/paladin:v0.8.0
 
 # Latest commit on main branch
 ghcr.io/your-org/paladin:main
@@ -102,7 +102,7 @@ ghcr.io/your-org/paladin:dev-<branch-name>
 | Tag Pattern | Description | Use Case |
 |-------------|-------------|----------|
 | `latest` | Most recent stable release | Production |
-| `v<semver>` | Specific version (e.g., `v0.4.3`) | Production (pinned) |
+| `v<semver>` | Specific version (e.g., `v0.8.0`) | Production (pinned) |
 | `main` | Latest commit on main branch | Staging |
 | `<branch>` | Feature branch builds | Development |
 | `slim` | Minimal image without examples | Production (space-constrained) |
@@ -110,10 +110,11 @@ ghcr.io/your-org/paladin:dev-<branch-name>
 
 ### Dockerfile
 
-Paladin's multi-stage Dockerfile optimizes for size and security. There are two Dockerfiles in the repository:
+Paladin's multi-stage Dockerfile optimizes for size and security. There are three Dockerfiles in the repository:
 
-- **`Dockerfile`** — Standard two-stage build (`builder` → `runtime`)
+- **`Dockerfile`** — Standard two-stage build (`builder` → `runtime`) for the full `paladin` CLI binary
 - **`Dockerfile.chef`** — Cargo-chef optimized build for faster CI (caches Rust dependencies as a separate layer)
+- **`Dockerfile.server`** — Builds `paladin-server` (the `web-server` feature only: agent HTTP API, health/readiness, OpenAPI docs, auth); built via `make docker-build-server` and used by `docker/docker-compose.server.yml`
 
 The `paladin` binary carries `required-features = ["cli"]` (ADR-0023, `.planning/decisions/0023-cli-dependency-isolation.md`), so a build command that omits `--features cli` fails — the Dockerfile below always passes it.
 
@@ -125,8 +126,10 @@ FROM rust:1.93-slim-bookworm AS builder
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    pkg-config libssl-dev g++ \
+    pkg-config libssl-dev g++ curl \
     && rm -rf /var/lib/apt/lists/*
+# curl is needed by the `utoipa-swagger-ui` build script (pulled by `paladin-web`)
+# to download the Swagger UI bundle during the workspace build.
 
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
@@ -154,9 +157,13 @@ RUN groupadd -g 65532 paladin && \
     chown -R paladin:paladin /app
 
 USER paladin:paladin
-EXPOSE 8080
+EXPOSE 8080 9090
 CMD ["/usr/local/bin/paladin"]
 ```
+
+> **Note:** Port 9090 is reserved and exposed for future Prometheus metrics; no `/metrics`
+> HTTP handler is wired up yet (the shipped routes are `/health` and `/ready`, see
+> `crates/paladin-web/src/health.rs`).
 
 > **Tip:** Use `Dockerfile.chef` in CI for faster builds — `cargo-chef` caches the dependency compilation layer separately from application code, so only changed crates are rebuilt.
 
@@ -170,9 +177,14 @@ Mount configuration files as volumes:
 docker run -d \
   --name paladin \
   -v ./config.yml:/app/config.yml:ro \
-  -v ./secrets.yml:/app/secrets.yml:ro \
   ghcr.io/your-org/paladin:latest
 ```
+
+> **Note:** Paladin has no separate secrets file. Config loads from a single required
+> `config.yml`/`config.toml` (plus an optional `config.$APP_ENV` override), and every value
+> can additionally be overridden by an `APP_`-prefixed environment variable
+> (`src/config/settings.rs`, `Environment::with_prefix("APP")`) — see
+> [Environment Variables](#environment-variables) below.
 
 ### Example config.yml
 
@@ -181,16 +193,14 @@ docker run -d \
 server:
   host: "0.0.0.0"
   port: 8080
-  log_level: "info"
 
-paladin:
-  default_model: "gpt-4"
-  default_temperature: 0.7
-  default_max_loops: 3
-  timeout_seconds: 300
+# There is no top-level `paladin:` defaults section — a single Paladin's model,
+# temperature, max_loops etc. are set programmatically via the `PaladinBuilder`
+# Rust API. The HTTP service host (`paladin-server`) instead loads a list of
+# agent definitions under `agents:` (see docs/src/user-guides/paladin-configuration.md).
 
 garrison:
-  type: "sqlite"
+  garrison_type: "sqlite"
   path: "/app/data/garrison.db"
   max_entries: 1000
   max_tokens: 8000
@@ -198,44 +208,61 @@ garrison:
 arsenal:
   mcp_servers:
     - name: "web_search"
-      type: "stdio"
+      server_type: "stdio"
       command: "uvx"
       args: ["mcp-web-search"]
 
 llm:
   openai:
+    api_key: "${OPENAI_API_KEY}"
     base_url: "https://api.openai.com/v1"
-    # API key from environment variable
   deepseek:
+    api_key: "${DEEPSEEK_API_KEY}"
     base_url: "https://api.deepseek.com/v1"
   anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
     base_url: "https://api.anthropic.com/v1"
 
-storage:
-  type: "minio"
-  endpoint: "minio:9000"
-  bucket: "paladin"
-  use_ssl: false
+file_storage:
+  minio_endpoint: "minio:9000"
+  minio_access_key: "minioadmin"
+  minio_secret_key: "minioadmin"
+  minio_bucket: "paladin"
+  minio_secure: false
 
 queue:
-  type: "redis"
-  url: "redis://redis:6379"
+  redis_host: "redis"
+  redis_port: 6379
+  redis_password: "changeme"
 ```
 
 ## Environment Variables
 
+> **Note:** Paladin loads settings via the `config` crate with `Environment::with_prefix("APP")`
+> (`src/config/settings.rs:66`) — every config-file key is overridable by an `APP_`-prefixed
+> variable. The only *unprefixed* variables the binary itself reads directly are the three LLM
+> provider API keys (`src/application/cli/commands/setup_check.rs`) and `RUST_LOG` (the standard
+> Rust logging convention, `src/infrastructure/adapters/logs/system_log_adapter.rs`). There is no
+> `SERVER_HOST`/`SERVER_PORT`/`LOG_LEVEL`/`DEFAULT_MODEL`/`DEFAULT_TEMPERATURE`/`DEFAULT_MAX_LOOPS`
+> override — `server.host`/`server.port` are config-file-only, and there is no top-level Paladin
+> defaults section to override (see the config.yml note above).
+
 ### Required Variables
 
 ```bash
-# LLM Provider API Keys
+# LLM Provider API Keys (read unprefixed, directly by the binary)
 OPENAI_API_KEY=sk-...
 DEEPSEEK_API_KEY=your_key_here
 ANTHROPIC_API_KEY=your_key_here
 
-# Redis (queue)
-REDIS_PASSWORD=changeme
+# Redis (queue) — read by the Paladin binary as APP_REDIS_PASSWORD
+APP_REDIS_PASSWORD=changeme
 
-# MinIO (object storage)
+# MinIO (object storage) — read by the Paladin binary as APP_MINIO_ACCESS_KEY/APP_MINIO_SECRET_KEY.
+# MINIO_ROOT_USER/MINIO_ROOT_PASSWORD below are consumed by the MinIO *container* itself
+# (its own bootstrap credentials), not by the Paladin binary.
+APP_MINIO_ACCESS_KEY=minioadmin
+APP_MINIO_SECRET_KEY=minioadmin
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
 ```
@@ -243,20 +270,13 @@ MINIO_ROOT_PASSWORD=minioadmin
 ### Optional Variables
 
 ```bash
-# Server configuration
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8080
-LOG_LEVEL=info
+# Logging
+RUST_LOG=info
 
 # Garrison configuration
-GARRISON_TYPE=sqlite
-GARRISON_PATH=/app/data/garrison.db
-GARRISON_MAX_ENTRIES=1000
-
-# Paladin defaults
-DEFAULT_MODEL=gpt-4
-DEFAULT_TEMPERATURE=0.7
-DEFAULT_MAX_LOOPS=3
+APP_GARRISON_TYPE=sqlite
+APP_GARRISON_PATH=/app/data/garrison.db
+APP_GARRISON_MAX_ENTRIES=1000
 ```
 
 ### Passing Environment Variables
@@ -265,7 +285,7 @@ DEFAULT_MAX_LOOPS=3
 # From command line
 docker run -d \
   -e OPENAI_API_KEY=sk-... \
-  -e LOG_LEVEL=debug \
+  -e RUST_LOG=debug \
   ghcr.io/your-org/paladin:latest
 
 # From .env file
@@ -278,7 +298,7 @@ services:
   paladin:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LOG_LEVEL=info
+      - RUST_LOG=info
 ```
 
 ## Volumes and Persistence
@@ -345,8 +365,8 @@ docker run --rm \
 ```bash
 # Map container port to host
 docker run -d \
-  -p 8080:8080 \           # HTTP API
-  -p 8081:8081 \           # Metrics endpoint
+  -p 8080:8080 \           # HTTP API (/health, /ready)
+  -p 9090:9090 \           # Reserved for future Prometheus metrics — no /metrics route yet
   ghcr.io/your-org/paladin:latest
 ```
 
@@ -421,9 +441,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - LOG_LEVEL=info
-      - GARRISON_TYPE=sqlite
-      - GARRISON_PATH=/app/data/garrison.db
+      - RUST_LOG=info
+      - APP_GARRISON_TYPE=sqlite
+      - APP_GARRISON_PATH=/app/data/garrison.db
     volumes:
       - ./config.yml:/app/config.yml:ro
       - paladin-data:/app/data
@@ -476,25 +496,29 @@ docker buildx inspect --bootstrap
 # Build for multiple platforms
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/your-org/paladin:v0.4.3 \
+  -t ghcr.io/your-org/paladin:v0.8.0 \
   --push \
   .
 ```
 
 ### Automated Multi-Arch Builds
 
-GitHub Actions workflow (see `.github/workflows/docker-publish.yml`):
+There is no `.github/workflows/docker-publish.yml` — the real pipeline is split across two
+workflows: `.github/workflows/ci.yml`'s `docker` job builds (but does not push) a multi-arch
+image on every PR/push as a build-and-size gate, and `.github/workflows/release.yml`'s
+`build-docker` job builds, tags (via `docker/metadata-action`) and pushes to `ghcr.io` when a
+release tag lands:
 
 ```yaml
-- name: Build and push Docker image
+# .github/workflows/release.yml, job: build-docker
+- name: Build and push
   uses: docker/build-push-action@v5
   with:
     context: .
     platforms: linux/amd64,linux/arm64
     push: true
-    tags: |
-      ghcr.io/${{ github.repository }}:latest
-      ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+    tags: ${{ steps.meta.outputs.tags }}   # from docker/metadata-action, semver + latest
+    labels: ${{ steps.meta.outputs.labels }}
     cache-from: type=gha
     cache-to: type=gha,mode=max
 ```
@@ -506,10 +530,10 @@ GitHub Actions workflow (see `.github/workflows/docker-publish.yml`):
 Paladin follows semantic versioning with Docker tags:
 
 ```bash
-# Release v0.4.3
+# Release v0.8.0
 ghcr.io/your-org/paladin:latest       # Always points to latest release
-ghcr.io/your-org/paladin:v0.4.3       # Immutable version tag
-ghcr.io/your-org/paladin:v0.4         # Minor version (updates with patches)
+ghcr.io/your-org/paladin:v0.8.0       # Immutable version tag
+ghcr.io/your-org/paladin:v0.8         # Minor version (updates with patches)
 ghcr.io/your-org/paladin:v0           # Major version
 
 # Development
@@ -523,7 +547,7 @@ ghcr.io/your-org/paladin:dev-feature  # Feature branch
 
 ```bash
 # ✅ Good: Immutable version
-docker run ghcr.io/your-org/paladin:v0.4.3
+docker run ghcr.io/your-org/paladin:v0.8.0
 
 # ❌ Avoid: Latest can change
 docker run ghcr.io/your-org/paladin:latest
@@ -539,30 +563,32 @@ docker run ghcr.io/your-org/paladin:main
 
 ### Built-in Health Check
 
-Paladin includes health check endpoint:
+Paladin includes liveness and readiness endpoints (`crates/paladin-web/src/health.rs`):
 
 ```bash
-# HTTP health check
+# Liveness — always 200 once the process is up; no dependency checks
 curl http://localhost:8080/health
-
 # Response
-{
-  "status": "healthy",
-  "version": "0.1.0",
-  "uptime": 3600,
-  "components": {
-    "llm": "healthy",
-    "garrison": "healthy",
-    "arsenal": "healthy",
-    "queue": "healthy"
-  }
-}
+{ "status": "ok" }
+
+# Readiness — 200 once the agent registry is built and serving (shallow check,
+# no network I/O against LLM/garrison/arsenal/queue)
+curl http://localhost:8080/ready
+# Response
+{ "status": "ready", "agents": 3 }
 ```
 
 ### Docker Health Check
 
+> **Note:** the shipped `Dockerfile` sets `HEALTHCHECK NONE` — health checking is left to the
+> orchestrator's own probes (Kubernetes liveness/readiness, or a `healthcheck:` block in
+> `docker-compose.yml` as shown in [Multi-Container Setup](#multi-container-setup)). A plain
+> `docker run` of the built image has no Docker-level health check unless you add one, either
+> with `--health-cmd` (see [Health Check Failing](#health-check-failing) below) or in compose.
+
 ```bash
-# Check container health
+# Check container health (only reports a status if a HEALTHCHECK was configured
+# via --health-cmd or a compose healthcheck: block)
 docker inspect --format='{{.State.Health.Status}}' paladin
 
 # View health check logs
@@ -619,10 +645,10 @@ version: '3.8'
 
 services:
   paladin:
-    image: ghcr.io/your-org/paladin:v0.4.3  # Pinned version
+    image: ghcr.io/your-org/paladin:v0.8.0  # Pinned version
     restart: unless-stopped
     environment:
-      - LOG_LEVEL=warn  # Reduce log verbosity
+      - RUST_LOG=warn  # Reduce log verbosity
       - RUST_BACKTRACE=0  # Disable backtraces
     volumes:
       - paladin-data:/app/data
