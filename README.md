@@ -93,6 +93,7 @@ for the full table, dependency graph, and copy-paste `Cargo.toml` profiles.
 
 - **Guide (mdBook):** <https://df3ndr.github.io/paladin-dev-env/> — installation, orchestration, content processing, the agent↔orchestrator bridge, architecture, deployment, and operations.
 - **API docs (docs.rs):** <https://docs.rs/paladin-ai>
+- **Demos:** [`docs/DEMOS.md`](docs/DEMOS.md) — terminal recordings of Basic Paladin Execution, Battalion Formation, Council Discussion, and Grove Routing.
 
 ## Getting Started
 
@@ -178,7 +179,7 @@ API docs & versioning (the `http.docs` section):
 
 ## Project Status
 
-Current version: **0.6.0**. Stability guarantees and the public-API policy are documented in the
+Current version: **0.8.0**. Stability guarantees and the public-API policy are documented in the
 [Stable API reference](https://df3ndr.github.io/paladin-dev-env/api-reference/stable-api.html); see
 [`CHANGELOG.md`](CHANGELOG.md) for release history.
 
