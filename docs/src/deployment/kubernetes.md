@@ -29,6 +29,21 @@ Paladin on Kubernetes provides:
 - **Resource Management**: CPU/memory limits and requests
 - **Service Discovery**: Internal DNS for service communication
 
+> **Scope note (read before following this guide):** the `k8s/` manifests actually shipped in
+> this repository (`k8s/namespace.yaml`, `k8s/deployment.yaml`, `k8s/service.yaml`,
+> `k8s/configmap.yaml`, `k8s/secret.yaml.example`, `k8s/redis.yaml`, `k8s/minio.yaml`, plus a
+> `k8s/server/` variant for `paladin-server`) are a **local/CI testing fixture**, not a
+> production deployment kit — `k8s/deployment.yaml` runs the image `paladin:test` with
+> `imagePullPolicy: Never`, a placeholder `sleep 3600` command instead of the real binary, and
+> its liveness/readiness/startup probes commented out ("Disabled for testing — needs HTTP
+> server endpoint"). No Helm chart is shipped anywhere in this repository, and
+> `https://charts.paladin.dev` is not a real Helm repository. Everything below this note —
+> the numbered `k8s/NN-*.yaml` filenames, the Ingress/HPA/PDB/ResourceQuota/NetworkPolicy/
+> ServiceMonitor/RBAC manifests, and the entire Helm Chart section — is illustrative production
+> guidance the reader must author themselves; it does not describe files that exist in this
+> repository today. Where a manifest below *does* have a real, shipped 1:1 counterpart, its
+> filename comment has been corrected to the real path.
+
 ## Prerequisites
 
 ```bash
@@ -124,7 +139,7 @@ helm uninstall paladin -n paladin
 ### Namespace
 
 ```yaml
-# k8s/00-namespace.yaml
+# k8s/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -137,7 +152,8 @@ metadata:
 ### Deployment
 
 ```yaml
-# k8s/10-deployment.yaml
+# k8s/deployment.yaml (illustrative production shape — the shipped file at this path is a
+# local/CI test fixture; see the scope note above)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -164,8 +180,10 @@ spec:
         component: server
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8081"
+        prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
+        # Reserved for future Prometheus metrics — no /metrics HTTP handler is wired up yet;
+        # the shipped routes are /health and /ready (crates/paladin-web/src/health.rs).
     spec:
       serviceAccountName: paladin
       securityContext:
@@ -180,7 +198,7 @@ spec:
 
       containers:
       - name: paladin
-        image: ghcr.io/your-org/paladin:v0.4.3
+        image: ghcr.io/your-org/paladin:v0.8.0
         imagePullPolicy: IfNotPresent
 
         ports:
@@ -188,16 +206,14 @@ spec:
           containerPort: 8080
           protocol: TCP
         - name: metrics
-          containerPort: 8081
+          containerPort: 9090
           protocol: TCP
 
         env:
-        - name: SERVER_HOST
-          value: "0.0.0.0"
-        - name: SERVER_PORT
-          value: "8080"
-        - name: LOG_LEVEL
-          value: "info"
+        # NOTE: there is no SERVER_HOST/SERVER_PORT/LOG_LEVEL environment override — Paladin
+        # loads config via `Environment::with_prefix("APP")` (src/config/settings.rs:66);
+        # server.host/server.port are config-file-only, and logging uses RUST_LOG (the
+        # standard Rust convention), not a custom LOG_LEVEL variable.
         - name: RUST_LOG
           value: "info,paladin=debug"
 
@@ -252,7 +268,7 @@ spec:
 
         readinessProbe:
           httpGet:
-            path: /health/ready
+            path: /ready
             port: http
           initialDelaySeconds: 10
           periodSeconds: 5
@@ -293,7 +309,9 @@ spec:
 ### Service
 
 ```yaml
-# k8s/20-service.yaml
+# k8s/service.yaml (illustrative production shape; the shipped file at this path defines three
+# services — a ClusterIP `paladin`, a headless `paladin-headless`, and a `paladin-metrics`
+# service, all on port 9090 for metrics, not 8081 — see the scope note above)
 apiVersion: v1
 kind: Service
 metadata:
@@ -312,7 +330,7 @@ spec:
     targetPort: http
     protocol: TCP
   - name: metrics
-    port: 8081
+    port: 9090
     targetPort: metrics
     protocol: TCP
   sessionAffinity: ClientIP
@@ -323,8 +341,10 @@ spec:
 
 ### Ingress
 
+Not shipped in this repository — no `k8s/*ingress*.yaml` file exists (per the scope note above).
+The following is illustrative:
+
 ```yaml
-# k8s/21-ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -359,7 +379,9 @@ spec:
 ### ConfigMap
 
 ```yaml
-# k8s/30-configmap.yaml
+# k8s/configmap.yaml (illustrative production shape — corrected to the real Settings struct
+# field names; the shipped file at this path is a CI test fixture and carries the same
+# `type:`/`paladin:` field-name drift this correction fixes here, per the scope note above)
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -370,16 +392,13 @@ data:
     server:
       host: "0.0.0.0"
       port: 8080
-      log_level: "info"
 
-    paladin:
-      default_model: "gpt-4"
-      default_temperature: 0.7
-      default_max_loops: 3
-      timeout_seconds: 300
+    # No top-level `paladin:` defaults section exists — a single Paladin's model/temperature/
+    # max_loops are set via the Rust PaladinBuilder API; the HTTP service host loads a list of
+    # agent definitions under `agents:` instead (see docs/src/user-guides/paladin-configuration.md).
 
     garrison:
-      type: "sqlite"
+      garrison_type: "sqlite"
       path: "/app/data/garrison.db"
       max_entries: 1000
       max_tokens: 8000
@@ -387,27 +406,31 @@ data:
     arsenal:
       mcp_servers:
         - name: "web_search"
-          type: "stdio"
+          server_type: "stdio"
           command: "uvx"
           args: ["mcp-web-search"]
 
     llm:
       openai:
+        api_key: "${OPENAI_API_KEY}"
         base_url: "https://api.openai.com/v1"
       deepseek:
+        api_key: "${DEEPSEEK_API_KEY}"
         base_url: "https://api.deepseek.com/v1"
       anthropic:
+        api_key: "${ANTHROPIC_API_KEY}"
         base_url: "https://api.anthropic.com/v1"
 
-    storage:
-      type: "minio"
-      endpoint: "minio.paladin.svc.cluster.local:9000"
-      bucket: "paladin"
-      use_ssl: false
+    file_storage:
+      minio_endpoint: "minio.paladin.svc.cluster.local:9000"
+      minio_access_key: "minioadmin"
+      minio_secret_key: "minioadmin"
+      minio_bucket: "paladin"
+      minio_secure: false
 
     queue:
-      type: "redis"
-      url: "redis://redis.paladin.svc.cluster.local:6379"
+      redis_host: "redis.paladin.svc.cluster.local"
+      redis_port: 6379
 ```
 
 ### Secret
@@ -425,8 +448,8 @@ kubectl create secret generic paladin-secrets \
   --from-env-file=secrets.env \
   -n paladin
 
-# Or from YAML (base64 encoded)
-# k8s/31-secret.yaml
+# Or from YAML (base64 encoded) — illustrative shape; the repo ships a template at
+# k8s/secret.yaml.example (copy to k8s/secret.yaml, which is gitignored, and fill in real values)
 apiVersion: v1
 kind: Secret
 metadata:
@@ -469,7 +492,7 @@ replicaCount: 3
 
 image:
   repository: ghcr.io/your-org/paladin
-  tag: "v0.4.3"
+  tag: "v0.8.0"
   pullPolicy: IfNotPresent
 
 serviceAccount:
@@ -608,7 +631,7 @@ resources:
 ### Resource Quotas
 
 ```yaml
-# k8s/40-resourcequota.yaml
+# illustrative — not shipped in this repository (see the scope note above)
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -630,7 +653,7 @@ spec:
 ### Pod Disruption Budget
 
 ```yaml
-# k8s/41-pdb.yaml
+# illustrative — not shipped in this repository (see the scope note above)
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -665,7 +688,7 @@ affinity:
 ### Horizontal Pod Autoscaler
 
 ```yaml
-# k8s/42-hpa.yaml
+# illustrative — not shipped in this repository (see the scope note above)
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -715,7 +738,7 @@ spec:
 ### PersistentVolumeClaim
 
 ```yaml
-# k8s/50-pvc.yaml
+# illustrative — the shipped k8s/deployment.yaml uses an emptyDir for /data instead of a PVC
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -733,7 +756,8 @@ spec:
 ### StatefulSet for Redis
 
 ```yaml
-# k8s/51-redis-statefulset.yaml
+# illustrative — the shipped k8s/redis.yaml is a plain Deployment with an emptyDir volume
+# (ephemeral), not a StatefulSet with a PVC; use a StatefulSet like this one for real persistence
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -775,7 +799,7 @@ spec:
 ### Network Policies
 
 ```yaml
-# k8s/60-networkpolicy.yaml
+# illustrative — not shipped in this repository (see the scope note above)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -819,7 +843,8 @@ spec:
 ### ServiceMonitor (Prometheus Operator)
 
 ```yaml
-# k8s/70-servicemonitor.yaml
+# illustrative — not shipped in this repository; also depends on the Prometheus Operator CRDs
+# and a real /metrics handler, neither of which exists yet (see the scope note above)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -842,7 +867,7 @@ spec:
 ### ServiceAccount and RBAC
 
 ```yaml
-# k8s/80-rbac.yaml
+# illustrative — not shipped in this repository (see the scope note above)
 apiVersion: v1
 kind: ServiceAccount
 metadata:

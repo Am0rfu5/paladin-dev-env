@@ -136,6 +136,18 @@ impl From<LlmProviderError> for LlmError {
 - Mark with `#![warn(missing_docs)]` and document all public items
 - Use `#[doc(hidden)]` to hide implementation details
 
+**`# Examples` heading spelling (D-06, Phase 16 DOCS-03):** on the D-05-enumerated **public API
+entry points** — `pub *Builder` structs, `pub *Port` traits, `pub *Service` structs (see
+`.planning/phases/16-documentation-currency-the-architecture-gap/16-DOCS-03-ENTRY-POINTS.md` for
+the full 76-item enumeration) — the heading is spelled **`# Examples`** (plural), not
+`# Example`. Both spellings render identically in rustdoc and neither is a compiler warning, so
+this is house style scoped narrowly to those 76 items, not a tree-wide sweep: the roughly 285
+other `# Example`/`# Examples` occurrences elsewhere in the tree are left as-is and are not
+enforced. `scripts/check-public-api-examples.sh` is the mechanical enforcer for the plural rule on
+the enumerated set — there is no stable-Rust lint for this (`rustdoc::missing_doc_code_examples`
+is nightly-only), so the script is the honest fallback, not a workaround for a built-in that
+exists elsewhere.
+
 **Example from** `src/application/services/paladin/paladin_builder.rs`:
 ```rust
 /// Creates a new PaladinBuilder with default values
@@ -144,7 +156,7 @@ impl From<LlmProviderError> for LlmError {
 ///
 /// * `llm_port` - The LLM port implementation to use for this Paladin
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust,no_run
 /// # use paladin::application::services::paladin::paladin_builder::PaladinBuilder;
@@ -156,6 +168,11 @@ impl From<LlmProviderError> for LlmError {
 /// ```
 pub fn new(llm_port: Arc<dyn LlmPort>) -> Self { ... }
 ```
+
+*(Note: this map is dated 2026-07-30 and predates Phases 12-17 — most of its content has not been
+re-verified against the tree since. This §Comments edit is scoped narrowly to the D-06 heading
+rule; a full refresh of the whole map is `/gsd-map-codebase` work, explicitly out of scope for
+Phase 16 per `16-CONTEXT.md`'s Deferred Ideas.)*
 
 ## Function Design
 

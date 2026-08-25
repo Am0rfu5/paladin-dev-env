@@ -128,9 +128,13 @@ test-integration: ## Run integration tests (local mode)
 	@./scripts/run_integration_tests.sh -m local
 
 .PHONY: test-integration-docker
-test-integration-docker: ## Run integration tests with docker-compose
+test-integration-docker: ## Run integration tests with docker-compose (includes the Ollama Tier 2 suite, 17-07/D-15)
 	@echo "$(CYAN)Running integration tests with docker-compose...$(NC)"
 	@./scripts/run_integration_tests.sh -m docker -v
+	@echo "$(CYAN)Starting ollama-test for the Ollama Docker-gated Tier 2 suite (17-07)...$(NC)"
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_TEST_FILE) up -d ollama-test ollama-test-init
+	@OLLAMA_TEST_URL=http://localhost:11435/v1 $(CARGO) test --test ollama_docker --features integration-tests,llm-ollama -- --nocapture
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_TEST_FILE) down -v --remove-orphans || true
 
 .PHONY: test-integration-redis
 test-integration-redis: ## Run Redis integration tests only
@@ -256,9 +260,11 @@ test-facade: ## Run tests for paladin facade crate
 .PHONY: coverage
 coverage: ## Measure workspace coverage (mirrors CI's `coverage` job — requires make services-up)
 	@echo "$(CYAN)Measuring coverage...$(NC)"
-	@nc -z localhost 6380 || { echo "$(RED)Redis not reachable on port 6380 — start services first with 'make services-up'.$(NC)"; exit 1; }
-	@nc -z localhost 9010 || { echo "$(RED)MinIO not reachable on port 9010 — start services first with 'make services-up'.$(NC)"; exit 1; }
-	@$(CARGO) llvm-cov --workspace --features integration-tests --lcov --output-path lcov.info --fail-under-lines 82 -- --test-threads=1
+	@# Delegates to scripts/coverage.sh — shared with CI's `coverage` job so the
+	@# feature list cannot drift. The script auto-detects service endpoints, so this
+	@# works both on the host (localhost:6380/9010) and inside the devcontainer
+	@# (redis:6379 / minio:9000), which the old hardcoded preflight could not.
+	@bash scripts/coverage.sh
 
 .PHONY: coverage-html
 coverage-html: ## Generate an HTML coverage report at target/coverage
@@ -296,6 +302,15 @@ check: ## Check code without building
 .PHONY: audit
 audit: ## Run security audit (vulnerability advisories)
 	@echo "$(CYAN)Running security audit...$(NC)"
+	@# Self-heal the advisory-db clone before auditing.
+	@# cargo-audit updates its clone with fetch+reset, which never deletes UNTRACKED
+	@# files. When RustSec renames or moves an advisory upstream (e.g. #3128 moved
+	@# RUSTSEC-2026-0244 from gettext-sys to gettext-rs), the old path survives locally
+	@# and collides with its own replacement, so the DB fails to load with
+	@# "duplicate advisory ID" and the whole security gate dies. Dropping untracked
+	@# files restores the clone to exactly what upstream tracks. Never fatal: a missing
+	@# clone (first run) or absent git just falls through to cargo audit's own fetch.
+	@git -C "$${CARGO_HOME:-$$HOME/.cargo}/advisory-db" clean -qfd 2>/dev/null || true
 	@# Exceptions are sourced from .cargo/audit.toml (single source of truth).
 	@$(CARGO) audit
 
@@ -309,6 +324,12 @@ openapi: ## Regenerate the committed OpenAPI baseline (crates/paladin-web/openap
 	@echo "$(CYAN)Regenerating OpenAPI baseline...$(NC)"
 	@UPDATE_OPENAPI=1 $(CARGO) test -p paladin-web --lib openapi_matches_committed_baseline -- --quiet
 	@echo "Wrote crates/paladin-web/openapi.json"
+
+.PHONY: keys
+keys: ## Show which LLM API credentials are available (never prints values)
+	@# paladin-env.sh is bash; make's default shell is dash, so invoke bash.
+	@# Status query: never fail the build just because no keys are present yet.
+	@bash -c '. .devcontainer/paladin-env.sh; paladin-keys' || true
 
 .PHONY: security
 security: audit deny ## Run all dependency security & license checks

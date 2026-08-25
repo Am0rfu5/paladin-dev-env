@@ -17,6 +17,23 @@ pub enum ContentItemServiceError {
     ContentItemNotFound(Uuid),
 }
 
+/// Content item service — wraps [`NodeVersionService`] with content-specific
+/// error mapping and version-history helpers.
+///
+/// # Examples
+///
+/// ```
+/// use paladin::core::base::service::node_version_service::NodeVersionRepository;
+/// use paladin::core::platform::container::content::ContentData;
+/// use paladin::core::platform::manager::content_service::ContentItemService;
+/// use std::sync::Arc;
+///
+/// fn build(
+///     version_repository: Arc<dyn NodeVersionRepository<ContentData> + Send + Sync>,
+/// ) -> ContentItemService {
+///     ContentItemService::new(version_repository)
+/// }
+/// ```
 pub struct ContentItemService {
     version_service: NodeVersionService<ContentData>,
 }

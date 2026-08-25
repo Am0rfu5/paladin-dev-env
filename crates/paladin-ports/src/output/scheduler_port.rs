@@ -233,6 +233,22 @@ pub enum SchedulerError {
 /// Implementations provide the mechanism for scheduling, querying, and
 /// cancelling cron-based jobs. The trait is `Send + Sync` to support
 /// async runtimes and shared state.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::output::scheduler_port::{SchedulerPort, JobSpec, JobStatus, SchedulerError};
+///
+/// async fn schedule_daily_report(
+///     scheduler: &dyn SchedulerPort,
+/// ) -> Result<JobStatus, SchedulerError> {
+///     let spec = JobSpec::new("daily-report", "0 0 9 * * *")
+///         .with_metadata("owner", "reporting-team");
+///
+///     let job_id = scheduler.schedule_job(spec).await?;
+///     scheduler.get_job_status(&job_id).await
+/// }
+/// ```
 #[async_trait]
 pub trait SchedulerPort: Send + Sync {
     /// Start the scheduler so that scheduled jobs begin executing.

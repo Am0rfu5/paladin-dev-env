@@ -50,6 +50,23 @@ pub struct LlmAnalysisOutput {
 // Re-export the canonical domain type from paladin-core (ADR-0016 / DEBT-05).
 pub use paladin_core::platform::container::token_usage::TokenUsage;
 
+/// LLM-backed content analysis service.
+///
+/// Wraps an [`LlmPort`] adapter with retry, timing and [`AnalysisResult`]
+/// packaging so callers depend only on the port trait, not a concrete
+/// provider.
+///
+/// # Examples
+///
+/// ```
+/// use paladin_llm::llm_analysis_service::LlmAnalysisService;
+/// use paladin_ports::output::llm_port::LlmPort;
+/// use std::sync::Arc;
+///
+/// fn build(llm_port: Arc<dyn LlmPort>) -> LlmAnalysisService {
+///     LlmAnalysisService::new(llm_port)
+/// }
+/// ```
 #[derive(Clone)] // Remove Debug derive here
 pub struct LlmAnalysisService {
     llm_port: Arc<dyn LlmPort>,

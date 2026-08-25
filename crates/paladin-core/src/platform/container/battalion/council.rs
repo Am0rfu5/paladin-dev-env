@@ -272,7 +272,7 @@ pub type Council = crate::base::entity::node::Node<CouncilData>;
 /// Provides a fluent interface for constructing and validating Council
 /// configurations before use.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// let council = CouncilBuilder::new()

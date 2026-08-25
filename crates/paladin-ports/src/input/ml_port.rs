@@ -94,6 +94,28 @@ pub enum MlPortError {
 /// This port is responsible for translating high-level application use cases into interactions
 /// with the ML model. It provides an abstraction layer that allows the application to interact with
 /// the ML model without being tightly coupled to its implementation details.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::input::ml_port::{MlPort, MlPredictionRequest, MlInputData, MlPortError};
+///
+/// fn classify_text(ml: &dyn MlPort, text: &str) -> Result<(), MlPortError> {
+///     if !ml.is_model_available("sentiment-classifier")? {
+///         return Err(MlPortError::ModelNotFound("sentiment-classifier".to_string()));
+///     }
+///
+///     let request = MlPredictionRequest {
+///         model_name: "sentiment-classifier".to_string(),
+///         input_data: MlInputData::Text(text.to_string()),
+///         parameters: None,
+///     };
+///
+///     let response = ml.predict(request)?;
+///     println!("Got {} prediction(s)", response.predictions.len());
+///     Ok(())
+/// }
+/// ```
 pub trait MlPort {
     /// Make a prediction using the ML model
     fn predict(&self, request: MlPredictionRequest) -> Result<MlPredictionResponse, MlPortError>;

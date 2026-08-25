@@ -129,3 +129,74 @@ decision only.
   `llm_port.rs:754` and on every adapter's `ProviderCapabilities` construction site. GAP-07 and
   WEB-03 should land in the same change, or be explicitly sequenced with the second rebasing onto
   the first.
+
+---
+
+## Amendment — 2026-08-23 (Phase 17, plans 17-19 and 17-21)
+
+**Status of this amendment:** Accepted. The original decision above stands; this narrows *when*
+the gate fires and records two boundary cases live measurement forced. Flagged as a required
+phase-close act by `17-19-SUMMARY.md`.
+
+### A1 — The gate fires only on a temperature the caller actually expressed
+
+`PaladinData::default()` fabricates `temperature: 0.7`. The original gate could not tell that
+fabrication apart from a deliberate request, so it judged both against the provider's declared
+range. That became a denial of service the moment a provider declared a *narrow, truthful* range:
+Kimi's live-measured constraint is the degenerate `(1.0, 1.0)`, which meant **every** Paladin
+built against Kimi was rejected — including callers who never mentioned temperature.
+
+The gate in `paladin_builder.rs` now fires only when `manual_temperature_override` is set. A
+caller who said nothing is not judged; a caller who asked for an illegal value is still refused by
+name, with the legal endpoints in the message, exactly as before.
+
+This is a narrowing of *what is judged*, not a weakening of the judgement.
+
+### A2 — Auto-selected temperatures are judged too (closing CR-01)
+
+The narrowing in A1 opened a hole that code review caught (`17-REVIEW-gaps.md`, CR-01). The
+auto-temperature branch in `PaladinBuilder::build` assigns an LLM-chosen temperature but never
+sets `manual_temperature_override` — and `validate()` runs *before* that branch regardless. An
+auto-selected value therefore reached `PaladinData` with no provider check at all.
+
+The value is now validated at the point of assignment. Consistent with this ADR's core position,
+an out-of-range auto selection is **refused by name, never clamped**: a caller who received a
+substituted value has no way to discover the substitution happened.
+
+Note the gap predates the A1 narrowing — it only became *reachable* once a provider declared a
+range an auto-selected value could fall outside.
+
+### A3 — Omission is not clamping
+
+Some vendors reject a sampling parameter's *presence*, not merely its value. Kimi accepts only
+`temperature=1`; xAI rejects `presence_penalty` outright on every current model.
+
+The mechanism adopted (`CompatRequestParameters`, plan 17-18) lets a preset declare which
+parameters its request path carries; undeclared ones are **omitted from the request body entirely**
+— the JSON key is absent, never `null` — so the vendor's own default applies.
+
+This is explicitly **not** the adapter-level clamping the Considered Options above rejected. No
+legal value is substituted for another; the parameter is simply not sent. The distinction matters:
+clamping silently rewrites a caller's stated intent, whereas omission declines to state an intent
+the caller never had.
+
+### A4 — A declared range must be the measured one, including half-open bounds
+
+`temperature_range` states what the vendor was *measured* to enforce, not a comfortable figure
+copied from another provider. Two live measurements on 2026-08-22/23 illustrate the cost of
+guessing:
+
+- **Kimi** enforces a single legal value; declared `(1.0, 1.0)`, which drove A1.
+- **Qwen** accepts the *half-open* `[0.0, 2.0)` — `2.0` itself is refused. Since
+  `temperature_range` is an inclusive pair, it is declared `(0.0, 1.99)`. An inclusive `(0.0, 2.0)`
+  would have advertised a value the vendor rejects.
+
+A declared range that is wrong in the permissive direction is worse than no declaration: it moves
+the failure from a local build error to a vendor round trip.
+
+### Code locations added by this amendment
+
+- `src/application/services/paladin/paladin_builder.rs` — the `manual_temperature_override` gate (A1) and the auto-branch validation (A2)
+- `crates/paladin-llm/src/compat/engine.rs` — `CompatRequestParameters` and its application in `build_request` (A3)
+- `crates/paladin-llm/src/kimi/adapter.rs` — the `(1.0, 1.0)` declaration and temperature/top_p omission (A1, A3, A4)
+- `crates/paladin-llm/src/qwen/adapter.rs` — the `(0.0, 1.99)` half-open declaration (A4)

@@ -110,6 +110,23 @@ pub struct ChunkMetadata {
 ///
 /// Provides methods for ingesting documents from various sources
 /// and chunking them for processing by LLMs.
+///
+/// # Examples
+///
+/// ```rust
+/// use paladin_ports::input::document_port::{DocumentPort, DocumentSource, ChunkConfig};
+/// use paladin_core::platform::container::document::DocumentError;
+/// use std::path::PathBuf;
+///
+/// async fn ingest_and_chunk(
+///     documents: &dyn DocumentPort,
+///     path: PathBuf,
+/// ) -> Result<usize, DocumentError> {
+///     let document = documents.ingest(DocumentSource::File(path)).await?;
+///     let chunks = documents.chunk(&document, ChunkConfig::default()).await?;
+///     Ok(chunks.len())
+/// }
+/// ```
 #[async_trait]
 pub trait DocumentPort: Send + Sync {
     /// Ingests a document from the specified source.

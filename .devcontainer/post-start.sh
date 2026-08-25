@@ -9,6 +9,8 @@ echo "🌟 Starting Paladin development environment..."
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 cd /workspace
@@ -84,6 +86,50 @@ if [ -f ".env" ]; then
     fi
 else
     echo "  ⚠️  .env file missing (use .env.example as template)"
+fi
+
+# Wire the host-credential loader into interactive shells. It must be sourced AFTER
+# the .env loader above: .env declares the LLM key names with empty values, and
+# paladin-env.sh fills any that are unset-or-empty from ~/.config/paladin.
+PALADIN_ENV_LINE='[ -f /workspace/.devcontainer/paladin-env.sh ] && . /workspace/.devcontainer/paladin-env.sh'
+if ! grep -Fq "$PALADIN_ENV_LINE" /home/vscode/.bashrc; then
+    {
+        echo ""
+        echo "# Load host-provided credentials (see .devcontainer/paladin-env.sh)"
+        echo "$PALADIN_ENV_LINE"
+    } >> /home/vscode/.bashrc
+    echo "  ✅ Added host-credential loader to ~/.bashrc"
+fi
+
+if [ -d /home/vscode/.config/paladin ]; then
+    # shellcheck source=paladin-env.sh
+    . /workspace/.devcontainer/paladin-env.sh
+    echo "  ✅ Host credential mount active ($(ls -1 /home/vscode/.config/paladin 2>/dev/null | wc -l) file(s)) — run 'paladin-keys' to list"
+else
+    echo "  ⚠️  No host credential mount at ~/.config/paladin"
+    echo "     On the HOST:  mkdir -p ~/.config/paladin"
+    echo "     Then one file per key, e.g. ~/.config/paladin/gemini_api_key"
+fi
+
+# Claude Code state mount guard. Docker silently creates a missing bind-mount
+# source as a ROOT-OWNED directory, after which the vscode user cannot write to
+# it and Claude Code loses all state without any visible error — detect that and
+# say what to do about it.
+CLAUDE_STATE_DIR="${CLAUDE_STATE_DIR:-/home/vscode/.claude}"
+if [ ! -d "$CLAUDE_STATE_DIR" ]; then
+    echo -e "${YELLOW}⚠️  No Claude Code state mount at $CLAUDE_STATE_DIR${NC}"
+    echo "     Sessions and login will NOT survive a rebuild."
+    echo "     On the HOST:  mkdir -p ~/.claude-paladin && chmod 700 ~/.claude-paladin"
+    echo "     Then run Dev Containers: Rebuild Container."
+elif [ ! -w "$CLAUDE_STATE_DIR" ]; then
+    CLAUDE_STATE_OWNER=$(stat -c '%U' "$CLAUDE_STATE_DIR")
+    echo -e "${RED}❌ Claude Code state mount at $CLAUDE_STATE_DIR is not writable (owned by $CLAUDE_STATE_OWNER)${NC}"
+    echo "     Docker creates a missing bind-mount source root-owned; fix ownership on the HOST:"
+    echo '     sudo chown -R "$(id -u):$(id -g)" ~/.claude-paladin'
+else
+    TRANSCRIPT_COUNT=$(find "$CLAUDE_STATE_DIR/projects/-workspace" -maxdepth 1 -name '*.jsonl' 2>/dev/null | wc -l)
+    echo "  ✅ Claude Code state mount active ($TRANSCRIPT_COUNT session transcript(s) for this workspace)"
+    [ -f "$CLAUDE_STATE_DIR/.claude.json" ] || echo "     Authenticate Claude Code once; the login then persists across rebuilds."
 fi
 
 echo ""

@@ -12,7 +12,7 @@ below so they apply to every session (one source of truth shared with GitHub Cop
 
 @.github/copilot-instructions.md
 @.github/instructions/rust.instructions.md
-@.github/instructions/snyk_rules.instructions.md
+@.github/instructions/security.instructions.md
 
 ## Workspace layout
 
@@ -66,8 +66,10 @@ make health               # Service status
   Arsenal, Citadel, Herald, Quest, …) consistently in code, docs, and comments.
 - **Before committing a parent task**: `cargo test` → `cargo fmt --check` → `cargo clippy`, then
   conventional-commit message. Stop after each major task and wait for go-ahead.
-- **Security**: run a Snyk code scan on newly generated/modified first-party code (see imported
-  `snyk_rules.instructions.md`) and `make audit` for dependencies.
+- **Security**: run `make security` (cargo-audit + cargo-deny) and `cargo clippy -- -D warnings`
+  on new/modified code, plus the manual credential-handling review in the imported
+  `security.instructions.md`. Snyk was evaluated and removed — it has no Rust coverage; do not
+  reintroduce a Snyk step or record a phase as blocked on one.
 - Avoid `unwrap()`/`expect()` and `panic!` in library code — return `Result`. Prefer borrowing
   over cloning; keep iterators lazy until you need a collection.
 

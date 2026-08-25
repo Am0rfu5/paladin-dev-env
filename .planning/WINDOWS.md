@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 10
-waived_count: 0
-fixed_count: 1
-total_count: 11
-last_updated: 2026-08-14T14:23:03.057Z
+open_count: 12
+waived_count: 4
+fixed_count: 5
+total_count: 21
+last_updated: 2026-08-23T18:50:57.849Z
 ---
 
 # Broken Windows Ledger
@@ -26,6 +26,16 @@ last_updated: 2026-08-14T14:23:03.057Z
 | 9 | 15.1 | unrun-verify | .github/workflows/ci.yml |  | Task 1 acceptance criterion 'git diff \| grep -c "^[+-].*cargo "' returns 4 not 0 -- matches step *name* text ('Cache cargo registry' etc.) removed by the migration, not actual cargo invocations. Verified via 'run: cargo' scoped grep returning 0 changed invocations. | open |  | 2026-08-14T14:22:48.884Z |  |
 | 10 | 15.1 | unrun-verify | .github/workflows/integration-tests.yml |  | Task 2's first automated verify literally asserts survivors=={pre-commit.yml} after migration, but integration-tests.yml (3 hand-rolled cache blocks) is still present -- deletion is plan 15.1-05's job, not yet executed in this wave, exactly per this plan's own Recorded discretion resolutions section. Substituted an assertion expecting survivors=={pre-commit.yml, integration-tests.yml}, both counts matching (1 and 3 respectively). | open |  | 2026-08-14T14:22:56.039Z |  |
 | 11 | 15.1 | unrun-verify | .github/workflows/ci.yml |  | Task 2 acceptance criterion 'grep -rc restore-keys ci.yml feature-flags.yml release.yml' returns 0 for ci.yml -- returns 2, both from pre-existing prose comments in the examples job (added by plan 15.1-01, lines ~268/271) explaining why a restore-keys fallback alone is insufficient, not an actual YAML restore-keys: key. Verified via structural YAML walk: no step's with block contains a restore-keys key in any of the three files. | open |  | 2026-08-14T14:23:03.057Z |  |
+| 12 | 17 | unrun-verify | tests/integration/ollama_docker_test.rs |  | Ollama Docker-gated Tier 2 suite (17-07 Task 2) authored and proven to compile/clippy-clean/skip-gracefully, but never run against a real Ollama server -- no Docker daemon in the execution sandbox. Runtime behavior (generate/generate_stream/get_available_models/validate_model against real qwen2.5:0.5b) is unverified. | fixed | Resolved 2026-08-23 by a CI run on the pushed branch. The orchestrator queried the GitHub check-runs API directly for commit 76b859d (the SHA it pushed) rather than relying on a report: 44 checks success, 3 skipped, 0 failures. This is first-hand evidence at CURRENT HEAD, which is what these rows lacked -- the previously cited run was at ca211644 (2026-08-19), before ~2,160 lines of gap-closure code landed. The 'Ollama Integration Tests (live server)' job concluded success (completed 2026-08-23T16:55:44Z), exercising the Docker-gated Tier 2 suite this row recorded as unrun. | 2026-08-17T14:17:30.134Z | 2026-08-23T17:55:00.000Z |
+| 13 | 17 | unrun-verify | Makefile |  | 17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead. | fixed | Resolved 2026-08-23 by a CI run on the pushed branch. The orchestrator queried the GitHub check-runs API directly for commit 76b859d (the SHA it pushed) rather than relying on a report: 44 checks success, 3 skipped, 0 failures. This is first-hand evidence at CURRENT HEAD, which is what these rows lacked -- the previously cited run was at ca211644 (2026-08-19), before ~2,160 lines of gap-closure code landed. The 'Coverage' job concluded success (completed 2026-08-23T16:59:08Z). That job runs `cargo llvm-cov --fail-under-lines 82`, so a success conclusion IS the >=82% workspace line-coverage assertion (ADR-0006) holding against the gap-closure code -- the exact measurement this row recorded as unrun. The job emitted no percentage into its check-run output, so the pass/fail verdict is recorded here rather than a figure. | 2026-08-17T14:17:37.112Z | 2026-08-23T17:55:00.000Z |
+| 14 | 17 | deviation | docker/docker-compose.test.yml |  | 17-07 Task 2: ollama-test healthcheck uses 'ollama list' (native /api/tags) instead of the plan's preferred curl-based /v1/models check, because curl/wget availability in the ollama/ollama:0.3.14 base image could not be verified without Docker in this sandbox. 'ollama list' is a well-precedented dependency-free healthcheck for this exact image. Compose file syntax validated via python yaml.safe_load only -- 'docker compose config' itself was never run. | open |  | 2026-08-17T14:17:46.408Z |  |
+| 15 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Snyk code scan (per snyk_rules.instructions.md) could not be run — no Snyk MCP tool or CLI available in this worktree's runtime (no network egress); recorded as not-run, never as passed | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-17T19:33:52.477Z | 2026-08-19T13:55:48.872Z |
+| 16 | 17 | unrun-verify | crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-17T20:01:16.281Z | 2026-08-19T13:55:49.213Z |
+| 17 | 17 | unrun-verify | crates/paladin-llm/src/gemini/adapter.rs |  | Plan 17-11's verification step 7 (Snyk code scan over crates/paladin-llm/src/gemini/adapter.rs) was not run -- no snyk_code_scan MCP tool and no Snyk CLI were available in the executor's runtime (no network egress). 17-11's own SUMMARY.md recorded this as not-run, never as passed. This row is the sibling of ids 15 and 16, filed 2026-08-18 by plan 17-17 after 17-VERIFICATION.md flagged 17-11's row as missing. | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-18T02:10:42.462Z | 2026-08-19T13:55:49.665Z |
+| 18 | 17 | unrun-verify | crates/paladin-llm/src/provider_factory.rs,tests/unit/llm/provider_factory_test.rs,crates/paladin-llm/src/openai_compatible/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs,crates/paladin-llm/src/compat/engine.rs |  | Plans 17-12 through 17-16 each attempted the mandated Snyk code scan (per snyk_rules.instructions.md, imported into CLAUDE.md) over the files they modified; none could run -- no snyk_code_scan MCP tool and no Snyk CLI in this environment. All five SUMMARYs (17-12-SUMMARY.md, 17-13-SUMMARY.md, 17-14-SUMMARY.md, 17-15-SUMMARY.md, 17-16-SUMMARY.md) record their scans as not-run, never as passed. Filed 2026-08-18 by plan 17-17. | waived | Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md. | 2026-08-18T02:10:55.983Z | 2026-08-19T13:55:50.375Z |
+| 19 | 17 | deviation | .project/current-exports.txt |  | The public-API surface snapshot .project/current-exports.txt was regenerated under default features only, so KimiAdapter, QwenAdapter, GrokAdapter, OllamaAdapter, GeminiAdapter and OpenAiCompatibleAdapter do not appear in it and cannot be checked for public-API drift. This is consistent with D-11's unchanged default feature set and is not itself wrong. 17-REVIEW.md records it as IN-01, non-blocking, with the suggested follow-up of generating an --features llm-all variant or documenting its absence. It was excluded from the 2026-08-18 gap-closure scope by explicit developer decision, taken in an interactive AskUserQuestion checkpoint in the orchestrating /gsd-plan-phase 17 --gaps session -- a recorded human choice, not an --auto inference -- and is therefore carried forward as accepted debt (IN-01) rather than dropped. Filed 2026-08-18 by plan 17-17. | open |  | 2026-08-18T02:11:05.490Z |  |
+| 20 | 17 | deviation | crates/paladin-llm/src/gemini/adapter.rs |  | Live vendor smoke run for plan 17-18 (2026-08-22) found Gemini's generate() probe FAILS on GEMINI_DEFAULT_MODEL=gemini-2.5-flash: vendor error 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash'. Model-list probe still PASSES (model present in live catalog), so this is a vendor-side default-model deprecation, not a regression from 17-18's CompatRequestParameters change -- Gemini is not built on CompatEngine at all and is structurally unaffected by it. Confirmed identical before and after this plan's code changes. Out of scope for 17-18 (gemini/adapter.rs not in files_modified); candidate follow-up: refresh GEMINI_DEFAULT_MODEL similarly to this plan's Grok refresh. | fixed | Fixed by the orchestrator between waves 1 and 2 of /gsd-execute-phase 17 --gaps-only (commit 954b750). GEMINI_DEFAULT_MODEL -> gemini-3.6-flash and GEMINI_FALLBACK_MODELS -> [gemini-3.6-flash, gemini-3.5-flash], every entry verified by a live generateContent call on 2026-08-22 rather than taken from the vendor deprecation message on faith. No pro-family fallback entry: gemini-2.5-pro and gemini-3-pro-preview are retired, gemini-3.6-pro is absent from v1beta, and gemini-pro-latest / gemini-3.1-pro-preview returned quota errors on the available credential -- an unverified identifier is what this refresh exists to remove. Escalated out of follow-up status because plans 17-19, 17-21 and 17-22 each carry a must_have requiring Gemini to PASS both live probes, and 17-22 requires four vendors PASS; leaving it open would have made three downstream must_haves unachievable. Live harness after the fix: Grok PASS/PASS, Gemini PASS/PASS. | 2026-08-22T16:29:02.316Z | 2026-08-22T16:52:00.000Z |
+| 21 | 17 | unrun-verify | crates/paladin-llm/src/qwen/adapter.rs |  | Plan 17-21 Task 2 is BLOCKED on an Alibaba Cloud Model Studio account entitlement, not on any code defect. After Task 1 moved QWEN_DEFAULT_BASE_URL to the US (Virginia) compatible-mode endpoint, the credential authenticates there correctly -- GET /models returns 92 entries with qwen-plus present, versus invalid_api_key at the previous dashscope-intl (Singapore) default, which is the measurement that proves the reversal right. But every chat-completion invocation returns HTTP 403 {"code":"Model.AccessDenied"}. The plan's executor ruled out a stale-identifier explanation across 78 qwen-prefixed identifiers and their -us regional variants, two unrelated model families hosted on the same workspace (deepseek-v4-flash, glm-5.1), and both the OpenAI-compatible and native DashScope invocation endpoints; the orchestrator independently reproduced the same 403 on qwen-plus. Consequence: the Qwen generate() probe cannot PASS, so plan 17-21's remaining must_haves (QWEN_FALLBACK_MODELS refreshed from a live-measured catalog, the five sampling-parameter verdicts, both temperature_range endpoints) are unmeasurable, and plan 17-22's 'four vendors PASS' clause is unachievable. Note that 17-21-SUMMARY.md exists with frontmatter status: blocked, but phase-plan-index keys off file EXISTENCE, so 17-21 reads as complete to the index and will be skipped by a plain --gaps-only re-run. It is deliberately NOT marked complete in ROADMAP.md. Required human action: in the Model Studio console, for the workspace tied to DASHSCOPE_API_KEY, select US (Virginia) and activate model invocation for at least qwen-plus, clearing whatever billing/quota/terms gate the console surfaces -- the API returns only the generic Model.AccessDenied code. Verify with: cargo run -p paladin-llm --example live_vendor_smoke --features kimi,qwen,grok,gemini (DASHSCOPE_BASE_URL left unset); Qwen's generate line should read PASS. Filed 2026-08-22 by the /gsd-execute-phase 17 --gaps-only orchestrator; the developer chose to continue waves 4 and 5 with Qwen recorded as catalog-verified / invocation-blocked rather than wait. | fixed | Resolved 2026-08-23, externally: the operator's DASHSCOPE_API_KEY was replaced with a Singapore-scoped credential (the entitlement-blocked key was Virginia-scoped and workspace-specific). Against the new key and the corrected shipped default (dashscope-intl, Singapore -- plan 17-21 gap closure), every measured request succeeded: GET /models returned 162 entries, generate() returned real completions for qwen-plus and candidate qwen3.7-plus, and all five optional sampling parameters plus both temperature_range endpoints were probed individually with no rejection below DashScope's documented [0.0, 2.0) temperature ceiling. No code change resolved this row -- it was never a code defect -- but the previously-blocked live_vendor_smoke run now exits 0 with all four vendors (Kimi, Qwen, Grok, Gemini) PASSING both probes and no DASHSCOPE_BASE_URL override, closing plan 17-22's 'four vendors PASS' clause. See 17-21-SUMMARY.md's 2026-08-23 update for the full measurement record. [Ledger normalization 2026-08-23: this row was originally written with kind "blocker" and status "resolved", neither of which is in the WINDOWS.md schema vocabulary (kinds: stub\|todo\|fixme\|skipped-test\|lint-warning\|unmet-truth\|unrun-verify\|deviation; statuses: open\|waived\|fixed). The off-schema values made the whole ledger unreadable to gsd-tools. Reclassified to kind=unrun-verify (a live-vendor verification that could not be executed) and status=fixed; the substance of the record is unchanged.] | 2026-08-22T18:05:00.000Z | 2026-08-23T12:55:15.198Z |
 
 ````json
 [
@@ -160,6 +170,126 @@ last_updated: 2026-08-14T14:23:03.057Z
     "reason": "",
     "recorded_at": "2026-08-14T14:23:03.057Z",
     "resolved_at": null
+  },
+  {
+    "id": 12,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "tests/integration/ollama_docker_test.rs",
+    "line": null,
+    "description": "Ollama Docker-gated Tier 2 suite (17-07 Task 2) authored and proven to compile/clippy-clean/skip-gracefully, but never run against a real Ollama server -- no Docker daemon in the execution sandbox. Runtime behavior (generate/generate_stream/get_available_models/validate_model against real qwen2.5:0.5b) is unverified.",
+    "status": "fixed",
+    "reason": "Resolved 2026-08-23 by a CI run on the pushed branch. The orchestrator queried the GitHub check-runs API directly for commit 76b859d (the SHA it pushed) rather than relying on a report: 44 checks success, 3 skipped, 0 failures. This is first-hand evidence at CURRENT HEAD, which is what these rows lacked -- the previously cited run was at ca211644 (2026-08-19), before ~2,160 lines of gap-closure code landed. The 'Ollama Integration Tests (live server)' job concluded success (completed 2026-08-23T16:55:44Z), exercising the Docker-gated Tier 2 suite this row recorded as unrun.",
+    "recorded_at": "2026-08-17T14:17:30.134Z",
+    "resolved_at": "2026-08-23T17:55:00.000Z"
+  },
+  {
+    "id": 13,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "Makefile",
+    "line": null,
+    "description": "17-07 Task 3: the workspace 82% line-coverage gate (make coverage) could not be run in this execution sandbox -- Redis (6380) and MinIO (9010) are unreachable because no Docker daemon is available, and the coverage target's own preflight fails fast on both. The coverage percentage with all six new adapters counted is UNMEASURED, not failing. cargo doc -p paladin-llm --no-deps (0 missing-docs warnings under the six new features) and a scoped clippy pass on touched targets were verified instead.",
+    "status": "fixed",
+    "reason": "Resolved 2026-08-23 by a CI run on the pushed branch. The orchestrator queried the GitHub check-runs API directly for commit 76b859d (the SHA it pushed) rather than relying on a report: 44 checks success, 3 skipped, 0 failures. This is first-hand evidence at CURRENT HEAD, which is what these rows lacked -- the previously cited run was at ca211644 (2026-08-19), before ~2,160 lines of gap-closure code landed. The 'Coverage' job concluded success (completed 2026-08-23T16:59:08Z). That job runs `cargo llvm-cov --fail-under-lines 82`, so a success conclusion IS the >=82% workspace line-coverage assertion (ADR-0006) holding against the gap-closure code -- the exact measurement this row recorded as unrun. The job emitted no percentage into its check-run output, so the pass/fail verdict is recorded here rather than a figure.",
+    "recorded_at": "2026-08-17T14:17:37.112Z",
+    "resolved_at": "2026-08-23T17:55:00.000Z"
+  },
+  {
+    "id": 14,
+    "kind": "deviation",
+    "phase": "17",
+    "file": "docker/docker-compose.test.yml",
+    "line": null,
+    "description": "17-07 Task 2: ollama-test healthcheck uses 'ollama list' (native /api/tags) instead of the plan's preferred curl-based /v1/models check, because curl/wget availability in the ollama/ollama:0.3.14 base image could not be verified without Docker in this sandbox. 'ollama list' is a well-precedented dependency-free healthcheck for this exact image. Compose file syntax validated via python yaml.safe_load only -- 'docker compose config' itself was never run.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-17T14:17:46.408Z",
+    "resolved_at": null
+  },
+  {
+    "id": 15,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/gemini/adapter.rs",
+    "line": null,
+    "description": "Snyk code scan (per snyk_rules.instructions.md) could not be run — no Snyk MCP tool or CLI available in this worktree's runtime (no network egress); recorded as not-run, never as passed",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
+    "recorded_at": "2026-08-17T19:33:52.477Z",
+    "resolved_at": "2026-08-19T13:55:48.872Z"
+  },
+  {
+    "id": 16,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/compat/engine.rs,crates/paladin-llm/src/kimi/adapter.rs,crates/paladin-llm/src/qwen/adapter.rs,crates/paladin-llm/src/grok/adapter.rs,crates/paladin-llm/src/ollama/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs",
+    "line": null,
+    "description": "Plan 17-10 verification step 7 (Snyk code scan over the five modified WR-04 adapter files plus compat/engine.rs) was not run — snyk_code_scan MCP tool unavailable in the executor runtime",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
+    "recorded_at": "2026-08-17T20:01:16.281Z",
+    "resolved_at": "2026-08-19T13:55:49.213Z"
+  },
+  {
+    "id": 17,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/gemini/adapter.rs",
+    "line": null,
+    "description": "Plan 17-11's verification step 7 (Snyk code scan over crates/paladin-llm/src/gemini/adapter.rs) was not run -- no snyk_code_scan MCP tool and no Snyk CLI were available in the executor's runtime (no network egress). 17-11's own SUMMARY.md recorded this as not-run, never as passed. This row is the sibling of ids 15 and 16, filed 2026-08-18 by plan 17-17 after 17-VERIFICATION.md flagged 17-11's row as missing.",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
+    "recorded_at": "2026-08-18T02:10:42.462Z",
+    "resolved_at": "2026-08-19T13:55:49.665Z"
+  },
+  {
+    "id": 18,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/provider_factory.rs,tests/unit/llm/provider_factory_test.rs,crates/paladin-llm/src/openai_compatible/adapter.rs,crates/paladin-llm/src/gemini/adapter.rs,crates/paladin-llm/src/compat/engine.rs",
+    "line": null,
+    "description": "Plans 17-12 through 17-16 each attempted the mandated Snyk code scan (per snyk_rules.instructions.md, imported into CLAUDE.md) over the files they modified; none could run -- no snyk_code_scan MCP tool and no Snyk CLI in this environment. All five SUMMARYs (17-12-SUMMARY.md, 17-13-SUMMARY.md, 17-14-SUMMARY.md, 17-15-SUMMARY.md, 17-16-SUMMARY.md) record their scans as not-run, never as passed. Filed 2026-08-18 by plan 17-17.",
+    "status": "waived",
+    "reason": "Snyk mandate removed 2026-08-18: Snyk has no Rust coverage (SAST found 0 of 4 planted vulnerabilities that it caught in equivalent JavaScript; SCA has no Cargo support). The scan this row waits on cannot produce a meaningful result. Superseded by make security + clippy + manual credential review per .github/instructions/security.instructions.md.",
+    "recorded_at": "2026-08-18T02:10:55.983Z",
+    "resolved_at": "2026-08-19T13:55:50.375Z"
+  },
+  {
+    "id": 19,
+    "kind": "deviation",
+    "phase": "17",
+    "file": ".project/current-exports.txt",
+    "line": null,
+    "description": "The public-API surface snapshot .project/current-exports.txt was regenerated under default features only, so KimiAdapter, QwenAdapter, GrokAdapter, OllamaAdapter, GeminiAdapter and OpenAiCompatibleAdapter do not appear in it and cannot be checked for public-API drift. This is consistent with D-11's unchanged default feature set and is not itself wrong. 17-REVIEW.md records it as IN-01, non-blocking, with the suggested follow-up of generating an --features llm-all variant or documenting its absence. It was excluded from the 2026-08-18 gap-closure scope by explicit developer decision, taken in an interactive AskUserQuestion checkpoint in the orchestrating /gsd-plan-phase 17 --gaps session -- a recorded human choice, not an --auto inference -- and is therefore carried forward as accepted debt (IN-01) rather than dropped. Filed 2026-08-18 by plan 17-17.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-08-18T02:11:05.490Z",
+    "resolved_at": null
+  },
+  {
+    "id": 20,
+    "kind": "deviation",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/gemini/adapter.rs",
+    "line": null,
+    "description": "Live vendor smoke run for plan 17-18 (2026-08-22) found Gemini's generate() probe FAILS on GEMINI_DEFAULT_MODEL=gemini-2.5-flash: vendor error 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash'. Model-list probe still PASSES (model present in live catalog), so this is a vendor-side default-model deprecation, not a regression from 17-18's CompatRequestParameters change -- Gemini is not built on CompatEngine at all and is structurally unaffected by it. Confirmed identical before and after this plan's code changes. Out of scope for 17-18 (gemini/adapter.rs not in files_modified); candidate follow-up: refresh GEMINI_DEFAULT_MODEL similarly to this plan's Grok refresh.",
+    "status": "fixed",
+    "reason": "Fixed by the orchestrator between waves 1 and 2 of /gsd-execute-phase 17 --gaps-only (commit 954b750). GEMINI_DEFAULT_MODEL -> gemini-3.6-flash and GEMINI_FALLBACK_MODELS -> [gemini-3.6-flash, gemini-3.5-flash], every entry verified by a live generateContent call on 2026-08-22 rather than taken from the vendor deprecation message on faith. No pro-family fallback entry: gemini-2.5-pro and gemini-3-pro-preview are retired, gemini-3.6-pro is absent from v1beta, and gemini-pro-latest / gemini-3.1-pro-preview returned quota errors on the available credential -- an unverified identifier is what this refresh exists to remove. Escalated out of follow-up status because plans 17-19, 17-21 and 17-22 each carry a must_have requiring Gemini to PASS both live probes, and 17-22 requires four vendors PASS; leaving it open would have made three downstream must_haves unachievable. Live harness after the fix: Grok PASS/PASS, Gemini PASS/PASS.",
+    "recorded_at": "2026-08-22T16:29:02.316Z",
+    "resolved_at": "2026-08-22T16:52:00.000Z"
+  },
+  {
+    "id": 21,
+    "kind": "unrun-verify",
+    "phase": "17",
+    "file": "crates/paladin-llm/src/qwen/adapter.rs",
+    "line": null,
+    "description": "Plan 17-21 Task 2 is BLOCKED on an Alibaba Cloud Model Studio account entitlement, not on any code defect. After Task 1 moved QWEN_DEFAULT_BASE_URL to the US (Virginia) compatible-mode endpoint, the credential authenticates there correctly -- GET /models returns 92 entries with qwen-plus present, versus invalid_api_key at the previous dashscope-intl (Singapore) default, which is the measurement that proves the reversal right. But every chat-completion invocation returns HTTP 403 {\"code\":\"Model.AccessDenied\"}. The plan's executor ruled out a stale-identifier explanation across 78 qwen-prefixed identifiers and their -us regional variants, two unrelated model families hosted on the same workspace (deepseek-v4-flash, glm-5.1), and both the OpenAI-compatible and native DashScope invocation endpoints; the orchestrator independently reproduced the same 403 on qwen-plus. Consequence: the Qwen generate() probe cannot PASS, so plan 17-21's remaining must_haves (QWEN_FALLBACK_MODELS refreshed from a live-measured catalog, the five sampling-parameter verdicts, both temperature_range endpoints) are unmeasurable, and plan 17-22's 'four vendors PASS' clause is unachievable. Note that 17-21-SUMMARY.md exists with frontmatter status: blocked, but phase-plan-index keys off file EXISTENCE, so 17-21 reads as complete to the index and will be skipped by a plain --gaps-only re-run. It is deliberately NOT marked complete in ROADMAP.md. Required human action: in the Model Studio console, for the workspace tied to DASHSCOPE_API_KEY, select US (Virginia) and activate model invocation for at least qwen-plus, clearing whatever billing/quota/terms gate the console surfaces -- the API returns only the generic Model.AccessDenied code. Verify with: cargo run -p paladin-llm --example live_vendor_smoke --features kimi,qwen,grok,gemini (DASHSCOPE_BASE_URL left unset); Qwen's generate line should read PASS. Filed 2026-08-22 by the /gsd-execute-phase 17 --gaps-only orchestrator; the developer chose to continue waves 4 and 5 with Qwen recorded as catalog-verified / invocation-blocked rather than wait.",
+    "status": "fixed",
+    "reason": "Resolved 2026-08-23, externally: the operator's DASHSCOPE_API_KEY was replaced with a Singapore-scoped credential (the entitlement-blocked key was Virginia-scoped and workspace-specific). Against the new key and the corrected shipped default (dashscope-intl, Singapore -- plan 17-21 gap closure), every measured request succeeded: GET /models returned 162 entries, generate() returned real completions for qwen-plus and candidate qwen3.7-plus, and all five optional sampling parameters plus both temperature_range endpoints were probed individually with no rejection below DashScope's documented [0.0, 2.0) temperature ceiling. No code change resolved this row -- it was never a code defect -- but the previously-blocked live_vendor_smoke run now exits 0 with all four vendors (Kimi, Qwen, Grok, Gemini) PASSING both probes and no DASHSCOPE_BASE_URL override, closing plan 17-22's 'four vendors PASS' clause. See 17-21-SUMMARY.md's 2026-08-23 update for the full measurement record. [Ledger normalization 2026-08-23: this row was originally written with kind \"blocker\" and status \"resolved\", neither of which is in the WINDOWS.md schema vocabulary (kinds: stub|todo|fixme|skipped-test|lint-warning|unmet-truth|unrun-verify|deviation; statuses: open|waived|fixed). The off-schema values made the whole ledger unreadable to gsd-tools. Reclassified to kind=unrun-verify (a live-vendor verification that could not be executed) and status=fixed; the substance of the record is unchanged.]",
+    "recorded_at": "2026-08-22T18:05:00.000Z",
+    "resolved_at": "2026-08-23T12:55:15.198Z"
   }
 ]
 ````

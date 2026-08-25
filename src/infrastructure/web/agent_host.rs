@@ -213,7 +213,7 @@ pub fn bind_address(settings: &Settings) -> String {
 /// specific message rather than mid-build. It verifies, for every agent: non-empty `id`,
 /// `model`, and `system_prompt`; no duplicate ids; and that the resolved provider is one
 /// of the providers available in this build. It does **not** verify API keys — those are
-/// checked when the provider is actually created in [`build_agent`].
+/// checked when the provider is actually created in `build_agent`.
 ///
 /// # Errors
 ///
@@ -265,7 +265,7 @@ pub fn validate_config(settings: &Settings) -> Result<(), HostBuildError> {
 /// Build a populated [`AgentRegistry`] from the `agents` section of `settings`.
 ///
 /// Runs [`validate_config`] first (fail-fast), then constructs each agent via
-/// [`build_agent`]. A validation failure, an unresolvable provider, or a build failure
+/// `build_agent`. A validation failure, an unresolvable provider, or a build failure
 /// aborts with a descriptive [`HostBuildError`] naming the agent.
 ///
 /// # Errors

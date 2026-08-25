@@ -57,6 +57,9 @@ Service orchestration configuration.
 - Persistent volumes
 - Environment variables configured
 - Development optimizations
+- Host bind mounts: read-only `~/.config/paladin` LLM credentials, and read-write
+  `~/.claude-paladin` Claude Code session state (with `CLAUDE_CONFIG_DIR` set to
+  match)
 
 ### `.devcontainer/Dockerfile` (2.0K)
 Production runtime image (maintained from original).
@@ -92,6 +95,7 @@ Runs every time container starts.
 - Shows git status
 - Displays system information
 - Quick health check
+- Claude Code state mount check (active / absent / non-writable, with host-side fix)
 - Helpful reminders
 
 ### `.devcontainer/setup-network.sh` (535 bytes) 🌐
@@ -224,7 +228,7 @@ Build and run tasks.
 Editor settings (existing, maintained).
 
 **Settings:**
-- Snyk integration
+- Editor/formatting preferences
 - Auto-approval for common commands
 
 ## Additional Files

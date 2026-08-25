@@ -1,10 +1,14 @@
-# Public API Surface - Generated 2026-08-12 16:40:58 UTC
+# Public API Surface - Generated 2026-08-17 14:33:20 UTC
 # This file tracks all publicly exported items from the paladin crate
 # Generated using cargo-public-api v0.52.0
 
 pub mod paladin
+pub use paladin::AnthropicAdapter
+pub use paladin::AnthropicConfig
 pub use paladin::BattalionConfig
 pub use paladin::BattalionError
+pub use paladin::DeepSeekAdapter
+pub use paladin::DeepSeekConfig
 pub use paladin::LlmProviderFactory
 pub use paladin::MockLlmAdapter
 pub use paladin::MultiStepMockLlmPort
@@ -3543,4 +3547,4 @@ impl !core::panic::unwind_safe::RefUnwindSafe for paladin::application::services
 impl !core::panic::unwind_safe::UnwindSafe for paladin::application::services::paladin::paladin_builder::PaladinBuilder
 
 ## Summary
-Total public items: 1967
+Total public items: 1971

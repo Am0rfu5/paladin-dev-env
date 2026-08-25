@@ -62,8 +62,33 @@ the plans that follow in this same phase):
 | 0040 | `opaque-bearer-token-mechanism` | Opaque server-issued bearer tokens ratified as the agent API's token mechanism; M12 Epic 5 Open Question 4 dissolved, not answered (Phase 14, plan 14-05) |
 | 0041 | `in-process-token-store-single-replica-scope` | The shared-store requirement scoped to the `AuthPort` credential path, not the replica count; WEB-02's own two literal exits declined and the deviation stated explicitly; the shared store deferred with a named trigger (Phase 14, plan 14-05) |
 | 0042 | `llm-native-tool-calling-deferred` | LLM-native tool calling (Deferred-QA Epic 27) recorded as a future capability improvement, not built, with a named reintroduction trigger and owner (Phase 14, plan 14-06) |
+| 0045 | `additional-llm-provider-selection` | The additional-LLM-provider selection study — Kimi, Qwen, Grok, Ollama and Gemini build; Meta/Llama dispositioned via Ollama; Groq/Together/Mistral/Fireworks/Bedrock rejected as already covered by the generic operator-configured provider, not deferred (Phase 17, plan 17-02) |
+| 0046 | `facade-llm-feature-flag-wiring` | The facade's `llm-*` provider flags wired for real, with the default build preserved (D-11 amended, option-b) — a `Fixed` CHANGELOG entry, not `BREAKING` (Phase 17, plan 17-06) |
+| 0047 | `architecture-appendix-disposition` | `docs/src/appendix/design-and-architecture.md` recorded historical, superseded by `docs/src/architecture/` plus `docs/src/appendix/sentinel.md`; FR-26.1's metric re-anchored to 18 of 19 → 19 of 19 against the live chapter, naming Sentinel; three of the four named Mermaid diagrams withdrawn as genuinely unanswered by the existing SVG inventory, the fourth mapped to existing artifacts (Phase 16, plan 16-06) |
 
-**Next free ADR number: 0045**
+**Next free ADR number: 0048**
+
+*Dated note, 2026-08-24 (plan 16-06):* the line advances by **one**, from 0047 to 0048, because
+Phase 16 plan 16-06 authored ADR-0047 (the architecture-appendix disposition — archive, metric
+re-anchoring naming Sentinel, and the diagram-clause withdrawal with its SVG mapping, all three
+D-04 sub-decisions in one ADR). `ls .planning/decisions/0047-*.md` (re-run before writing this note)
+confirms the file exists with the expected number, not skipped or reused, and no existing index row
+above was renumbered, reworded or reordered.
+
+*Dated note, 2026-08-17 (plan 17-06):* the line advances by **one**, from 0046 to 0047, because
+Phase 17 plan 17-06 authored ADR-0046 (the facade `llm-*` flag-wiring fix, D-11 as amended to
+option-b — the default build is preserved, so the entry is `Fixed` rather than `BREAKING`).
+`ls .planning/decisions/0046-*.md` (re-run before writing this note) confirms the file exists with
+the expected number, not skipped or reused, and no existing index row above was renumbered,
+reworded or reordered.
+
+*Dated note, 2026-08-17 (plan 17-02):* the line advances by **one**, from 0045 to 0046, because
+Phase 17 plan 17-02 authored ADR-0045 (the additional-LLM-provider selection study, `PROV-01`). The
+line advances by **two** across the whole phase, not one — plan 17-06 authors a second, ADR-0046
+(D-11's breaking default-build flag change), per D-00g's one-ADR-per-contested-position rule, so
+this note only accounts for this plan's own single allocation. `ls .planning/decisions/0045-*.md`
+(re-run before writing this note) confirms the file exists with the expected number, not skipped or
+reused, and no existing index row above was renumbered, reworded or reordered.
 
 *Dated note, 2026-08-12 (plan 14-07):* the line advances by **three**, from 0040 to 0043, because
 Phase 14 authored all three of ADR-0040 through ADR-0042 across its own plans — plan 14-05 authored

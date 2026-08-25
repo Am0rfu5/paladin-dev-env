@@ -6,7 +6,7 @@
 //! Used internally by [`commander`](crate::commander) and
 //! [`grove_service`](crate::grove_service) to assemble temporary registries during
 //! execution, and exported for use by the application facade and integration tests.
-//! Because this type depends only on [`paladin-core`] and [`paladin-ports`] it carries
+//! Because this type depends only on `paladin-core` and `paladin-ports` it carries
 //! zero infrastructure overhead.
 //!
 //! # Features
@@ -62,7 +62,7 @@ use std::sync::{Arc, RwLock};
 /// - `list_ids`: O(n) where n is the number of registered Paladins, acquires read lock
 #[derive(Debug, Default)]
 pub struct HashMapPaladinRegistry {
-    /// Internal storage: Paladin ID -> Arc<Paladin>
+    /// Internal storage: Paladin ID -> `Arc<Paladin>`
     paladins: RwLock<HashMap<String, Arc<Paladin>>>,
 }
 

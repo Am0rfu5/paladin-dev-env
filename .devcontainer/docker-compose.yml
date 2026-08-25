@@ -10,6 +10,21 @@ services:
       - ..:/workspace:cached
       - paladin-cargo-cache:/usr/local/cargo/registry
       - paladin-target-cache:/workspace/target
+      # Host-provided credentials (LLM API keys), read-only.
+      # /home/vscode is part of the container filesystem and is DESTROYED on every
+      # rebuild, so keys cannot live there. One file per secret, filename = variable
+      # name lowercased (gemini_api_key -> GEMINI_API_KEY); see .devcontainer/paladin-env.sh.
+      # Create the host directory BEFORE first launch, or the Docker daemon creates
+      # it root-owned:  mkdir -p ~/.config/paladin
+      - ${HOME}/.config/paladin:/home/vscode/.config/paladin:ro
+      # Claude Code user state (session transcripts, history, todos, shell snapshots,
+      # user settings, and the .credentials.json auth token), read-write. Unlike the
+      # credentials mount above, Claude Code must be able to write here.
+      # This is a DEDICATED host directory, not the host's real ~/.claude, so a Claude
+      # Code session running on the host cannot race the container's.
+      # Create the host directory BEFORE first launch, or the Docker daemon creates
+      # it root-owned:  mkdir -p ~/.claude-paladin && chmod 700 ~/.claude-paladin
+      - ${HOME}/.claude-paladin:/home/vscode/.claude
     command: /bin/sh -c "while sleep 1000; do :; done"
     cap_add:
       - SYS_PTRACE
@@ -22,6 +37,24 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
+      # Claude Code's .claude.json defaults to $HOME/.claude.json, OUTSIDE the .claude
+      # dir above, and Claude Code rewrites it via atomic rename -- so a single-file
+      # bind mount or a symlink would be replaced by a plain file and persistence would
+      # break silently. Setting this keeps .claude.json inside the mounted directory
+      # instead. Verified empirically against Claude Code 2.1.239. Must stay identical
+      # to the mount target above.
+      - CLAUDE_CONFIG_DIR=/home/vscode/.claude
+      # LLM credentials. Bare names (no "=") pass through from the host shell only
+      # when set there, and stay UNSET otherwise. When unset, paladin-env.sh reads
+      # them from the bind-mounted key files above.
+      - OPENAI_API_KEY
+      - ANTHROPIC_API_KEY
+      - DEEPSEEK_API_KEY
+      - GEMINI_API_KEY
+      - XAI_API_KEY
+      - MOONSHOT_API_KEY
+      - DASHSCOPE_API_KEY
+      - OPENAI_COMPATIBLE_API_KEY
     depends_on:
       - redis
       - minio

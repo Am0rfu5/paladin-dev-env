@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The Qwen (Alibaba DashScope) adapter's shipped default `base_url` is the Singapore
+  (international) endpoint.** `QWEN_DEFAULT_BASE_URL` resolves to
+  `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`. This constant moved twice inside one
+  week: Singapore → US (Virginia) on 2026-08-22, then back to Singapore on 2026-08-23, when the
+  project's own credential was replaced with a Singapore-scoped key and the Virginia default it
+  had just shipped started failing. Neither move settles the question for every operator —
+  DashScope API keys are region-scoped and rejected with a well-formed `401` by every region
+  except their own, so **whichever region this default names, an operator whose workspace is in
+  a different region must set `DASHSCOPE_BASE_URL`** to their own endpoint:
+  `https://dashscope-us.aliyuncs.com/compatible-mode/v1` (US/Virginia) or
+  `https://dashscope.aliyuncs.com/compatible-mode/v1` (mainland China). See the "Region default"
+  and "Reversal record" docs on `QWEN_DEFAULT_BASE_URL` in
+  `crates/paladin-llm/src/qwen/adapter.rs` for the full endpoint table and why no single default
+  here is ever the whole answer — the override and the diagnostic below are what actually protect
+  every operator, not the choice of default.
+- **`QWEN_DEFAULT_MODEL` stays `qwen-plus`, now for a stated reason.** Live-verified 2026-08-23
+  against the shipped Singapore endpoint alongside the alternative candidate `qwen3.7-plus`: both
+  are present in the live catalog and both accept every measured sampling parameter, so
+  `qwen-plus` was kept as the rolling, generation-independent alias rather than switched to the
+  generation-pinned `qwen3.7-plus`, which a future Qwen generation will eventually retire the way
+  `moonshot-v1-8k` and `gemini-2.5-flash` were retired earlier in this phase.
+- **Qwen's declared `temperature_range` narrows from `(0.0, 2.0)` to `(0.0, 1.99)`.** Live
+  measurement against the shipped endpoint found DashScope's own accepted range is the half-open
+  interval `[0.0, 2.0)` — a request carrying `temperature: 2.0` is rejected with
+  `HTTP 400 InternalError.Algo.InvalidParameter`. Since `ProviderCapabilities`'s validation gate
+  treats both endpoints of a declared range as inclusive, advertising `2.0` verbatim would let a
+  legal-looking request through the local gate only to fail on the wire.
+
+### Fixed
+
+- **The facade's `llm-*` provider flags now actually gate their adapters.** Root `Cargo.toml`
+  previously declared `llm-openai = []`, `llm-anthropic = []` and `llm-deepseek = []` as empty
+  stubs while pulling `paladin-llm` in unconditionally (`Cargo.toml:55`, pre-fix) with
+  `features = ["openai", "anthropic", "deepseek", "mock", "vision"]` — every build compiled all
+  three provider adapters regardless of which flags were set. Each `llm-<provider>` flag now
+  forwards into the matching `paladin-llm` feature (`llm-openai = ["paladin-llm/openai"]`, and the
+  same shape for `anthropic`, `deepseek`, and the five providers Phase 17 added — `kimi`, `qwen`,
+  `grok`, `ollama`, `gemini`, plus the generic `openai-compatible` provider), and the
+  `paladin-llm` dependency line no longer hardcodes any provider feature. **The default build
+  compiles the same three providers it did before — `openai`, `anthropic`, `deepseek` — so no
+  action is required of any consumer.** See
+  [ADR-0046](.planning/decisions/0046-facade-llm-feature-flag-wiring.md).
+
 ## [0.8.0] - 2026-08-12
 
 ### Changed

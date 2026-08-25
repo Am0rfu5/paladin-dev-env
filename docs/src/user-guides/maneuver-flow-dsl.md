@@ -52,7 +52,7 @@ Maneuver is included in `paladin-battalion`. Add it to your workspace:
 
 ```toml
 [dependencies]
-paladin-battalion = { version = "0.5.0", path = "crates/paladin-battalion" }
+paladin-battalion = { version = "0.8.0", path = "crates/paladin-battalion" }
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```bash
 # Create a Maneuver configuration
-paladin battalion new my-workflow --type maneuver -o workflow.yaml
+paladin battalion new --name my-workflow --type maneuver -o workflow.yaml
 
 # Visualize the flow
 paladin maneuver visualize -c workflow.yaml --format ascii
@@ -100,8 +100,9 @@ paladin maneuver visualize -c workflow.yaml --format ascii
 # Validate configuration
 paladin maneuver validate -c workflow.yaml --verbose
 
-# Execute the workflow
-paladin battalion run -c workflow.yaml -t maneuver -i "Process this input"
+# Execute the workflow (there is no -i/--input flag on `battalion run` —
+# it prompts "Enter input for maneuver" interactively on stdin)
+paladin battalion run -c workflow.yaml -t maneuver
 ```
 
 ---
@@ -404,7 +405,7 @@ visualize: "ascii"
 ### Create Maneuver Configuration
 
 ```bash
-paladin battalion new my-workflow --type maneuver --output workflow.yaml
+paladin battalion new --name my-workflow --type maneuver --output workflow.yaml
 ```
 
 Creates a template YAML file with example flow and agents.
@@ -460,14 +461,12 @@ paladin maneuver validate -c workflow.yaml --verbose
 ### Execute Maneuver
 
 ```bash
-# Interactive execution
+# Interactive execution — prompts "Enter input for maneuver" on stdin;
+# `battalion run` has no -i/--input flag
 paladin battalion run -c workflow.yaml -t maneuver
 
-# With input provided
-paladin battalion run -c workflow.yaml -t maneuver -i "Process this text"
-
 # Save output to file
-paladin battalion run -c workflow.yaml -t maneuver -i "Input" -o result.json
+paladin battalion run -c workflow.yaml -t maneuver -o result.json
 
 # Verbose execution
 paladin battalion run -c workflow.yaml -t maneuver -v
@@ -563,8 +562,8 @@ use paladin_battalion::maneuver::ManeuverError;
 
 match service.execute(&maneuver, input).await {
     Ok(result) => println!("Success: {}", result.final_output),
-    Err(ManeuverError::AgentNotFound(name)) => {
-        eprintln!("Agent '{}' not found in configuration", name);
+    Err(ManeuverError::AgentNotFound { agent_name, available_agents }) => {
+        eprintln!("Agent '{}' not found. Available: {:?}", agent_name, available_agents);
     },
     Err(ManeuverError::ExecutionError(msg)) => {
         eprintln!("Execution failed: {}", msg);
@@ -650,7 +649,7 @@ let config = ManeuverConfig::new()
 
 ```rust,ignore
 let config = ManeuverConfig::new()
-    .with_collect_timing_metrics(true);
+    .with_timing_metrics(true);
 
 let result = service.execute(&maneuver, input).await?;
 
@@ -721,8 +720,8 @@ agents.insert("reviewer", ...);
 // ✅ Good: Explicit error handling
 match service.execute(&maneuver, input).await {
     Ok(result) => process_result(result),
-    Err(ManeuverError::AgentNotFound(name)) => {
-        log_error!("Missing agent: {}", name);
+    Err(ManeuverError::AgentNotFound { agent_name, .. }) => {
+        log_error!("Missing agent: {}", agent_name);
         return default_result();
     },
     Err(e) => {
@@ -1063,7 +1062,7 @@ Catches configuration mismatches before execution.
 
 ```rust,ignore
 let config = ManeuverConfig::new()
-    .with_collect_timing_metrics(true);
+    .with_timing_metrics(true);
 
 let result = service.execute(&maneuver, input).await?;
 
@@ -1140,7 +1139,7 @@ For high-throughput systems:
 ```rust,ignore
 // Minimize overhead
 let config = ManeuverConfig::new()
-    .with_collect_timing_metrics(false)  // Disable if not needed
+    .with_timing_metrics(false)  // Disable if not needed
     .with_detailed_observability(false)  // Reduce logging
     .with_error_strategy(ErrorStrategy::FailFast);  // Fast failure
 
@@ -1152,5 +1151,5 @@ let config = ManeuverConfig::new()
 ---
 
 **Last Updated**: February 2026
-**Version**: 0.1.0
+**Version**: 0.8.0
 **Status**: Production Ready

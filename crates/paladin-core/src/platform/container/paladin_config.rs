@@ -85,7 +85,7 @@ impl PaladinConfig {
 ///
 /// Provides a fluent interface for constructing PaladinConfig instances.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use paladin_core::platform::container::paladin_config::{PaladinConfig, OutputFormat};

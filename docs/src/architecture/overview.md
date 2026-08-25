@@ -221,6 +221,18 @@ MCP-compatible tool registry. Connects to external tools via:
 
 Configured via `arsenal.mcp_servers` in `config.yml`.
 
+### Sentinel (Vision System)
+
+Multimodal capability layer, extending Paladin's reasoning loop to analyze images and process
+documents alongside text — enabled via `PaladinBuilder::enable_vision`. Sentinel follows the same
+hexagonal shape as the rest of the framework: a vision port abstraction in the application boundary,
+implemented by provider adapters in `paladin-llm` (OpenAI, Anthropic, DeepSeek vision-capable
+models), with encryption-at-rest and automatic memory cleanup for sensitive visual data at the
+infrastructure edge.
+
+See [Sentinel](../appendix/sentinel.md) for the full reference — content types, supported providers,
+document processing, CLI usage, YAML configuration, security, and Battalion integration.
+
 ## Technology Stack
 
 | Component | Technology |

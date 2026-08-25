@@ -32,7 +32,7 @@ use tokio::sync::mpsc;
 /// Orchestrates concurrent Paladin execution with configurable aggregation strategies,
 /// concurrency limiting via semaphore, and cancellation support.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```ignore
 /// let service = PhalanxExecutionService::new(paladin_port);

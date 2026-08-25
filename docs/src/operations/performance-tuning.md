@@ -27,6 +27,15 @@ Comprehensive guide for optimizing Paladin performance across different workload
 
 ### Benchmark Results
 
+**Dated, unverified against the current tree (corrected 2026-08-24):** `benches/` today
+contains only `config_benchmarks.rs` (benchmarking `Settings::new()` and domain config
+accessors) — no Garrison, Battalion, or Herald benchmark file exists to reproduce the figures
+below (`benches/BENCHMARK_FIXES.md` records that `garrison_benchmarks.rs`,
+`battalion_benchmarks.rs`, `paladin_benchmarks.rs`, and `arsenal_benchmarks.rs` were drafted for
+a past task but never fixed to compile, and are absent from the tree now). The figures are left
+in place as a historical measurement claim, not re-derived or invented; see this task's
+`config_benchmarks.rs` results instead for benchmarks reproducible today.
+
 **Garrison Memory Operations (Measured - January 2026):**
 
 Single Entry Operations:
@@ -99,8 +108,8 @@ cargo bench
 cargo bench config_benchmarks
 
 # With baseline comparison
-cargo bench --bench config_benchmarks -- --save-baseline v0.4.3
-cargo bench --bench config_benchmarks -- --baseline v0.4.3
+cargo bench --bench config_benchmarks -- --save-baseline v0.8.0
+cargo bench --bench config_benchmarks -- --baseline v0.8.0
 
 # Generate HTML report
 cargo bench --bench config_benchmarks -- --plotting-backend gnuplot
@@ -195,6 +204,9 @@ impl LlmBatcher {
 
 ### Caching Responses
 
+`moka` is not a dependency anywhere in this workspace (`grep -n moka Cargo.toml` → 0 hits) —
+illustrative only.
+
 ```rust,ignore
 use moka::future::Cache;
 
@@ -249,23 +261,21 @@ pub async fn execute_with_streaming(
 
 ### Garrison Configuration
 
+**Corrected 2026-08-24.** The real `GarrisonSettings` fields
+(`crates/paladin-memory/src/config/garrison.rs:11-26`) are `garrison_type` (not `type`;
+defaults `"in_memory"`, max_entries 100, max_tokens 4000), `path`, `max_entries`, `max_tokens`,
+`tokenizer`, `eviction_strategy` (`"importance_based"` (default) | `"fifo"` | `"sliding_window"`
+— not the string `"sliding"`), and `preserve_recent_count`. There is no `windowing:` or
+`cleanup:` block anywhere in the config surface.
+
 ```yaml
 # Optimize memory usage
 garrison:
-  type: "sqlite"
-  max_entries: 500        # Reduce from default 1000
-  max_tokens: 4000        # Reduce from default 8000
-
-  # Use sliding window for active conversations
-  windowing:
-    strategy: "sliding"
-    window_size: 10       # Keep last 10 messages
-
-  # Aggressive cleanup
-  cleanup:
-    enabled: true
-    interval: "5m"
-    max_age: "1h"
+  garrison_type: "sqlite"
+  max_entries: 500              # Reduce from default 100
+  max_tokens: 4000              # Same as default
+  eviction_strategy: "sliding_window"
+  preserve_recent_count: 10     # Keep last 10 entries regardless of eviction
 ```
 
 ### Memory Pooling
@@ -338,18 +348,17 @@ pub fn create_runtime() -> Runtime {
 
 ### Concurrency Limits
 
-```yaml
-# Control concurrent operations
-paladin:
-  max_concurrent_executions: 100
+**Corrected 2026-08-24.** There is no top-level `paladin:` or `battalion:` config key anywhere
+in `Settings` (consistent with 16-04's `docker.md` finding), so `max_concurrent_executions` and
+`battalion.phalanx.max_concurrent_paladins` do not correspond to any real config surface. The
+`arsenal:` key is real (`ArsenalConfig`, `src/config/arsenal.rs:31-38`), but the timeout field is
+named `default_timeout_seconds`, not `tool_timeout`:
 
+```yaml
+# Control concurrent tool execution (the only one of these three that is real config)
 arsenal:
   max_concurrent_tools: 10
-  tool_timeout: 30s
-
-battalion:
-  phalanx:
-    max_concurrent_paladins: 5
+  default_timeout_seconds: 30
 ```
 
 ### Backpressure Handling
@@ -393,13 +402,13 @@ PRAGMA temp_store = MEMORY;          -- In-memory temp tables
 PRAGMA mmap_size = 268435456;        -- 256MB memory-mapped I/O
 PRAGMA page_size = 4096;             -- Optimal page size
 
--- Add indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_garrison_session
-  ON garrison_entries(session_id, timestamp);
-
-CREATE INDEX IF NOT EXISTS idx_garrison_search
-  ON garrison_entries(content)
-  USING gin(to_tsvector('english', content));
+-- Corrected 2026-08-24: garrison_entries has no session_id column (the real scoping column
+-- is paladin_id); an index on it already ships as idx_paladin_timestamp
+-- (migrations/001_create_garrison_tables.sql:18-19). GIN/to_tsvector is PostgreSQL syntax —
+-- this project's Garrison store is SQLite (garrison_type: "sqlite"), which has no GIN index
+-- type. Full-text search already ships via a real SQLite FTS5 virtual table instead:
+-- CREATE VIRTUAL TABLE garrison_search USING fts5(content, content='garrison_entries', ...)
+-- (same migration file, lines 31-36), kept in sync by triggers, not by a manual index.
 ```
 
 ### Connection Pooling
@@ -421,14 +430,17 @@ pub async fn create_pool(database_url: &str) -> Result<SqlitePool> {
 
 ### Query Optimization
 
+**Corrected 2026-08-24:** `garrison_entries` has no `session_id` column; the real scoping
+column is `paladin_id` (`migrations/001_create_garrison_tables.sql:7-16`).
+
 ```rust,ignore
 // Use prepared statements
 let stmt = sqlx::query!(
     "SELECT * FROM garrison_entries
-     WHERE session_id = ? AND timestamp > ?
+     WHERE paladin_id = ? AND timestamp > ?
      ORDER BY timestamp DESC
      LIMIT ?",
-    session_id,
+    paladin_id,
     cutoff_time,
     limit
 );
@@ -437,9 +449,9 @@ let stmt = sqlx::query!(
 let mut tx = pool.begin().await?;
 for entry in entries {
     sqlx::query!(
-        "INSERT INTO garrison_entries (session_id, content, timestamp)
+        "INSERT INTO garrison_entries (paladin_id, content, timestamp)
          VALUES (?, ?, ?)",
-        entry.session_id, entry.content, entry.timestamp
+        entry.paladin_id, entry.content, entry.timestamp
     )
     .execute(&mut *tx)
     .await?;
@@ -467,8 +479,13 @@ lazy_static! {
 
 ### Compression
 
+**Corrected 2026-08-24.** `ServerConfig` (`src/config/web_server.rs:17-20`) has exactly two
+fields, `host` and `port` — no `compression:` block exists anywhere in the config surface. This
+snippet describes a feature that is not implemented; treat it as illustrative only, not shipped
+config.
+
 ```yaml
-# Enable response compression
+# Illustrative only — no compression config exists in ServerConfig today
 server:
   compression:
     enabled: true
@@ -530,6 +547,10 @@ codegen-units = 1
 ```
 
 ### Monitoring Resource Usage
+
+`sysinfo` is not a dependency anywhere in this workspace (`grep -n sysinfo Cargo.toml` → 0
+hits), and this snippet's `info!(...)` call is `tracing`-shaped, not the real `log`-crate
+facade (see `logging.md`'s scope note) — illustrative only.
 
 ```rust,ignore
 use sysinfo::{System, SystemExt};

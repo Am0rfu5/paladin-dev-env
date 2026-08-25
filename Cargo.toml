@@ -52,7 +52,7 @@ paladin-core = { workspace = true }
 paladin-ports = { workspace = true }
 paladin-battalion = { workspace = true }
 paladin-herald = { workspace = true }
-paladin-llm = { version = "0.8.0", path = "crates/paladin-llm", default-features = false, features = ["openai", "anthropic", "deepseek", "mock", "vision"] }
+paladin-llm = { version = "0.8.0", path = "crates/paladin-llm", default-features = false, features = ["mock"] }
 paladin-memory = { workspace = true, features = ["sqlite"] }
 paladin-storage = { workspace = true, features = ["sqlite"] }
 paladin-notifications = { workspace = true, optional = true }
@@ -216,6 +216,11 @@ required-features = ["cli"]
 name = "cli_isolation"
 path = "tests/cli_isolation_test.rs"
 
+[[test]]
+name = "ollama_docker"
+path = "tests/integration/ollama_docker_test.rs"
+required-features = ["integration-tests", "llm-ollama"]
+
 [[example]]
 name = "vision_analysis"
 path = "examples/vision_analysis.rs"
@@ -256,7 +261,11 @@ name = "config_benchmarks"
 harness = false
 
 [features]
-default = ["llm-openai"]
+# D-11 (amended 2026-08-17, option-b): the compiled default provider set is
+# unchanged from the pre-ADR-0046 shape (openai + anthropic + deepseek) even
+# though the llm-* flags below are now real gates rather than inert stubs.
+# See ADR-0046 for the full reasoning and the deferred opt-in-posture question.
+default = ["llm-openai", "llm-anthropic", "llm-deepseek"]
 redis-queue = ["paladin-storage/redis-queue"]
 s3-storage = ["paladin-storage/s3"]
 openai-embeddings = ["paladin-llm/openai-embeddings"]
@@ -264,14 +273,25 @@ qdrant = ["qdrant-client", "paladin-memory/qdrant"]
 integration-tests = []
 live-api-tests = []  # Tests requiring real API keys (OpenAI, DeepSeek, Anthropic)
 
-# LLM provider feature flags
-llm-openai = []
-llm-anthropic = []
-llm-deepseek = []
-llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek"]
+# LLM provider feature flags (ADR-0046): each flag forwards into the
+# paladin-llm feature of the same name, so a `--no-default-features` build
+# compiles no provider adapter at all.
+llm-openai = ["paladin-llm/openai"]
+llm-anthropic = ["paladin-llm/anthropic"]
+llm-deepseek = ["paladin-llm/deepseek"]
+llm-kimi = ["paladin-llm/kimi"]
+llm-qwen = ["paladin-llm/qwen"]
+llm-grok = ["paladin-llm/grok"]
+llm-ollama = ["paladin-llm/ollama"]
+llm-gemini = ["paladin-llm/gemini"]
+llm-openai-compatible = ["paladin-llm/openai-compatible"]
+llm-all = ["llm-openai", "llm-anthropic", "llm-deepseek", "llm-kimi", "llm-qwen", "llm-grok", "llm-ollama", "llm-gemini", "llm-openai-compatible"]
 
 # Subsystem feature flags
-vision = []
+# `vision` forwards into paladin-llm/vision (which itself depends on
+# paladin-llm's own `openai` feature) rather than being pulled in
+# unconditionally on the dependency line — see ADR-0046 Pitfall 2/T-17-36.
+vision = ["paladin-llm/vision"]
 content-processing = ["dep:paladin-content", "paladin-content/web-scraping", "paladin-content/rss", "paladin-content/news-api", "paladin-content/tiktoken", "paladin-content/llm", "paladin-memory/content-processing"]
 web-server = ["dep:paladin-web", "dep:axum"]
 notifications = ["dep:paladin-notifications", "paladin-notifications/email", "paladin-notifications/push", "paladin-notifications/system"]

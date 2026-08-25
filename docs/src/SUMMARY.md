@@ -97,7 +97,7 @@
 - [Release Checklist](appendix/release-checklist.md)
 - [Doc Coverage Report](appendix/doc-coverage-report.md)
 - [Port Trait Template](appendix/port-trait-template.md)
-- [Design and Architecture](appendix/design-and-architecture.md)
+- [Design and Architecture (Archived)](appendix/design-and-architecture.md)
 - [MinIO File Repository Setup](appendix/minio-file-repository-setup.md)
 - [Redis Queue Adapter Setup](appendix/redis-queue-adapter-setup.md)
 - [CLI Configuration](appendix/cli-configuration.md)

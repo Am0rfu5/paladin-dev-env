@@ -25,6 +25,22 @@ pub use crate::config::rag::{RagConfig, RetrievalTrigger};
 /// Service for retrieving relevant memories using RAG.
 ///
 /// Depends only on port traits — contains no concrete adapter references.
+///
+/// # Examples
+///
+/// ```
+/// use paladin_memory::services::rag_retrieval_service::{RagConfig, RagRetrievalService};
+/// use paladin_ports::output::embedding_port::EmbeddingPort;
+/// use paladin_ports::output::sanctum_port::SanctumPort;
+/// use std::sync::Arc;
+///
+/// fn build(
+///     sanctum: Arc<dyn SanctumPort>,
+///     embedding: Arc<dyn EmbeddingPort>,
+/// ) -> RagRetrievalService {
+///     RagRetrievalService::new(sanctum, embedding, RagConfig::default())
+/// }
+/// ```
 pub struct RagRetrievalService {
     sanctum: Arc<dyn SanctumPort>,
     embedding: Arc<dyn EmbeddingPort>,

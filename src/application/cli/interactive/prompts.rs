@@ -4,6 +4,19 @@ use crate::application::cli::error::{CliError, CliResult};
 use dialoguer::{Confirm, Input, MultiSelect, Password, Select};
 
 /// Prompt builder for creating interactive prompts
+///
+/// # Examples
+///
+/// Construction only — the returned prompt types read from the terminal
+/// when `.prompt()` is called, so that call is intentionally not made here
+/// (this doctest must run offline with no TTY attached, T-16-26).
+///
+/// ```
+/// use paladin::application::cli::interactive::prompts::PromptBuilder;
+///
+/// let _input_prompt = PromptBuilder::input("Enter your name");
+/// let _confirm_prompt = PromptBuilder::confirm("Continue?");
+/// ```
 pub struct PromptBuilder;
 
 impl PromptBuilder {

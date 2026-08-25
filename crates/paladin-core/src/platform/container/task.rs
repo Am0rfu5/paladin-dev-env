@@ -329,6 +329,15 @@ fn safe_relative_name(name: &str) -> Result<PathBuf, TaskError> {
 }
 
 /// Persists a backup artifact into a configured, path-constrained directory.
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::platform::container::task::DataBackupService;
+///
+/// let service = DataBackupService::new("./backups");
+/// assert_eq!(service.backup_path, "./backups");
+/// ```
 #[derive(Debug, Clone)]
 pub struct DataBackupService {
     /// Base directory that all backups are written beneath.
@@ -395,6 +404,15 @@ impl TaskService for DataBackupService {
 }
 
 /// Builds and persists a simple term-frequency index artifact.
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::platform::container::task::ContentIndexingService;
+///
+/// let service = ContentIndexingService::new("support_articles");
+/// assert_eq!(service.index_name, "support_articles");
+/// ```
 #[derive(Debug, Clone)]
 pub struct ContentIndexingService {
     /// Logical name of the index this service maintains.
@@ -531,6 +549,15 @@ impl EmailSink for InMemoryEmailSink {
 }
 
 /// Dispatches email notifications through an injectable [`EmailSink`].
+///
+/// # Examples
+///
+/// ```
+/// use paladin_core::platform::container::task::EmailNotificationService;
+///
+/// let service = EmailNotificationService::new("smtp.example.com");
+/// assert_eq!(service.smtp_server, "smtp.example.com");
+/// ```
 #[derive(Debug, Clone)]
 pub struct EmailNotificationService {
     /// SMTP server identifier recorded with each dispatch.

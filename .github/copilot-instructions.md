@@ -543,7 +543,9 @@ make audit             # cargo-audit for vulnerabilities
 make clean-code        # Format, lint, check
 ```
 
-Run `snyk_code_scan` on first-party code per `.github/instructions/snyk_rules.instructions.md`.
+Run `make security` and `cargo clippy -- -D warnings` on first-party code, and follow the manual
+credential-handling review in `.github/instructions/security.instructions.md`. Snyk was evaluated
+and removed (no Rust coverage) — do not reintroduce it.
 
 # Task List Management (Rust)
 

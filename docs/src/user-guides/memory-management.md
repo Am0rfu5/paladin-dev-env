@@ -42,7 +42,7 @@ pub struct GarrisonEntry {
     pub role: ConversationRole,
     pub content: String,
     pub timestamp: DateTime<Utc>,
-    pub metadata: HashMap<String, String>,
+    pub metadata: HashMap<String, serde_json::Value>,
     pub token_count: Option<u32>,
 }
 
@@ -112,11 +112,10 @@ use paladin::prelude::*;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let llm_adapter = Arc::new(OpenAiAdapter::new().build()?);
 
-    // Create in-memory garrison
+    // Create in-memory garrison — max_entries and max_tokens are GarrisonConfig::new
+    // constructor arguments, not with_max_entries()/with_max_tokens() builder calls.
     let garrison = Arc::new(InMemoryGarrison::new(
-        GarrisonConfig::default()
-            .with_max_entries(100)
-            .with_max_tokens(4000)
+        GarrisonConfig::new(100, Some(4000))
     ));
 
     // Build Paladin with memory
@@ -136,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Check garrison statistics
     let stats = garrison.stats().await?;
-    println!("Total memories: {}", stats.total_entries);
+    println!("Total memories: {}", stats.entry_count);
     println!("Total tokens: {}", stats.total_tokens);
 
     Ok(())
@@ -146,50 +145,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Configuration Options
 
 ```rust,ignore
+// GarrisonConfig::new(max_entries, max_tokens) — there is no default-then-with_max_*
+// builder chain; entry/token limits are constructor arguments, not builder methods.
 let garrison = InMemoryGarrison::new(
-    GarrisonConfig::default()
-        // Maximum number of entries to retain
-        .with_max_entries(100)
-
-        // Maximum total tokens across all entries
-        .with_max_tokens(4000)
-
-        // Token estimation strategy
-        .with_token_counter(TokenCounter::Gpt4)
-
-        // Eviction policy when limits reached
-        .with_eviction_policy(EvictionPolicy::Fifo)  // First-in-first-out
+    GarrisonConfig::new(100, Some(4000))
+        // Eviction strategy when limits reached
+        .with_eviction_strategy(EvictionStrategy::FIFO)  // First-in-first-out
+        // Entries always kept regardless of eviction strategy
+        .with_preserve_recent(10)
 );
+
+// Token counting is a separate concern from GarrisonConfig — GarrisonEntry.token_count
+// is populated by a `TokenCounter` implementation (e.g. `TiktokenCounter::new("gpt-4")`),
+// there is no `GarrisonConfig::with_token_counter` method.
 ```
 
-### Eviction Policies
+### Eviction Strategies
+
+The real type is `EvictionStrategy` (`crates/paladin-core/src/platform/container/garrison.rs`),
+not `EvictionPolicy`, and it has three variants — there is no `Lru` or `Custom(..)` variant:
 
 ```rust,ignore
-pub enum EvictionPolicy {
+pub enum EvictionStrategy {
     // Remove oldest entries first
-    Fifo,
+    FIFO,
 
-    // Remove least recently accessed entries
-    Lru,
-
-    // Remove entries based on importance score
+    // Preserve system prompts and recent messages, evict middle entries (the default)
     ImportanceBased,
 
-    // Custom eviction logic
-    Custom(Arc<dyn Fn(&[GarrisonEntry]) -> Vec<Uuid> + Send + Sync>),
+    // Always keep only the most recent N entries
+    SlidingWindow,
 }
+```
 
-// Example: Custom eviction keeping system prompts
+`ImportanceBased` (the default) already protects system-role entries and the
+`preserve_recent_count` most recent entries before evicting anything else — the effect the
+former `Custom` closure example was reaching for is the built-in behavior, not something you
+need to hand-write:
+
+```rust,ignore
 let garrison = InMemoryGarrison::new(
-    GarrisonConfig::default()
-        .with_eviction_policy(EvictionPolicy::Custom(Arc::new(|entries| {
-            // Never evict system prompts, evict oldest user messages
-            entries.iter()
-                .filter(|e| e.role == ConversationRole::User)
-                .take(10)
-                .map(|e| e.id)
-                .collect()
-        })))
+    GarrisonConfig::new(100, Some(4000))
+        .with_eviction_strategy(EvictionStrategy::ImportanceBased)
+        .with_preserve_recent(10)
 );
 ```
 
@@ -200,16 +198,17 @@ SQLite-backed storage for sessions that need to survive restarts.
 ### Setup
 
 ```rust,ignore
-use paladin_memory::garrison::InMemoryGarrison;
-use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole, GarrisonConfig};
+use paladin_memory::garrison::SqliteGarrison;
+use paladin_core::platform::container::garrison::GarrisonConfig;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create persistent garrison
+    // Create persistent garrison — the constructor is `connect`, not `new`, and it
+    // takes the config and a paladin_id (the scoping key) directly; there is no
+    // separate `.with_config(...)` builder step.
     let garrison = Arc::new(
-        SqliteGarrison::new("garrison.db")
+        SqliteGarrison::connect("garrison.db", GarrisonConfig::default(), "paladin-001")
             .await?
-            .with_config(GarrisonConfig::default())
     );
 
     let paladin = PaladinBuilder::new(llm_adapter)
@@ -223,23 +222,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Session Management
+### Scoping by Paladin
+
+`SqliteGarrison` has no separate "session" concept or `.with_session_id(...)` method — the
+scoping key is the `paladin_id` argument passed directly to `connect()`:
 
 ```rust,ignore
-// Create session-based garrison
-let session_id = Uuid::new_v4();
+let paladin_id = "paladin-001";
 
 let garrison = Arc::new(
-    SqliteGarrison::new("garrison.db")
-        .await?
-        .with_session_id(session_id)
+    SqliteGarrison::connect("garrison.db", GarrisonConfig::default(), paladin_id).await?
 );
 
-// Later, restore the same session
+// Later, reconnect scoped to the same Paladin
 let garrison_restored = Arc::new(
-    SqliteGarrison::new("garrison.db")
-        .await?
-        .with_session_id(session_id)  // Same session ID
+    SqliteGarrison::connect("garrison.db", GarrisonConfig::default(), paladin_id).await?
 );
 
 // History is preserved
@@ -257,7 +254,7 @@ pub struct UserGarrison {
 
 impl UserGarrison {
     pub async fn new(db_path: &str, user_id: String) -> Result<Self> {
-        let db = SqliteGarrison::new(db_path).await?;
+        let db = SqliteGarrison::connect(db_path, GarrisonConfig::default(), &user_id).await?;
         Ok(Self { db, user_id })
     }
 }
@@ -297,28 +294,51 @@ let bob_paladin = PaladinBuilder::new(llm_adapter)
 
 ### Database Schema
 
+The scoping column is `paladin_id`, not `session_id` (there is no session concept — see
+[Scoping by Paladin](#scoping-by-paladin) above), embeddings live in a separate table, and
+SQLite indexes are declared with standalone `CREATE INDEX` statements, not inline in
+`CREATE TABLE` (SQLite does not support the inline `INDEX (...)` syntax at all — this excerpt is
+the real `migrations/001_create_garrison_tables.sql`, trimmed to the entries/metadata tables):
+
 ```sql
 -- migrations/001_create_garrison_tables.sql
 CREATE TABLE IF NOT EXISTS garrison_entries (
-    id TEXT PRIMARY KEY,
-    session_id TEXT NOT NULL,
-    role TEXT NOT NULL,
+    id TEXT PRIMARY KEY NOT NULL,
+    paladin_id TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('system', 'user', 'assistant', 'tool')),
     content TEXT NOT NULL,
-    timestamp INTEGER NOT NULL,
-    metadata TEXT,
+    timestamp TEXT NOT NULL,
     token_count INTEGER,
-    embedding BLOB,
-
-    INDEX idx_session_timestamp (session_id, timestamp),
-    INDEX idx_session_role (session_id, role)
+    metadata TEXT, -- JSON blob for flexible metadata
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS garrison_sessions (
-    session_id TEXT PRIMARY KEY,
-    user_id TEXT,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    metadata TEXT
+CREATE INDEX IF NOT EXISTS idx_paladin_timestamp
+ON garrison_entries(paladin_id, timestamp DESC);
+
+CREATE INDEX IF NOT EXISTS idx_paladin_role
+ON garrison_entries(paladin_id, role);
+
+-- Vector embeddings live in a separate table, not inline in garrison_entries
+CREATE TABLE IF NOT EXISTS garrison_embeddings (
+    entry_id TEXT PRIMARY KEY NOT NULL,
+    embedding BLOB,
+    embedding_model TEXT NOT NULL,
+    dimension INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (entry_id) REFERENCES garrison_entries(id) ON DELETE CASCADE
+);
+
+-- Per-Paladin config and running totals — there is no garrison_sessions table
+CREATE TABLE IF NOT EXISTS garrison_metadata (
+    paladin_id TEXT PRIMARY KEY NOT NULL,
+    max_entries INTEGER NOT NULL DEFAULT 100,
+    max_tokens INTEGER,
+    eviction_strategy TEXT NOT NULL DEFAULT 'importance_based',
+    preserve_recent_count INTEGER NOT NULL DEFAULT 10,
+    total_entries INTEGER NOT NULL DEFAULT 0,
+    total_tokens INTEGER NOT NULL DEFAULT 0
 );
 ```
 
@@ -461,11 +481,9 @@ impl SummarizingGarrison {
 
             let summary = self.summarizer.generate(&prompt).await?;
 
-            // Replace old entries with summary
-            for entry in old_entries {
-                self.garrison.remove_entry(entry.id).await?;
-            }
-
+            // GarrisonPort has no remove_entry()/selective-delete method — old entries
+            // are not explicitly deleted here; they age out via the configured
+            // EvictionStrategy once the summary entry below pushes past the limit.
             self.garrison.remember(GarrisonEntry {
                 id: Uuid::new_v4(),
                 role: ConversationRole::System,
@@ -487,38 +505,53 @@ impl SummarizingGarrison {
 
 Retrieve relevant memories by meaning using embeddings.
 
+`LongTermGarrisonPort::search_similar` (above) is a real trait method, but the tree's own
+`examples/garrison_semantic_search.rs` documents it as "planned for future implementation" with
+no concrete Garrison-side adapter — the vector-search path that is actually implemented today
+is the separate Sanctum subsystem used below, not a Garrison extension.
+
 ### Setup with Embeddings
 
+There is no `VectorGarrison` type and no `paladin_memory::embedding` module — semantic search
+is a separate subsystem (Sanctum, `crates/paladin-memory/src/sanctum/`) built on the real
+`EmbeddingPort` trait and `OpenAIEmbeddingAdapter` (`paladin_llm::openai::embedding`), not a
+Garrison variant, and it is not wired into `PaladinBuilder::with_garrison` automatically:
+
 ```rust,ignore
-use paladin_memory::garrison::InMemoryGarrison;
-use paladin_core::platform::container::garrison::{GarrisonEntry, ConversationRole, GarrisonConfig};
-use paladin_memory::embedding::OpenAIEmbeddingPort;
+use paladin_llm::openai::embedding::{OpenAIEmbeddingAdapter, OpenAIEmbeddingConfig};
+use paladin_memory::sanctum::qdrant_adapter::QdrantSanctumAdapter;
+use paladin_ports::output::embedding_port::EmbeddingPort;
+use paladin_ports::output::sanctum_port::{SanctumPort, SanctumQuery};
+use paladin_core::platform::container::sanctum::{MemoryBuilder, SanctumEntry};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create garrison with embedding support
-    let embedding_service = Arc::new(OpenAIEmbeddingService::new(api_key)?);
+    // Embedding generation and vector storage are two separate ports
+    let embedder = OpenAIEmbeddingAdapter::new(OpenAIEmbeddingConfig {
+        api_key,
+        ..Default::default()
+    });
+    let sanctum = QdrantSanctumAdapter::new("http://localhost:6334", "paladin_memories", 1536).await?;
 
-    let garrison = Arc::new(
-        VectorGarrison::new("garrison.db")
-            .await?
-            .with_embedding_service(embedding_service)
-    );
+    // Store entries with embeddings generated explicitly (not automatic on paladin.execute())
+    for text in [
+        "I love hiking in the mountains",
+        "My favorite color is blue",
+        "I work as a software engineer",
+    ] {
+        let embedding = embedder.embed_text(text).await?;
+        let memory = MemoryBuilder::new("paladin-001".to_string(), text.to_string()).build()?;
+        sanctum.store(SanctumEntry::new(memory, embedding.vector)?).await?;
+    }
 
-    let paladin = PaladinBuilder::new(llm_adapter)
-        .with_garrison(garrison.clone())
-        .build()?;
+    // Semantic search — SanctumSearchResult carries the similarity score, unlike
+    // LongTermGarrisonPort::search_similar, which returns plain Vec<GarrisonEntry>
+    let query_embedding = embedder.embed_text("outdoor activities").await?;
+    let query = SanctumQuery::new(query_embedding.vector, 5);
+    let results = sanctum.search(query).await?;
 
-    // Add entries - embeddings generated automatically
-    paladin.execute("I love hiking in the mountains").await?;
-    paladin.execute("My favorite color is blue").await?;
-    paladin.execute("I work as a software engineer").await?;
-
-    // Semantic search
-    let results = garrison.semantic_search("outdoor activities", 5).await?;
-
-    for (entry, similarity) in results {
-        println!("Similarity: {:.2} - {}", similarity, entry.content);
+    for result in results {
+        println!("Similarity: {:.2} - {}", result.score, result.entry.memory.content);
     }
     // Output: High similarity for "hiking in the mountains"
 
@@ -543,7 +576,7 @@ impl HybridGarrison {
         let keyword_results = self.garrison.search(query, limit * 2).await?;
 
         // Get semantic matches
-        let embedding = self.embedding_service.embed(query).await?;
+        let embedding = self.embedder.embed_text(query).await?;
         let semantic_results = self.garrison
             .semantic_search(embedding, limit * 2)
             .await?;
@@ -586,7 +619,7 @@ pub struct RAGPaladin {
 impl RAGPaladin {
     pub async fn execute_with_rag(&self, query: &str) -> Result<PaladinResult> {
         // Retrieve relevant context from long-term memory
-        let embedding = self.embedding_service.embed(query).await?;
+        let embedding = self.embedder.embed_text(query).await?;
         let relevant_memories = self.garrison
             .semantic_search(embedding, 5)
             .await?;
@@ -692,27 +725,28 @@ garrison.remember(GarrisonEntry {
 // - Testing and development
 
 let garrison = Arc::new(InMemoryGarrison::new(
-    GarrisonConfig::default().with_max_tokens(4000)
+    GarrisonConfig::new(100, Some(4000))
 ));
 
 // ✅ Use SqliteGarrison for:
-// - Multi-session applications
-// - User-specific contexts
+// - Multi-Paladin applications
+// - Per-Paladin contexts
 // - Production services needing persistence
 
 let garrison = Arc::new(
-    SqliteGarrison::new("garrison.db").await?
-        .with_session_id(session_id)
+    SqliteGarrison::connect("garrison.db", GarrisonConfig::default(), "paladin-001").await?
 );
 
-// ✅ Use VectorGarrison for:
+// ✅ Use Sanctum for:
 // - Long-term knowledge bases
 // - RAG applications
 // - Semantic retrieval needs
+//
+// Sanctum (crates/paladin-memory/src/sanctum/) is a separate long-term-memory subsystem
+// from Garrison, not a Garrison variant — there is no "VectorGarrison" type.
 
-let garrison = Arc::new(
-    VectorGarrison::new("garrison.db").await?
-        .with_embedding_service(embedding_service)
+let sanctum = Arc::new(
+    QdrantSanctumAdapter::new("http://localhost:6334", "paladin_memories", 1536).await?
 );
 ```
 
@@ -733,8 +767,7 @@ let buffer = 500;
 let available_for_history = GPT_4 - response_tokens - system_prompt_tokens - buffer;
 
 let garrison = InMemoryGarrison::new(
-    GarrisonConfig::default()
-        .with_max_tokens(available_for_history)  // ~6000 tokens
+    GarrisonConfig::new(100, Some(available_for_history))  // ~6000 tokens
 );
 ```
 
@@ -759,32 +792,21 @@ garrison.remember(GarrisonEntry {
 
 ### 4. Clean Up Old Memories
 
+`GarrisonPort` has no age-based or per-entry removal method — `forget_all()` is the only
+removal operation the trait exposes, and it clears everything. Age-based cleanup is handled
+automatically by `GarrisonConfig`'s eviction strategy (`with_eviction_strategy`,
+`with_preserve_recent`) rather than an application-level `remove_before(cutoff)` call:
+
 ```rust,ignore
-// Periodic cleanup
-pub async fn cleanup_old_memories(
-    garrison: &SqliteGarrison,
-    days_to_keep: i64,
-) -> Result<usize> {
-    let cutoff = Utc::now() - Duration::days(days_to_keep);
+// Automatic: entries beyond max_entries/max_tokens are evicted per the configured
+// EvictionStrategy on every `remember()` call — no scheduled task is required.
+let garrison = InMemoryGarrison::new(
+    GarrisonConfig::new(1000, Some(50_000))
+        .with_eviction_strategy(EvictionStrategy::ImportanceBased)
+);
 
-    let removed = garrison
-        .remove_before(cutoff)
-        .await?;
-
-    println!("Removed {} old memories", removed);
-    Ok(removed)
-}
-
-// Scheduled cleanup
-tokio::spawn(async move {
-    let mut interval = tokio::time::interval(Duration::from_secs(86400)); // Daily
-    loop {
-        interval.tick().await;
-        if let Err(e) = cleanup_old_memories(&garrison, 30).await {
-            eprintln!("Cleanup failed: {}", e);
-        }
-    }
-});
+// Manual, full reset (the only removal GarrisonPort exposes):
+garrison.forget_all().await?;
 ```
 
 ### 5. Implement Conversation Branching
@@ -900,7 +922,7 @@ impl AttentionGarrison {
         context_size: u32,
     ) -> Result<Vec<GarrisonEntry>> {
         // Get semantic matches
-        let query_embedding = self.embed(query).await?;
+        let query_embedding = self.embedder.embed_text(query).await?.vector;
         let candidates = self.garrison
             .semantic_search(query_embedding, 50)
             .await?;
@@ -1036,7 +1058,7 @@ let safety_buffer = 500;
 let garrison_limit = model_limit - response_budget - system_prompt_tokens - safety_buffer;
 
 let garrison = InMemoryGarrison::new(
-    GarrisonConfig::default().with_max_tokens(garrison_limit)
+    GarrisonConfig::new(100, Some(garrison_limit))
 );
 ```
 
@@ -1051,12 +1073,12 @@ let garrison = InMemoryGarrison::new(
 4. Limit search scope with filters
 
 ```sql
--- Add index for faster vector search
-CREATE INDEX idx_embeddings ON garrison_entries(embedding);
+-- Embeddings live in garrison_embeddings, not inline on garrison_entries
+-- (see Database Schema above); index by model for faster lookups:
+CREATE INDEX IF NOT EXISTS idx_embedding_model ON garrison_embeddings(embedding_model);
 
--- Consider using specialized vector databases
--- PostgreSQL with pgvector extension
--- Qdrant, Milvus, or Weaviate for production
+-- The workspace already ships a Qdrant adapter for vector search at scale
+-- (crates/paladin-memory/src/sanctum/qdrant_adapter.rs, behind the `qdrant` feature)
 ```
 
 ### Memory Leaks in Long Sessions
@@ -1070,7 +1092,9 @@ CREATE INDEX idx_embeddings ON garrison_entries(embedding);
 4. Monitor with `garrison.stats()`
 
 ```rust,ignore
-// Periodic memory management
+// Periodic monitoring — GarrisonPort has no compact()/partial-cleanup method;
+// eviction already runs automatically per the configured EvictionStrategy on
+// every remember() call, so this loop only needs to watch for problems.
 tokio::spawn(async move {
     let mut interval = tokio::time::interval(Duration::from_secs(3600));
     loop {
@@ -1078,9 +1102,8 @@ tokio::spawn(async move {
 
         let stats = garrison.stats().await.unwrap();
 
-        if stats.total_entries > 1000 {
-            // Trigger cleanup
-            garrison.compact().await.unwrap();
+        if stats.entry_count > 1000 {
+            log::warn!("Garrison entry_count exceeds expected bound: {}", stats.entry_count);
         }
     }
 });
@@ -1118,7 +1141,7 @@ mod tests {
     #[tokio::test]
     async fn test_token_window() {
         let garrison = InMemoryGarrison::new(
-            GarrisonConfig::default().with_max_tokens(100)
+            GarrisonConfig::new(100, Some(100))
         );
 
         // Add entries totaling 150 tokens
@@ -1149,8 +1172,8 @@ mod tests {
 See working examples:
 - `examples/garrison_in_memory.rs` - Basic in-memory usage
 - `examples/garrison_persistent.rs` - SQLite persistence
-- `examples/garrison_semantic_search.rs` - Embedding-based retrieval
-- `examples/memory_windowing.rs` - Token management strategies
+- `examples/garrison_semantic_search.rs` - Placeholder text search; semantic search is not yet
+  implemented for Garrison (see [Semantic Search](#semantic-search) above)
 
 ## Next Steps
 

@@ -133,11 +133,81 @@ RUN cargo install --locked --version 1.1.2 cargo-release
 RUN cargo install --locked --version 0.19.8 cargo-deny
 RUN cargo install --locked --version 0.5.9 cargo-cyclonedx
 
+# Install the doc-build toolchain (pinned) — mirrors .github/workflows/docs.yml:44-54
+# exactly, so `mdbook build docs/` run in this container and in CI cannot disagree on
+# tooling. Consumer: `mdbook build docs/` (no `make` target).
+RUN cargo install --locked --version 0.4.40 mdbook
+RUN cargo install --locked --version 0.13.0 mdbook-mermaid
+RUN cargo install --locked --version 0.7.7 mdbook-linkcheck
+
 # Install sqlx-cli for database migrations
 RUN cargo install --locked sqlx-cli --no-default-features --features sqlite,mysql
 
 # Install cargo-nextest (optional, can fail without breaking the build)
 RUN cargo install --locked cargo-nextest || echo "cargo-nextest installation failed, skipping"
+
+# Install the demo-recorder toolchain (D-14, DOCS-04) — vhs drives the checked-in
+# .tape scripts that regenerate docs/assets/recordings/*.gif so the demos stay
+# regenerable rather than going stale, which matters in a phase whose entire theme is
+# documentation currency. ttyd and ffmpeg are vhs's own runtime dependencies, not
+# independent tool choices: vhs's README requires ttyd on PATH before it will run, and
+# vhs shells out to ffmpeg to encode GIF/mp4/webm output. asciinema produces the .cast
+# format vhs has no Output case for. The vhs/ttyd supply chain sits outside the
+# automated package-legitimacy gate's ecosystem coverage entirely (no crates.io/npm/PyPI
+# registry for either), so no automated check can evaluate it. The project owner
+# reviewed the gathered evidence and authorised this block on 2026-08-24. Note that
+# the Charm signing-key fingerprint could NOT be corroborated against any source
+# independent of repo.charm.sh itself — that gap is open and accepted, not closed.
+# ttyd's release tag and SHA256 are pinned and checked at build time (below).
+# See .planning/phases/16-documentation-currency-the-architecture-gap/16-DOCS-04-TOOLCHAIN.md.
+
+# ttyd: no package registry exists for it at all — the only documented install path is
+# a binary download from GitHub releases. Pinned to release tag 1.7.7 (not "latest"),
+# and its published SHA256 is verified before install; the RUN fails closed if the
+# checksum does not match.
+RUN curl -fsSL -o /tmp/ttyd.x86_64 https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 \
+    && echo "8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55  /tmp/ttyd.x86_64" | sha256sum -c - \
+    && install -m 0755 /tmp/ttyd.x86_64 /usr/local/bin/ttyd \
+    && rm /tmp/ttyd.x86_64
+
+# vhs: third-party APT repository at repo.charm.sh (the flat `* *` distribution/component
+# in the sources entry matches any Debian codename, so this line is identical across
+# bookworm and bullseye). The signing key is stored ASCII-armored as .asc — apt supports
+# armored keyrings natively (same pattern as the nodesource key above), avoiding a
+# gnupg install just to dearmor it — in a dedicated keyring file referenced by
+# signed-by=, so it can authenticate only this repository and never the
+# globally-trusted keyring (the deprecated global-keyring-add path is never used).
+# Pinned to an explicit APT version, never a floating "latest".
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://repo.charm.sh/apt/gpg.key -o /etc/apt/keyrings/charm.asc \
+    && chmod go+r /etc/apt/keyrings/charm.asc \
+    && echo "deb [signed-by=/etc/apt/keyrings/charm.asc] https://repo.charm.sh/apt/ * *" \
+    | tee /etc/apt/sources.list.d/charm.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends vhs=0.11.0 \
+    # VHS renders through a headless Chromium (go-rod driving ttyd), not by capturing the
+    # terminal directly, so it needs Chromium's GTK/at-spi runtime libraries. apt cannot
+    # infer these: the browser is fetched by go-rod at run time, so nothing in vhs's own
+    # package metadata depends on them. Without this list `vhs` installs cleanly and then
+    # fails on first render with "could not launch browser: libatk-1.0.so.0: cannot open
+    # shared object file" — an install that looks successful until it is actually used.
+    # Set measured on 2026-08-24 as the packages newly pulled in when vhs first rendered
+    # successfully in a live container (phase 16, plan 16-14). See D-14 / 16-DOCS-04-TOOLCHAIN.md.
+    && apt-get install -y --no-install-recommends \
+       libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcups2 libxcomposite1 \
+       libxdamage1 libxrandr2 libxkbcommon0 libxi6 libxcursor1 libxss1 \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# ffmpeg + asciinema: the base image's own Debian repository — the same trust boundary
+# as every other apt-get install line already in this file. Not version-pinned beyond
+# the base image tag: pinning a distro package version across two different Debian
+# releases (bookworm here, bullseye in the other devcontainer image) would produce an
+# unsatisfiable constraint in one of the two.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg asciinema \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Optional CLI tools - uncomment to install:
 # RUN cargo install bat exa ripgrep fd-find tokei hyperfine

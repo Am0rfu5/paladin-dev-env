@@ -47,21 +47,22 @@ The Arsenal system enables Paladins to:
 pub struct Armament {
     pub name: String,
     pub description: String,
-    pub schema: ToolSchema,
+    pub parameters: Value,           // JSON Schema describing accepted parameters
     pub required_params: Vec<String>,
 }
 
 // Arsenal Port - Tool execution interface
 #[async_trait]
 pub trait ArsenalPort: Send + Sync {
-    async fn list_armaments(&self) -> Result<Vec<Armament>>;
-    async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult>;
+    async fn list_armaments(&self) -> Vec<Armament>;
+    async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError>;
+    fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError>;
 }
 
 // Armament Call - Tool invocation request
 pub struct ArmamentCall {
     pub tool_name: String,
-    pub parameters: HashMap<String, Value>,
+    pub arguments: HashMap<String, Value>,
     pub call_id: Uuid,
 }
 
@@ -69,8 +70,9 @@ pub struct ArmamentCall {
 pub struct ArmamentResult {
     pub call_id: Uuid,
     pub success: bool,
-    pub output: String,
+    pub output: Option<Value>,
     pub error: Option<String>,
+    pub execution_time_ms: u64,
 }
 ```
 
@@ -227,29 +229,31 @@ uvx mcp-server-calculator
 
 ### Configuration Example
 
+The YAML key is `server_type` (the `MCPServerConfig` field name,
+`src/config/arsenal.rs:13`), not `type` -- `type` deserializes as an unknown field and
+`server_type` is required, so a `type:`-keyed entry fails to load. There is no `enabled`
+field on `MCPServerConfig`; omit a server entirely to disable it.
+
 ```yaml
 arsenal:
   mcp_servers:
     - name: "web_search"
-      type: "stdio"
+      server_type: "stdio"
       command: "uvx"
       args: ["mcp-server-fetch"]
-      enabled: true
 
     - name: "filesystem"
-      type: "stdio"
+      server_type: "stdio"
       command: "uvx"
       args:
         - "mcp-server-filesystem"
         - "--allowed-directory"
         - "/home/user/workspace"
-      enabled: true
 
     - name: "calculator"
-      type: "stdio"
+      server_type: "stdio"
       command: "uvx"
       args: ["mcp-server-calculator"]
-      enabled: true
 ```
 
 ### Advanced STDIO Configuration
@@ -312,13 +316,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Streamable-HTTP Configuration
 
 The config-driven flow (recommended for most use cases) declares the server in
-`config.yml`/`.mcp.json` and lets the CLI/loader connect it for you:
+`config.yml` and lets the CLI/loader connect it for you. (`.mcp.json` is Claude
+Code's own project-scoped MCP configuration for this repository's editor tooling;
+the Paladin application's config loader does not read it -- only `config.yml`'s
+`arsenal.mcp_servers` list, `src/config/arsenal.rs:37`.)
 
 ```yaml
 arsenal:
   mcp_servers:
     - name: "company_api"
-      type: "streamable_http"
+      server_type: "streamable_http"
       endpoint: "https://api.example.com/mcp"
       # NAMES the env var holding the bearer token -- never a literal secret
       # in this file. Omit entirely for an unauthenticated server.
@@ -378,6 +385,18 @@ for tool in tools {
 
 Create your own tools by implementing the `ArsenalPort` trait.
 
+> **Wiring note:** `PaladinBuilder` has no `add_armament()` method (it does not appear anywhere in
+> the tree). The builder's only Arsenal-related method is
+> `with_arsenal_registry(registry: Arc<dyn ArsenalRegistry>)`
+> (`src/application/services/paladin/paladin_builder.rs:686`), which attaches an `ArsenalRegistry` —
+> a metadata catalog of `Armament`s, populated via `registry.register(armament).await`
+> (`crates/paladin-ports/src/output/arsenal_port.rs:809`) — not a live `ArsenalPort` invoker.
+> The examples below build `Arc::new(<YourTool>)` and call `.add_armament(tool)` on the builder for
+> brevity; treat that call as shorthand for registering the tool's `Armament` metadata into a
+> registry via `.with_arsenal_registry(registry)` and wiring the tool's actual `invoke()` logic
+> through the execution path that consumes `Option<Arc<dyn ArsenalPort>>`
+> (`src/application/services/paladin/paladin_execution_service.rs:116`), not a single builder call.
+
 ### Simple Custom Tool
 
 ```rust,ignore
@@ -389,35 +408,45 @@ pub struct CalculatorTool;
 
 #[async_trait]
 impl ArsenalPort for CalculatorTool {
-    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
-        Ok(vec![
+    async fn list_armaments(&self) -> Vec<Armament> {
+        vec![
             Armament {
                 name: "add".to_string(),
                 description: "Add two numbers".to_string(),
-                schema: ToolSchema::new()
-                    .add_param("a", ParamType::Number, "First number", true)
-                    .add_param("b", ParamType::Number, "Second number", true),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "a": { "type": "number", "description": "First number" },
+                        "b": { "type": "number", "description": "Second number" }
+                    },
+                    "required": ["a", "b"]
+                }),
                 required_params: vec!["a".to_string(), "b".to_string()],
             },
             Armament {
                 name: "multiply".to_string(),
                 description: "Multiply two numbers".to_string(),
-                schema: ToolSchema::new()
-                    .add_param("a", ParamType::Number, "First number", true)
-                    .add_param("b", ParamType::Number, "Second number", true),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "a": { "type": "number", "description": "First number" },
+                        "b": { "type": "number", "description": "Second number" }
+                    },
+                    "required": ["a", "b"]
+                }),
                 required_params: vec!["a".to_string(), "b".to_string()],
             },
-        ])
+        ]
     }
 
-    async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
-        let a = call.parameters.get("a")
+    async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
+        let a = call.arguments.get("a")
             .and_then(|v| v.as_f64())
-            .ok_or_else(|| ArsenalError::InvalidParameter("a".to_string()))?;
+            .ok_or_else(|| ArsenalError::InvalidArguments("a".to_string()))?;
 
-        let b = call.parameters.get("b")
+        let b = call.arguments.get("b")
             .and_then(|v| v.as_f64())
-            .ok_or_else(|| ArsenalError::InvalidParameter("b".to_string()))?;
+            .ok_or_else(|| ArsenalError::InvalidArguments("b".to_string()))?;
 
         let result = match call.tool_name.as_str() {
             "add" => a + b,
@@ -428,24 +457,23 @@ impl ArsenalPort for CalculatorTool {
         Ok(ArmamentResult {
             call_id: call.call_id,
             success: true,
-            output: result.to_string(),
+            output: Some(serde_json::json!(result)),
             error: None,
             execution_time_ms: 1,
         })
     }
 
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
-        // Validate tool exists
-        let tools = self.list_armaments().await?;
-        if !tools.iter().any(|t| t.name == call.tool_name) {
-            return Err(ArsenalError::ToolNotFound(call.tool_name.clone()));
-        }
+        // validate_call is synchronous, so it checks against a known, static
+        // required-parameter list rather than awaiting the async list_armaments().
+        let required: &[&str] = match call.tool_name.as_str() {
+            "add" | "multiply" => &["a", "b"],
+            _ => return Err(ArsenalError::ToolNotFound(call.tool_name.clone())),
+        };
 
-        // Validate required parameters
-        let tool = tools.iter().find(|t| t.name == call.tool_name).unwrap();
-        for param in &tool.required_params {
-            if !call.parameters.contains_key(param) {
-                return Err(ArsenalError::MissingParameter(param.clone()));
+        for param in required {
+            if !call.arguments.contains_key(*param) {
+                return Err(ArsenalError::InvalidArguments(format!("missing required parameter: {param}")));
             }
         }
 
@@ -482,25 +510,30 @@ impl WeatherTool {
 
 #[async_trait]
 impl ArsenalPort for WeatherTool {
-    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
-        Ok(vec![
+    async fn list_armaments(&self) -> Vec<Armament> {
+        vec![
             Armament {
                 name: "get_weather".to_string(),
                 description: "Get current weather for a location".to_string(),
-                schema: ToolSchema::new()
-                    .add_param("location", ParamType::String, "City name or coordinates", true)
-                    .add_param("units", ParamType::String, "Temperature units (celsius/fahrenheit)", false),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "location": { "type": "string", "description": "City name or coordinates" },
+                        "units": { "type": "string", "description": "Temperature units (celsius/fahrenheit)" }
+                    },
+                    "required": ["location"]
+                }),
                 required_params: vec!["location".to_string()],
             },
-        ])
+        ]
     }
 
-    async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
-        let location = call.parameters.get("location")
+    async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
+        let location = call.arguments.get("location")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| ArsenalError::InvalidParameter("location".to_string()))?;
+            .ok_or_else(|| ArsenalError::InvalidArguments("location".to_string()))?;
 
-        let units = call.parameters.get("units")
+        let units = call.arguments.get("units")
             .and_then(|v| v.as_str())
             .unwrap_or("celsius");
 
@@ -513,11 +546,11 @@ impl ArsenalPort for WeatherTool {
         let response = self.client.get(&url)
             .send()
             .await
-            .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
+            .map_err(|e| ArsenalError::TransportError(e.to_string()))?;
 
         let weather_data = response.json::<serde_json::Value>()
             .await
-            .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
+            .map_err(|e| ArsenalError::TransportError(e.to_string()))?;
 
         let temp = weather_data["main"]["temp"].as_f64().unwrap_or(0.0);
         let description = weather_data["weather"][0]["description"]
@@ -532,7 +565,7 @@ impl ArsenalPort for WeatherTool {
         Ok(ArmamentResult {
             call_id: call.call_id,
             success: true,
-            output,
+            output: Some(serde_json::json!(output)),
             error: None,
             execution_time_ms: 200,
         })
@@ -543,8 +576,8 @@ impl ArsenalPort for WeatherTool {
             return Err(ArsenalError::ToolNotFound(call.tool_name.clone()));
         }
 
-        if !call.parameters.contains_key("location") {
-            return Err(ArsenalError::MissingParameter("location".to_string()));
+        if !call.arguments.contains_key("location") {
+            return Err(ArsenalError::InvalidArguments("missing required parameter: location".to_string()));
         }
 
         Ok(())
@@ -578,29 +611,34 @@ impl DatabaseTool {
 
 #[async_trait]
 impl ArsenalPort for DatabaseTool {
-    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
-        Ok(vec![
+    async fn list_armaments(&self) -> Vec<Armament> {
+        vec![
             Armament {
                 name: "query_database".to_string(),
                 description: "Execute a read-only SQL query".to_string(),
-                schema: ToolSchema::new()
-                    .add_param("query", ParamType::String, "SQL SELECT query", true),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "query": { "type": "string", "description": "SQL SELECT query" }
+                    },
+                    "required": ["query"]
+                }),
                 required_params: vec!["query".to_string()],
             },
-        ])
+        ]
     }
 
-    async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
-        let query = call.parameters.get("query")
+    async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
+        let query = call.arguments.get("query")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| ArsenalError::InvalidParameter("query".to_string()))?;
+            .ok_or_else(|| ArsenalError::InvalidArguments("query".to_string()))?;
 
         // Security: Only allow SELECT queries
         if !query.trim().to_lowercase().starts_with("select") {
             return Ok(ArmamentResult {
                 call_id: call.call_id,
                 success: false,
-                output: String::new(),
+                output: None,
                 error: Some("Only SELECT queries are allowed".to_string()),
                 execution_time_ms: 0,
             });
@@ -611,24 +649,24 @@ impl ArsenalPort for DatabaseTool {
         let rows = sqlx::query(query)
             .fetch_all(&self.pool)
             .await
-            .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
+            .map_err(|e| ArsenalError::TransportError(e.to_string()))?;
 
         // Convert rows to JSON
-        let result_json = serde_json::to_string_pretty(&rows)
-            .unwrap_or_else(|_| "[]".to_string());
+        let result_json = serde_json::to_value(&rows)
+            .unwrap_or_else(|_| serde_json::json!([]));
 
         Ok(ArmamentResult {
             call_id: call.call_id,
             success: true,
-            output: result_json,
+            output: Some(result_json),
             error: None,
             execution_time_ms: start.elapsed().as_millis() as u64,
         })
     }
 
     fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
-        if !call.parameters.contains_key("query") {
-            return Err(ArsenalError::MissingParameter("query".to_string()));
+        if !call.arguments.contains_key("query") {
+            return Err(ArsenalError::InvalidArguments("missing required parameter: query".to_string()));
         }
         Ok(())
     }
@@ -671,9 +709,9 @@ pub struct LoggingArsenalPort<T: ArsenalPort> {
 
 #[async_trait]
 impl<T: ArsenalPort> ArsenalPort for LoggingArsenalPort<T> {
-    async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
+    async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         println!("Invoking tool: {}", call.tool_name);
-        println!("Parameters: {:?}", call.parameters);
+        println!("Parameters: {:?}", call.arguments);
 
         let start = std::time::Instant::now();
         let result = self.inner.invoke(call).await?;
@@ -690,7 +728,7 @@ impl<T: ArsenalPort> ArsenalPort for LoggingArsenalPort<T> {
     }
 
     // Forward other methods
-    async fn list_armaments(&self) -> Result<Vec<Armament>, ArsenalError> {
+    async fn list_armaments(&self) -> Vec<Armament> {
         self.inner.list_armaments().await
     }
 
@@ -709,7 +747,7 @@ paladin.add_armament(logged_tool);
 ### Error Handling
 
 ```rust,ignore
-match arsenal.invoke(&call).await {
+match arsenal.invoke(call).await {
     Ok(result) if result.success => {
         // Tool succeeded
         process_result(&result.output);
@@ -723,8 +761,8 @@ match arsenal.invoke(&call).await {
         eprintln!("Tool not found: {}", name);
         // Handle missing tool
     }
-    Err(ArsenalError::Timeout) => {
-        eprintln!("Tool execution timed out");
+    Err(ArsenalError::Timeout(secs)) => {
+        eprintln!("Tool execution timed out after {} seconds", secs);
         // Retry with longer timeout
     }
     Err(e) => {
@@ -762,15 +800,15 @@ Armament {
 fn validate_call(&self, call: &ArmamentCall) -> Result<(), ArsenalError> {
     // Check required parameters
     for param in &self.required_params {
-        if !call.parameters.contains_key(param) {
-            return Err(ArsenalError::MissingParameter(param.clone()));
+        if !call.arguments.contains_key(param) {
+            return Err(ArsenalError::InvalidArguments(format!("missing required parameter: {param}")));
         }
     }
 
     // Validate parameter types and values
-    if let Some(url) = call.parameters.get("url") {
+    if let Some(url) = call.arguments.get("url") {
         if !url.as_str().unwrap_or("").starts_with("http") {
-            return Err(ArsenalError::InvalidParameter("url must start with http".into()));
+            return Err(ArsenalError::InvalidArguments("url must start with http".into()));
         }
     }
 
@@ -789,16 +827,22 @@ let tool = CustomTool::new()
 ### 4. Implement Retries for Flaky Operations
 
 ```rust,ignore
-async fn invoke_with_retry(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
+async fn invoke_with_retry(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
     let mut attempts = 0;
     let max_attempts = 3;
 
     loop {
         attempts += 1;
 
-        match self.invoke(call).await {
+        // ArsenalError has no is_retryable() helper (unlike PaladinError) --
+        // match the variants worth retrying explicitly instead.
+        let is_retryable = |e: &ArsenalError| {
+            matches!(e, ArsenalError::Timeout(_) | ArsenalError::TransportError(_))
+        };
+
+        match self.invoke(call.clone()).await {
             Ok(result) => return Ok(result),
-            Err(e) if attempts < max_attempts && e.is_retryable() => {
+            Err(e) if attempts < max_attempts && is_retryable(&e) => {
                 tokio::time::sleep(Duration::from_secs(2_u64.pow(attempts))).await;
                 continue;
             }
@@ -818,7 +862,7 @@ fn sanitize_sql(query: &str) -> Result<String, ArsenalError> {
 
     for keyword in dangerous {
         if query_upper.contains(keyword) {
-            return Err(ArsenalError::SecurityViolation(
+            return Err(ArsenalError::InvalidArguments(
                 format!("Query contains forbidden keyword: {}", keyword)
             ));
         }
@@ -850,9 +894,9 @@ impl<T: ArsenalPort> RateLimitedTool<T> {
 
 #[async_trait]
 impl<T: ArsenalPort> ArsenalPort for RateLimitedTool<T> {
-    async fn invoke(&self, call: &ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
+    async fn invoke(&self, call: ArmamentCall) -> Result<ArmamentResult, ArsenalError> {
         let _permit = self.semaphore.acquire().await
-            .map_err(|e| ArsenalError::ExecutionError(e.to_string()))?;
+            .map_err(|e| ArsenalError::TransportError(e.to_string()))?;
 
         self.inner.invoke(call).await
     }
@@ -878,7 +922,7 @@ let output = serde_json::json!({
 Ok(ArmamentResult {
     call_id: call.call_id,
     success: true,
-    output: output.to_string(),
+    output: Some(output),
     error: None,
     execution_time_ms: 150,
 })
@@ -913,11 +957,11 @@ Ok(ArmamentResult {
 4. Verify environment variables are set
 
 ```rust,ignore
-let tool = MCPStdioAdapter::new()
-    .command("uvx")
-    .args(vec!["mcp-server-fetch"])
-    .debug_mode(true)  // Enable verbose logging
-    .build()
+// MCPStdioAdapter::new(command, args) takes both up front; there is no
+// separate .command()/.args() builder step and no .debug_mode() flag --
+// enable verbose logging via the process's own RUST_LOG env var instead.
+let tool = MCPStdioAdapter::new("uvx", vec!["mcp-server-fetch"])
+    .connect()
     .await?;
 ```
 
@@ -949,7 +993,7 @@ let tool = CustomTool::new()
 
 ```rust,ignore
 // Robust parameter extraction
-let count = call.parameters.get("count")
+let count = call.arguments.get("count")
     .and_then(|v| {
         // Try as number, then as string
         v.as_i64()
@@ -997,17 +1041,17 @@ mod tests {
 
         let call = ArmamentCall {
             tool_name: "add".to_string(),
-            parameters: HashMap::from([
+            arguments: HashMap::from([
                 ("a".to_string(), json!(5.0)),
                 ("b".to_string(), json!(3.0)),
             ]),
             call_id: Uuid::new_v4(),
         };
 
-        let result = calc.invoke(&call).await.unwrap();
+        let result = calc.invoke(call).await.unwrap();
 
         assert!(result.success);
-        assert_eq!(result.output, "8");
+        assert_eq!(result.output, Some(json!(8.0)));
     }
 
     #[tokio::test]
@@ -1016,14 +1060,14 @@ mod tests {
 
         let call = ArmamentCall {
             tool_name: "add".to_string(),
-            parameters: HashMap::from([
+            arguments: HashMap::from([
                 ("a".to_string(), json!(5.0)),
                 // Missing 'b' parameter
             ]),
             call_id: Uuid::new_v4(),
         };
 
-        assert!(calc.invoke(&call).await.is_err());
+        assert!(calc.invoke(call).await.is_err());
     }
 }
 ```
@@ -1053,8 +1097,10 @@ async fn test_paladin_uses_tool() {
 See working examples:
 - `examples/arsenal_stdio_tools.rs` - MCP STDIO integration
 - `examples/arsenal_streamable_http_tools.rs` - MCP Streamable-HTTP integration (authenticated remote transport)
-- `examples/custom_tools.rs` - Custom tool implementation
-- `examples/tool_error_handling.rs` - Error handling patterns
+
+(`examples/custom_tools.rs` and `examples/tool_error_handling.rs`, previously cited here, do not
+exist in the tree -- `ls examples/` carries no custom-tool-implementation or error-handling-pattern
+example beyond what the two files above already cover.)
 
 ## Next Steps
 

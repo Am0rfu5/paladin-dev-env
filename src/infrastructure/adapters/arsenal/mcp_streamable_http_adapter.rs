@@ -15,7 +15,7 @@
 //! The bearer token is held in [`BearerToken`], which zeroizes its contents
 //! on drop and hand-implements a redacting `Debug` (never derives one) so no
 //! log line or `{:?}` can ever leak the raw value — the token is exposed
-//! only via [`BearerToken::expose_secret`], used exclusively inside
+//! only via `BearerToken::expose_secret`, used exclusively inside
 //! [`MCPStreamableHttpAdapter::connect`].
 //!
 //! # Example

@@ -101,6 +101,81 @@
 
 ---
 
+## Milestone: v0.8.0 — Milestone 2-12 close-out & Provider Expansion
+
+**Shipped:** 2026-08-24
+**Phases:** 14 (5-17, incl. inserted 15.1) | **Plans:** 149 | **Commits:** 1,014
+
+### What Was Built
+
+Four ingest-derived milestone blocks closed out, plus the first forward work beyond the ingest.
+Five as-shipped ledgers now carry 554 `REQ-*` rows with `file:line` verdicts. The quality gates
+Deferred-QA Epic 25 specified and nobody started exist and run. Nine LLM providers ship where three
+did. Branch protection went from literally nothing to three applied rulesets with 44 required
+contexts.
+
+### What Worked
+
+- **Record-then-apply, split across phases.** Phases 5, 7, 10 and 13 recorded; 6, 8, 9, 12, 14
+  changed code. The zero-`.rs` boundary on the recording phases was independently re-measured at
+  each close and held every time. Discovery never quietly became implementation.
+- **Verifiers that abstain rather than pass.** Four phases came back `gaps_found` or `human_needed`
+  on their first pass and were re-verified after real fixes (06, 14, 16, 17). Phase 12 refused to
+  mark a clause passing because no CI run existed that could confirm it — and it was right to.
+- **Disclosure over silent scope-cutting.** Phase 13 found a route defect it could not fix without
+  breaching its own zero-`.rs` boundary, and handed it forward with the exact fix and a named
+  owner. Phase 14 fixed it. That is the mechanism working.
+- **Measuring a tool instead of trusting it.** The Snyk probe is the single highest-value thing this
+  milestone produced: four deliberate vulnerabilities, 0 findings in Rust, 3 in JavaScript. It
+  turned six plans' worth of unsatisfiable blocking into a recorded, evidence-backed removal.
+
+### What Was Inefficient
+
+- **A stale requirement blocked verification in six plans before anyone measured it.** The Snyk
+  mandate sat in an untracked instructions file from Phase 15.1 through Phase 17, recorded as
+  "not run" five times, before being tested. The probe took an afternoon. It should have been the
+  first response to the second failure, not the tenth.
+- **The ROADMAP's milestone table went stale for four blocks and thirteen phases.** Every phase was
+  `[x]` while the table read "Not started". Nothing was unbuilt; the record simply was not
+  maintained, in a milestone whose entire purpose was making the record true.
+- **`Requirements: TBD` carried into execution once and cost a retroactive settlement.** Phase 15.1
+  shipped seven verified success criteria with no identifiers, which the milestone audit then had
+  to record as a traceability silence rather than close.
+- **Disk exhaustion silently degraded verification twice.** Plans 14-01 and 14-04 could not run
+  `cargo test --workspace` at all (99% full). Targeted verifies covered it, but the gap was
+  environmental and unflagged until close.
+
+### Patterns Established
+
+- **Probe the scanner, not just the code.** A clean result from a tool that cannot analyse the
+  language reads as assurance while meaning nothing. Adopted as a hard precondition in SAST-01.
+- **Dated at-source correction banners that retain the original text.** Applied consistently across
+  ledgers, ADRs and `.project/` annotations; nothing was silently edited away.
+- **Mint requirement IDs at roadmap time.** Direct consequence of the 15.1 experience; Phase 18
+  minted `SAST-01`…`SAST-04` before any planning began.
+- **Guards that parse the artifact, not prose about it.** `check-advisory-register.sh` and
+  `check-workflow-triggers.sh` both enforce relationships earlier phases had only asserted.
+
+### Key Lessons
+
+1. **A gate that cannot fail is worse than no gate.** The duplicate audit job, the Snyk mandate, and
+   the path-filter trap in `CLAUSE_CONTEXT` are three instances of one defect class: something that
+   reports success without doing work.
+2. **Check whether a later phase already closed the finding.** The milestone audit's first pass
+   carried two Phase 12 items forward as open; Phase 15.1 had closed both five days later. Reading
+   a VERIFICATION.md without asking what came after it produces confidently stale conclusions.
+3. **A record's account of itself drifts even when the record is correct.**
+   `SECURITY-EXCEPTIONS.md` governed eleven suppressions correctly while its own heading said ten.
+4. **Deferring with a named owner and a working fix is not scope-cutting.** Deferring without one
+   is.
+
+### Cost Observations
+
+- Sessions: not tracked per-milestone
+- Notable: four phases required a second verification pass, and three required `--gaps` replanning
+  rounds (17 needed three). The re-verification loop, not first-pass execution, is where the
+  quality came from — and it is not free.
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -108,18 +183,26 @@
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
 | v0.7.1 | — | 4 | First milestone with protected decisions. The corpus had 0 locked ADRs across twelve prior milestones and eighteen months; this one produced 9. |
+| v0.8.0 | — | 14 | First milestone to disqualify a tool by measurement (Snyk probe), and the first to apply live branch protection. Four phases needed a second verification pass. |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
 | v0.7.1 | 2,924 passing (+185 doc tests) | 85.92% (floor 84%) | 0 new dependencies |
+| v0.8.0 | 428 workspace unit + 247 `paladin-llm` crate-scoped; 96/96 doctests | 82.39% (floor 82, ADR-0006) | 6 new LLM providers, no new heavyweight deps |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. *(Awaiting a second milestone to cross-validate.)* The strongest single-milestone candidate:
-   record the decision before writing the code, and gate the record on a parser.
+1. **Record the decision before writing the code, and gate the record on a parser.** Held across
+   both milestones — v0.7.1 produced 9 ADRs where twelve prior milestones produced 0; v0.8.0 added
+   38 more and wired two mechanical guards that enforce what earlier prose only asserted.
+2. **A gate that cannot fail is worse than no gate.** New in v0.8.0, and the milestone's most
+   transferable finding: the duplicate audit job, the unsatisfiable Snyk mandate, and the
+   path-filter trap all report success without doing work.
+3. **Verify against the current tree, not against the last report about it.** Both milestones
+   produced findings that were accurate when written and stale when read.
 
 ---
 
-*Next milestone: Milestone 2-3 close-out (Phases 5-6). Start with `/gsd-new-milestone`.*
+*Next milestone: v0.9.0 Security Tooling (Phase 18). Start with `/gsd-discuss-phase 18`.*

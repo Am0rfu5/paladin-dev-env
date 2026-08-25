@@ -16,9 +16,15 @@ let settings = paladin_ai_core::config::ApplicationSettings::from_file("config.y
 
 ## LLM Provider
 
+Nine providers are supported: `openai`, `anthropic`, `deepseek`, `kimi`, `qwen`, `grok`,
+`ollama`, `gemini`, and a generic operator-configured `openai-compatible` provider for any
+other OpenAI-compatible endpoint. Only the providers compiled in via the matching
+`llm-<provider>` Cargo feature are usable at runtime; the compiled default remains
+`openai` + `anthropic` + `deepseek` (see [Feature Flags](../api-reference/feature-flags.md)).
+
 ```yaml
 llm:
-  default_provider: "openai"   # openai | deepseek | anthropic
+  default_provider: "openai"   # openai | anthropic | deepseek | kimi | qwen | grok | ollama | gemini | openai-compatible
 
   openai:
     base_url: "https://api.openai.com/v1"
@@ -40,6 +46,66 @@ llm:
     default_temperature: 0.7
     timeout_seconds: 300
     max_retries: 3
+
+  # Six providers added alongside the original three. Each carries its own dated
+  # verification status below rather than one blanket disclaimer — see "Live
+  # verification status" further down for what was confirmed and when.
+  #
+  # Kimi (Moonshot AI). Live-verified 2026-08-22 (plan 17-19, closing G-17-4b): GET
+  # /models and a generate() round trip both succeeded against api.moonshot.ai.
+  kimi:
+    base_url: "https://api.moonshot.ai/v1"
+    default_model: "kimi-k3"
+    timeout_seconds: 60
+
+  # Qwen (Alibaba DashScope). Live-verified 2026-08-23 (plan 17-21 gap closure): GET
+  # /models returned a 162-model catalog at the endpoint below, including the default
+  # model, and a generate() round trip succeeded.
+  #
+  # DashScope API keys are scoped to the Model Studio region that issued them and are
+  # REJECTED by every other region's endpoint. `base_url` below is Singapore, the
+  # shipped default. If your workspace is in the US or on the mainland, you MUST
+  # set `DASHSCOPE_BASE_URL` to your own region's endpoint:
+  #   - Singapore      (shipped default): https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  #   - US (Virginia):                    https://dashscope-us.aliyuncs.com/compatible-mode/v1
+  #   - China (mainland):                 https://dashscope.aliyuncs.com/compatible-mode/v1
+  qwen:
+    base_url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    default_model: "qwen-plus"
+    timeout_seconds: 60
+
+  # Grok (xAI). Live-verified 2026-08-22 (plan 17-18, closing G-17-4a): GET /models and
+  # a generate() round trip both succeeded against api.x.ai.
+  grok:
+    base_url: "https://api.x.ai/v1"
+    default_model: "grok-4.6"
+    timeout_seconds: 60
+
+  # Ollama (self-hosted) requires no api_key at all (D-12) — omit the field entirely.
+  # Not applicable to live-vendor verification: self-hosted, no vendor endpoint to
+  # verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), passed on a
+  # GitHub Actions runner 2026-08-19.
+  ollama:
+    base_url: "http://localhost:11434/v1"
+    default_model: "llama3"
+    timeout_seconds: 60
+
+  # Gemini uses a bespoke `generateContent` protocol, not OpenAI-compatible.
+  # Live-verified: GET /models and a generate() round trip both succeeded against
+  # generativelanguage.googleapis.com. default_model was refreshed from
+  # gemini-2.5-flash (retired for new users) to gemini-3.6-flash per the live catalog.
+  gemini:
+    base_url: "https://generativelanguage.googleapis.com/v1beta"
+    default_model: "gemini-3.6-flash"
+    timeout_seconds: 60
+
+  # Generic adapter for ANY OpenAI-compatible endpoint not named above (self-hosted
+  # vLLM/LiteLLM, Groq, Together, Mistral, Fireworks, Bedrock's OpenAI-compat mode, ...).
+  # base_url and default_model are REQUIRED here — there is no vendor default.
+  openai-compatible:
+    base_url: "https://your-endpoint.example.com/v1"
+    default_model: "your-model-name"
+    timeout_seconds: 60
 ```
 
 **API keys** are read exclusively from environment variables:
@@ -49,10 +115,75 @@ llm:
 | `OPENAI_API_KEY` | OpenAI |
 | `DEEPSEEK_API_KEY` | DeepSeek |
 | `ANTHROPIC_API_KEY` | Anthropic |
+| `MOONSHOT_API_KEY` | Kimi |
+| `DASHSCOPE_API_KEY` | Qwen |
+| `XAI_API_KEY` | Grok |
+| — (none required) | Ollama — self-hosted, no vendor credential (D-12) |
+| `GEMINI_API_KEY` | Gemini |
+| `OPENAI_COMPATIBLE_API_KEY` | Generic OpenAI-compatible provider — **not** the same variable as `OPENAI_API_KEY`, a different credential for a different provider; the two names are one word apart, read both character-by-character before exporting either |
 | `APP_LLM_DEFAULT_PROVIDER` | Override default provider at runtime |
 
 > **Security:** Never put API keys in `config.yml`. Use environment variables or
 > a secrets manager (AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets).
+
+### Live verification status
+
+Per-vendor, not one blanket disclaimer — each provider's `base_url` and `default_model`
+above carry their own dated status:
+
+| Provider | Status |
+|---|---|
+| Gemini | Live-verified: a model-list fetch and a `generate()` round trip both succeeded. |
+| Grok (xAI) | Live-verified 2026-08-22 (plan 17-18): model list + a `generate()` round trip against `api.x.ai`. |
+| Kimi (Moonshot) | Live-verified 2026-08-22 (plan 17-19): model list + a `generate()` round trip against `api.moonshot.ai`, including its measured fixed-temperature constraint. |
+| Qwen (DashScope) | Live-verified 2026-08-23 (plan 17-21 gap closure): a model-list fetch (162 models at the shipped Singapore endpoint) and a `generate()` round trip both succeeded. See the region-scoping note above `qwen:` for the mandatory override outside the Singapore region. |
+| Ollama | Not applicable — self-hosted, no vendor endpoint to verify. Its live exercise is the Docker Tier 2 suite (UAT test 3), passed on a GitHub Actions runner 2026-08-19. |
+
+### A rejected credential now announces itself
+
+Every provider above except Ollama shares one underlying protocol engine
+(`CompatEngine`), so this applies uniformly to all of them — an operator debugging a
+self-hosted OpenAI-compatible endpoint gets the same signal as one debugging DashScope,
+Moonshot or xAI (2026-08-22, plan 17-22, closing G-17-4d).
+
+Before this change, a rejected credential and an offline vendor looked identical: the
+model-list fetch silently fell back to a curated list with nothing above a `debug` log
+line, in either case. This is what let a genuine credential/region mismatch go
+undiagnosed for five days during this phase's own live verification (`.planning/WINDOWS.md`
+gap history). Now, when the configured endpoint rejects the request (an authentication
+failure), a `warn`-level line is emitted naming the endpoint and stating that the
+returned list is the curated fallback, not the vendor's own catalog — for example:
+
+```text
+[WARN] configured endpoint https://dashscope-intl.aliyuncs.com/compatible-mode/v1 rejected
+the request while listing models (Authentication failed: ...); the returned model list is
+the curated fallback, not this vendor's own catalog — a credential scoped to a different
+account or region is the usual cause
+```
+
+An endpoint that is simply unreachable — a self-hosted Ollama that has not started yet,
+a network blip, a slow response — stays at `debug`, exactly as before: being offline is a
+supported state (D-13/D-14), not a misconfiguration, and this diagnostic does not fire
+for it. Seeing the warning at all means the fix is the same one described throughout this
+page: check the configured `base_url`/`*_BASE_URL` override against the credential you
+are using.
+
+## Environment variables
+
+The full LLM environment-variable surface — every credential, base-URL, model, timeout
+and (for the generic `openai-compatible` provider) capability/temperature override the
+adapters read — is documented as a first-class configuration path, alongside the YAML
+above, in `.env.example` at the repository root. Copy it to
+`.env` and fill in the credentials you need; unset variables fall back to the defaults
+shown in this guide.
+
+**In the devcontainer**, these credentials arrive from `~/.config/paladin/` (one file per
+secret, filename = the lowercased variable name — e.g. `~/.config/paladin/xai_api_key` →
+`XAI_API_KEY`) via `.devcontainer/paladin-env.sh`, sourced automatically into interactive
+shells by `~/.bashrc`. A genuinely-exported non-empty value always wins over the file. A
+**non-interactive** shell (a script, a CI step, an agent's Bash tool) does not run
+`~/.bashrc` and therefore does not source `paladin-env.sh` automatically — it must be
+sourced explicitly: `set -a; . .devcontainer/paladin-env.sh; set +a`.
 
 ## Garrison (Short-term Memory)
 
