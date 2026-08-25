@@ -70,6 +70,32 @@ contributes no metrics and is noted separately if it occurs.
 | 32868842656 | `refs/heads/codeql-tracer-18-01` | `4b74cae7` | push | success | 212 | cold | 385 | 1 |
 | 32877178870 | `refs/heads/eval/codeql-probe` | `04328647` | workflow_dispatch | success | 223 | warm (2nd-ever run) | 385 | 1 |
 | 32877627856 | `refs/heads/eval/codeql-probe` | `04328647` | workflow_dispatch | success | 220 | warm (3rd-ever run) | 385 | 1 |
+| 32884197028 | `refs/heads/eval/codeql-probe` | `f9bc44cb` | workflow_dispatch | success | 181 | warm (5th-ever run) | 385 | 2 |
+
+**Run 32884197028 (18-03 continuation, re-probe against the redesigned fixture,
+2026-08-25T18:30:54Z–18:35:55Z):** dispatched via `gh workflow run codeql.yml --ref
+eval/codeql-probe -f scan_probe_fixture=true` after pushing the redesigned fixture (commit
+`f9bc44cb`) to the same `eval/codeql-probe` branch. Watched to completion, conclusion
+`success`, job wall-clock **3m1s (181s)**. `alerts_total=2` — see `## Re-Probe Result` below
+for the per-class breakdown.
+
+**A duplicate push-triggered run was cancelled by the same concurrency mechanism as the first
+probe.** Pushing the redesigned fixture to `eval/codeql-probe` triggered an automatic
+`push`-event run (`32883958722`), cancelled 3m21s in when the following `workflow_dispatch`
+run (`32884197028`) started. Its partial SARIF upload is visible in the code-scanning analyses
+list as analysis id `1670898889` (`error: "unsuccessful execution, exit code: 0"`,
+`results_count: 0`, `rules_count: 0`, created `2026-08-25T18:31:06Z`) — recorded here as
+debris from the cancelled run, not a real zero-result analysis, and not counted anywhere in
+this document.
+
+**`eval/codeql-probe` deleted after evidence capture** (`git push origin --delete
+eval/codeql-probe`), per this phase's D-09 posture of not leaving standing scan surfaces
+around — matching the same cleanup already applied to the `codeql-tracer-18-01` branch in
+18-01. Every code-scanning analysis and alert referenced in this section (`32884197028`'s
+results, alert #29) remains queryable by commit SHA (`f9bc44cb`) after the branch's deletion;
+GitHub retains code-scanning history independent of ref lifetime. The fixture source itself is
+unaffected — it lives in this plan's own commits on the worktree branch, not on the deleted
+evaluation branch.
 
 **Run 32868842656 (Task 1 tracer, 2026-08-25T15:55:59Z–15:59:35Z):** the first-ever execution of
 `codeql.yml` against this repository. Pushed to a disposable branch (`codeql-tracer-18-01`,
@@ -566,6 +592,131 @@ expected and uninformative, not evidence of anything.
   closing the archiving≠analysis caveat recorded in `## Analysis Coverage` above (the original
   probe's `probe_fixture_entries=6` proved presence in the source set, never proved semantic
   analysis, since nothing in it could ever alert).
+
+## Re-Probe Result
+
+**Run `32884197028`** (`eval/codeql-probe`, commit `f9bc44cb`, `workflow_dispatch` with
+`scan_probe_fixture=true`, conclusion `success`, 181s). Alerts read via
+`gh api "/repos/DF3NDR/paladin-dev-env/code-scanning/alerts?ref=refs/heads/eval/codeql-probe&tool_name=CodeQL&per_page=100"`
+(HTTP 200), cross-checked directly against the run's own raw SARIF (`rust.sarif` inside the
+`debug-artifacts` artifact) — both report exactly **2 results**, so nothing was lost to
+pagination or alert-store dedup.
+
+**Coverage established before interpreting the result:** `scripts/codeql-analysed-files.sh
+32884197028` reports `probe_fixture_entries=7` (all seven fixture files — `lib.rs`,
+`sql_injection.rs`, `path_traversal.rs`, `credential.rs`, `regex_injection.rs`,
+`command_injection.rs`, `feature_gated.rs`) confirmed present in the extracted source set,
+`analysed_rs_files=385`/`difference=0` unchanged. Full output:
+
+```
+run_id=32884197028
+analysed_rs_files=385
+denominator=385
+difference=0
+probe_fixture_entries=7
+feature_gated_present=src/infrastructure/web/mod.rs:yes
+feature_gated_present=src/application/cli/commands/agent.rs:yes
+feature_gated_present=crates/paladin-web/src/lib.rs:yes
+src_zip_total_rs_entries=3441
+src_zip_checkout_rs_entries=564
+src_zip_toolchain_stdlib_rs_entries=2874
+src_zip_other_vendored_rs_entries=3
+```
+
+### Per-class result
+
+| Class | Fixture File | Alert Raised | Rule ID | Scored? |
+|---|---|---|---|---|
+| SQL injection | `sql_injection.rs` | No | — | Yes |
+| Path traversal | `path_traversal.rs` | No | — | Yes |
+| Hardcoded credential | `credential.rs` | **Yes** — alert #29, `fixtures/codeql-probe/src/credential.rs:25` | `rust/hard-coded-cryptographic-value` | Yes |
+| Regex injection | `regex_injection.rs` | No | — | Yes |
+| Shell command injection (known gap) | `command_injection.rs` | No | — | **No — unscored** (no upstream CWE-078 query) |
+| D-12 feature-gated (SQL-injection variant) | `feature_gated.rs` | No | — | Yes (D-12 signal only, see below) |
+
+**1 of 4 scoreable classes alerted.** Alert #29 (`rust/hard-coded-cryptographic-value`,
+`credential.rs:25`) is a genuine detection of the redesigned heuristic-sink shape (a hardcoded
+literal passed to a locally-defined function parameter named `password`) — not a false
+positive, not a pre-existing alert; it did not exist before this run. Alert #28
+(`user_service.rs:1582`, the corrected test-code false positive from the original probe) is
+also present on this ref, as expected, and is excluded from this table and from the
+per-class count by path.
+
+### Extraction-mechanism findings (from the run's own debug logs, not inferred)
+
+Before scoring the three non-firing classes as a capability finding, the run's own
+`rust/log/database-index-files-*.log` was inspected directly for extraction-level anomalies —
+the same discipline that surfaced the first probe's instrument-invalidity, applied again here
+rather than assumed absent:
+
+1. **SQL injection (`sql_injection.rs:29`) has a diagnosed extraction failure, not merely a
+   silent non-detection.** The log records: `WARN
+   .../fixtures/codeql-probe/src/sql_injection.rs:29:9: macro expansion failed for 'format'` —
+   line 29 is exactly the fixture's `format!("SELECT id, name FROM users WHERE name =
+   '{untrusted_username}'")` call, the taint step this class's entire sink shape depends on. If
+   the macro's expansion is unresolved, the dataflow edge from the tainted `reqwest` response
+   through the interpolated string into `sqlx::query_as`'s argument may never be constructed,
+   independent of whether the underlying `rust/sql-injection`-family query can otherwise detect
+   this pattern.
+   - **This is not isolated to the redesigned fixture.** The same warning, at the same kind of
+     `format!` call, appears for `command_injection.rs:27` (`let shell_command = format!("echo
+     {caller_input}")`) — a file this continuation did **not** modify. Both fixture files use
+     Rust's inline-captured-identifier interpolation syntax (`format!("...{ident}...")` rather
+     than positional `format!("...{}...", ident)`).
+   - **This warning is systemic across the whole checkout, not fixture-specific**: it occurs
+     **889 times** in this run's log, all under first-party checkout paths (not just the
+     fixture). Whether it reflects a genuine, repository-wide CodeQL Rust extractor limitation
+     around `format!` macro expansion, or a narrower interaction specific to the
+     inline-capture syntax, was not further isolated in this continuation — that would require
+     an additional, targeted fixture variant (e.g. positional-args `format!`) and is not
+     pre-registered scope here.
+2. **Path traversal (`path_traversal.rs`) and regex injection (`regex_injection.rs`) extracted
+   cleanly — no warnings, no errors, in either file's `LoadSource`/`Parse`/`Extract` log
+   entries.** Their non-firing has no diagnosed extraction-level cause on this evidence; it may
+   reflect a genuine gap in how `rust/path-injection` / `rust/regex-injection` recognize
+   `reqwest::blocking::get(...).text()` specifically (as opposed to some other remote-source
+   shape), or something else not yet isolated. This is a materially different, more legitimate
+   kind of non-detection than SQL injection's diagnosed macro-expansion failure — it is not
+   itself proven to be instrument-invalid, but it is also not proven to be a clean capability
+   finding; no further isolation was performed within this continuation's scope.
+3. **D-12's feature-gated variant (`feature_gated.rs`) was archived but explicitly NOT
+   semantically analysed on this run**, per the log's own words: `INFO
+   .../fixtures/codeql-probe/src/feature_gated.rs:1:1: semantic analyzer unavailable (not
+   included as a module): macro expansion will be skipped.` This refines D-12's answer beyond
+   what either the original probe or 18-01's tracer run established. **File-reach and semantic
+   analysis are two different claims, and this run separates them directly**: `feature_gated.rs`
+   IS present in the extracted source set (one of the 7 `probe_fixture_entries`, same
+   file-extension-based archiving mechanism as always) — but rust-analyzer's own
+   module-inclusion pass, which determines what actually gets semantically analysed for taint
+   facts, explicitly excludes it when `probe-feature-gated` is not the active feature set for
+   this scan. **This is the closest empirical answer yet to whether buildless CodeQL genuinely
+   analyses this workspace's many feature-gated subsystems (`vision`, `web-server`,
+   `llm-openai`/`anthropic`/`deepseek`, `redis-queue`, `s3-storage`, `storage-mysql`, `qdrant`,
+   `cli`, `notifications`, etc.) under any single scan run: extraction reaches them (the file is
+   archived), but semantic analysis of a `#[cfg(feature = "...")]`-gated module is skipped
+   unless that specific feature happens to be active during that particular invocation** — and
+   `codeql.yml` runs with exactly one default feature set per invocation, not a matrix over
+   every feature combination.
+
+### Scoring against the pre-registered `## Re-Probe Criteria`
+
+Applying the criteria literally, as written before this run existed: **1 of 4 scoreable classes
+alerted**, which is fewer than the pre-registered qualifying floor of 3 and meets the
+pre-registered disqualifying condition of fewer than 2. On the literal text of the
+pre-registered scoring, this result is **disqualifying**.
+
+**This literal scoring is presented alongside the mechanism findings above, not instead of
+them, because one of the three non-firing classes has a diagnosed extraction-level cause
+(SQL injection's `format!`-macro-expansion failure) rather than a clean non-detection — the
+same category of evidence (a run-log-diagnosed mechanism defect, not an inference from the
+zero result) that justified correcting the first probe's verdict from "disqualified" to
+"instrument-invalid."** Whether that one diagnosed defect is enough to again call the
+instrument invalid, whether the two cleanly-extracted-but-non-firing classes (path traversal,
+regex injection) should be treated as genuine capability findings or as still-unexplored gaps,
+and whether the D-12 semantic-analysis-exclusion finding changes the shape of any eventual
+qualification, are **not decided here**. Wall-clock (181s) and analysed-file coverage
+(385/385, 100%) both comfortably clear their carried-over ceilings and are not disqualifying on
+their own.
 
 ## Promotion Status
 
