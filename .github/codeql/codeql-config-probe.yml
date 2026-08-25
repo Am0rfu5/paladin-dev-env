@@ -1,0 +1,18 @@
+# CodeQL Rust analysis config — PROBE-MODE scope (Phase 18, D-09, D-11).
+#
+# This is one of two named, committed CodeQL configurations
+# (.github/codeql/codeql-config.yml and
+# .github/codeql/codeql-config-probe.yml). This one is selected only when
+# codeql.yml is dispatched with `scan_probe_fixture: true` — an explicit,
+# on-demand choice, never the default for push/pull_request/schedule runs.
+#
+# It is identical to codeql-config.yml EXCEPT it carries no `paths-ignore`
+# entry for fixtures/codeql-probe/, so the probe fixture's five deliberately
+# planted defect classes (four unconditional, one behind the
+# `probe-feature-gated` cargo feature) are included in analysis scope and
+# their finding count becomes readable evidence for the D-11 probe result.
+#
+# NOTE: `paths-ignore` (or its absence here) is an ANALYSIS-SCOPE filter,
+# not a workflow TRIGGER path filter — SAST-02 forbids the latter, and this
+# file has no effect on codeql.yml's `on:` block either way.
+paths-ignore: []
