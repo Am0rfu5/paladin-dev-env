@@ -135,7 +135,15 @@ committer, the review count is the thing to revisit.
 
 ## Applying or auditing the rulesets (administrators)
 
-Rulesets require repository-admin scope. They were applied via the `gh` CLI:
+Rulesets require repository-admin scope. Two different calls apply, depending on whether the
+ruleset already exists on the repository — using the wrong one for the situation is how a
+re-application ends up creating a second, disagreeing ruleset instead of updating the one already
+in force (see "Updating an already-applied ruleset" below).
+
+### First-time application
+
+The three rulesets were originally applied via the `gh` CLI, using a **create** call. This call is
+correct only the first time a given ruleset is applied:
 
 ```bash
 gh api --method POST \
@@ -154,20 +162,67 @@ gh api --method POST \
   --input .github/rulesets/protect-release-tags.json
 ```
 
-Verify the active rulesets:
+The GitHub UI equivalent is **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, one
+upload per JSON file.
+
+### Updating an already-applied ruleset
+
+**Do not re-run the create call above against a ruleset that is already applied.** The create
+endpoint has no notion of "this already exists, update it in place" — running it again produces a
+**second** ruleset targeting the same refs, alongside the one already enforcing them, leaving two
+rulesets disagreeing about the same branch. Every change to an already-applied ruleset — for
+example, adding a newly promoted required-status-check context — instead goes through the
+id-addressed **update** endpoint:
+
+```
+PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}
+```
+
+with the whole committed JSON file as the request body, matching this document's existing
+whole-file input convention. For the trunk ruleset (`protect-main-branch.json`, repository
+`DF3NDR/paladin-dev-env`, applied ruleset id `20868126`):
+
+```bash
+gh api --method PUT \
+  -H "Accept: application/vnd.github+json" \
+  /repos/DF3NDR/paladin-dev-env/rulesets/20868126 \
+  --input .github/rulesets/protect-main-branch.json
+```
+
+The other two rulesets follow the same shape, substituting their own applied ruleset id
+(`protect-release-branches.json` → `20868128`; `protect-release-tags.json` → `20868099`) and JSON
+file.
+
+**Read the ruleset list back after every update.** This document already records that the
+rulesets were verified by reading them back from the API rather than by trusting the committed
+files, because the committed payloads had previously sat unapplied for months (see "Applied
+2026-08-14" above) — the same discipline applies here, so a duplicate cannot go unnoticed:
+
+```bash
+# The repository still has exactly three rulesets — a correct update never adds a fourth.
+gh api /repos/DF3NDR/paladin-dev-env/rulesets -q 'length'
+
+# The same id, read back, now carries the updated content.
+gh api /repos/DF3NDR/paladin-dev-env/rulesets/20868126
+```
+
+If the count above is anything other than three, or a new ruleset id shows up targeting the same
+ref, the create call was used where the update call belonged — delete the duplicate (see "Rolling
+back" below), then re-apply the change with the `PUT` form.
+
+### Auditing the active rulesets
 
 ```bash
 gh api /repos/DF3NDR/paladin-dev-env/rulesets
 ```
+
+### Rolling back
 
 Roll one back (reversible while the token retains `Administration: write`):
 
 ```bash
 gh api -X DELETE /repos/DF3NDR/paladin-dev-env/rulesets/<id>
 ```
-
-The GitHub UI equivalent is **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, one
-upload per JSON file.
 
 > The `bypass_actors` entry on `protect-release-tags.json` uses `actor_id: 5` (`RepositoryRole` =
 > Admin). Adjust the role id or add team/app actors to match your organization before importing.
