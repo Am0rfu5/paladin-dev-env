@@ -145,6 +145,20 @@
       }
     }
   },
+  // Container-wide environment
+  //
+  // BASH_ENV makes NON-INTERACTIVE bash source the credential loader. ~/.bashrc
+  // sources paladin-env.sh too, but only after Debian's `case $- in *i*)` early
+  // exit, so `bash -c` / `bash -l` — the shells used by tooling, CI helpers, git
+  // hooks and AI coding agents — never reached it and saw no GH_TOKEN. Setting it
+  // here reaches them. The authoritative copy is the `environment:` list in
+  // docker-compose.yml (containerEnv is not honoured for Compose-based dev
+  // containers); this remoteEnv entry covers VS Code-launched processes on
+  // reconnect, without waiting for a full rebuild. paladin-env.sh is idempotent
+  // and no-ops when the secrets mount is absent, so setting it is always safe.
+  "remoteEnv": {
+    "BASH_ENV": "/workspace/.devcontainer/paladin-env.sh"
+  },
   // Lifecycle scripts
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",

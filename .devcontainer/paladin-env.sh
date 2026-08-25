@@ -4,6 +4,13 @@
 # Sourced (not executed) from ~/.bashrc by .devcontainer/post-start.sh, and safe
 # to source repeatedly.
 #
+# Also reached via BASH_ENV (set in docker-compose.yml and .claude/settings.json).
+# ~/.bashrc only sources this file AFTER Debian's `case $- in *i*)` early exit, so
+# non-interactive shells -- `bash -c`, `bash -l`, git hooks, Makefile recipes, AI
+# coding agents -- never got here and saw no credentials. BASH_ENV closes that gap:
+# non-interactive bash sources whatever it names. Keep this file idempotent and
+# side-effect-free for that reason.
+#
 # HOW IT WORKS
 # ------------
 # The host directory ~/.config/paladin is bind-mounted read-only at
@@ -14,6 +21,7 @@
 #     ~/.config/paladin/xai_api_key         ->  XAI_API_KEY
 #     ~/.config/paladin/moonshot_api_key    ->  MOONSHOT_API_KEY   (Kimi)
 #     ~/.config/paladin/dashscope_api_key   ->  DASHSCOPE_API_KEY  (Qwen)
+#     ~/.config/paladin/gh_token            ->  GH_TOKEN           (gh CLI)
 #
 # The mapping is generic — no hardcoded provider list — so a new provider needs a
 # new file, not a change here.
@@ -73,11 +81,11 @@ __paladin_load_secrets
 paladin-keys() {
     local vars=(OPENAI_API_KEY ANTHROPIC_API_KEY DEEPSEEK_API_KEY GEMINI_API_KEY
                 XAI_API_KEY MOONSHOT_API_KEY DASHSCOPE_API_KEY
-                OPENAI_COMPATIBLE_API_KEY)
+                OPENAI_COMPATIBLE_API_KEY GH_TOKEN)
     local -A label=( [XAI_API_KEY]=Grok [MOONSHOT_API_KEY]=Kimi [DASHSCOPE_API_KEY]=Qwen
                      [GEMINI_API_KEY]=Gemini [OPENAI_API_KEY]=OpenAI
                      [ANTHROPIC_API_KEY]=Anthropic [DEEPSEEK_API_KEY]=DeepSeek
-                     [OPENAI_COMPATIBLE_API_KEY]=generic )
+                     [OPENAI_COMPATIBLE_API_KEY]=generic [GH_TOKEN]=GitHub )
     printf 'secrets dir: %s%s\n' "$PALADIN_SECRETS_DIR" \
         "$([ -d "$PALADIN_SECRETS_DIR" ] || echo '  (ABSENT — bind mount not active)')"
     local v val n=0
