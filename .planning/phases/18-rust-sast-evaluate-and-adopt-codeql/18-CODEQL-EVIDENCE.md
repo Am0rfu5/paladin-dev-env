@@ -919,6 +919,92 @@ continues to demonstrate the extraction → semantic-analysis → alert pipeline
 on this exact fixture crate, under the `.unwrap()` idiom, ruling out "the whole crate is
 somehow invisible to analysis" as an alternative explanation for the other three.
 
+## Workspace-Member Confound Test (pre-registered)
+
+*Pre-registered 2026-08-25T19:49:41Z, before the workspace-member experimental code exists and
+before any dispatch. The user, at the third checkpoint, explicitly authorized this one further
+diagnostic and explicitly lifted the prior "no workspace-membership variant" scope guard for
+this purpose only.*
+
+### The question this settles
+
+Are the SQL-injection / path-traversal / regex-injection misses (unchanged across both the
+redesigned and diagnostic fixture variants — `## Re-Probe Result`, `## Diagnostic Iteration
+Result`) a **genuine CodeQL tool gap** for these source/sink shapes, or an **artifact of the
+probe fixture being a nested, workspace-EXCLUDED, standalone Cargo crate** whose external-crate
+canonical paths (`reqwest`/`sqlx`/`regex`/`std::fs`) may not resolve identically to how they
+resolve inside an ordinary, in-workspace member during buildless extraction? The `0ms`
+empty-relation interpretation of `rust/path-injection` and `rust/regex-injection` in the
+diagnostic run (`## Diagnostic Iteration Result`) is consistent with their sinks never being
+recognized at all — which an external-crate resolution failure specific to the excluded
+fixture's nested-workspace shape would explain. The one class that fires in the fixture
+(hardcoded credential) needs only a **local** function call, no external-crate sink resolution
+— a structurally different requirement from the three that miss.
+
+### What: identical shapes, planted in an ordinary workspace member
+
+The three still-missing classes are planted as functions inside the root `paladin` crate
+(`src/`), an **ordinary, already-scanned workspace member** — not a new crate, not excluded
+from the workspace, not workspace-excluded in any way. This crate already depends on all three
+needed externals for real, shipped reasons, so no new dependency is added and every canonical
+path the planted code calls is identical to what steady-state code in this crate already
+resolves:
+
+- `reqwest` — root `Cargo.toml` line 71: `reqwest = { workspace = true, features =
+  ["blocking", "stream"] }` (blocking feature already present, same as the fixture uses).
+- `sqlx` — root `Cargo.toml` line 117: `sqlx = { workspace = true }` (workspace default
+  features include `sqlite`, same backend the fixture uses).
+- `regex` — root `Cargo.toml` line 115: `regex = "1.11.1"` (identical version the fixture
+  declares).
+- `std::fs` — no dependency needed, standard library.
+
+Each planted function reuses the exact diagnostic-idiom shape from `## Diagnostic Iteration
+(pre-registered)` (`.unwrap()`/`.unwrap_or_default()` instead of `?`, string concatenation
+instead of `format!` for the SQL class) — the only changed variable is workspace membership,
+not source/sink shape, not error-handling idiom, not query version. This is the correct
+single-variable experimental design: everything that could confound the result except
+workspace membership is held constant against the diagnostic run.
+
+### Hard safety invariant (binding on execution, not just this record)
+
+The vulnerable workspace-member code exists **only** on the throwaway `eval/codeql-probe`
+branch. It is:
+- **Never** committed to this plan's mergeable worktree branch history.
+- **Never** merged toward `chore/18-rust-sast-codeql` or any branch that reaches `main`.
+- **Never** referenced from real/shipped code paths — no `mod` declaration reachable from any
+  production entry point survives past the experiment.
+- Confined by committing it on a separate, throwaway local branch (not the worktree's own
+  `worktree-agent-*` branch), pushing only that throwaway branch's tip to
+  `refs/heads/eval/codeql-probe`, then discarding the local throwaway branch entirely once
+  evidence is captured — so the mergeable branch's own commit history never contains the
+  vulnerable code at any point, not even transiently.
+- The remote `eval/codeql-probe` branch is deleted after evidence capture, exactly as after
+  every prior probe run on this branch.
+- This document's own record of what was done (the exact steps taken, the local branch name,
+  confirmation commands run) is committed separately, on the mergeable branch, and contains no
+  vulnerable code itself — only its description and results.
+
+### Interpretation, pre-stated before any number exists
+
+- **A class FIRES as a workspace member but MISSED as the excluded fixture** → the miss was a
+  workspace-exclusion / external-crate-resolution artifact, not a tool capability gap, for that
+  class. Evidence leans toward CodeQL genuinely detecting this class in real, in-workspace Rust
+  code — the fixture's own workspace-exclusion design (itself required by D-07/D-11 to keep
+  deliberately-vulnerable code out of the real build graph) would then be understood as having
+  introduced its own measurement artifact for these three classes.
+- **A class MISSES in BOTH** the workspace-member and the excluded-fixture form → a genuine
+  tool gap for that specific source/sink shape at this CodeQL version, independent of workspace
+  membership. The workspace-exclusion hypothesis is ruled out for that class specifically.
+
+### Scoring (pre-registered): deciding for the confound, not for SAST-01
+
+**This is the deciding measurement for the workspace-exclusion confound** — it settles which of
+the two explanations (tool gap vs. measurement artifact) applies to each of the three classes.
+**It does not, by itself, set the final SAST-01 verdict** — that remains the user's call at the
+next checkpoint, informed by this result alongside every prior run's evidence. The record here
+is: how many of the 3 classes (SQL injection, path traversal, regex injection) fire as workspace
+members, named individually, not collapsed into a single pass/fail number.
+
 ## Promotion Status
 
 advisory — context not pinned in any ruleset
