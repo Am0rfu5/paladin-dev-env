@@ -523,8 +523,23 @@ evidence document), and `bash scripts/check-workflow-triggers.sh` exits 0:
 conclusions — the disqualification, the version scope, and the advisory-retained disposition —
 back the rewritten "Known gap: no Rust SAST (measured 2026-08-25)" section in
 `.github/instructions/security.instructions.md`, propagated from there into `CLAUDE.md`,
-`.github/copilot-instructions.md`, `.planning/STATE.md` and `.planning/MILESTONES.md`. This
-document remains the source of record; those files carry only its conclusions.
+`.github/copilot-instructions.md`, and `.planning/MILESTONES.md`. `.planning/STATE.md` is
+intentionally not touched by plan 18-07 — the worktree-mode executor spawn instructions reserve
+STATE.md updates for the orchestrator; see 18-07-SUMMARY.md's Deviations section. This document
+remains the source of record; those files carry only its conclusions.
+
+**Task 3 disposition note.** Plan 18-07's own Task 3 text, written before this verdict existed,
+describes two branches keyed on the verdict: on `disqualified`, remove `codeql.yml` and its
+config/register row; on `qualified`, leave the tree untouched. Neither branch matches what
+actually happened: the verdict above **is** `disqualified`, but the user, at the checkpoint that
+settled it (2026-08-25, same checkpoint recorded above), explicitly chose to **retain the
+workflow advisory-only** rather than remove it — a third disposition the plan's binary framing
+did not anticipate. `.github/workflows/codeql.yml`, `.github/codeql/codeql-config.yml` and
+`.github/codeql/codeql-config-probe.yml` all stay in the tree; the workflow's header comment and
+`docs/src/contributing/branching-model.md`'s trigger-policy row are both updated to state the
+measured disqualification plainly rather than reading as a pending, not-yet-measured advisory
+posture. `fixtures/codeql-probe/` and `scripts/codeql-analysed-files.sh` are retained either way,
+as both of the plan's original branches already required.
 
 **SAST-01 verdict: `disqualified` (version-scoped: CodeQL `2.26.3` / `rust-queries` `0.1.40`).
 `codeql.yml` is retained, advisory-only, not promoted to a required check. Decided by the user
