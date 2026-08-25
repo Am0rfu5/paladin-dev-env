@@ -229,7 +229,7 @@ milestone.*
 Plans:
 
 - [x] 18-01-PLAN.md — Tracer: wire CodeQL end-to-end (workflow + trigger-policy row in one commit), the analysed-file evidence script, and the evidence document with its promotion threshold written before any measurement
-- [ ] 18-02-PLAN.md — The workspace-excluded probe fixture: four planted defect classes in the recorded order, a fifth behind a non-default cargo feature, and the probe/steady-state scan split
+- [x] 18-02-PLAN.md — The workspace-excluded probe fixture: four planted defect classes in the recorded order, a fifth behind a non-default cargo feature, and the probe/steady-state scan split
 - [ ] 18-03-PLAN.md — Run the probe, record the per-class result beside the coverage evidence, and settle the SAST-01 verdict
 - [ ] 18-04-PLAN.md — Governed alert-dismissal register plus its offline guard, regression harness and required-check wiring
 - [ ] 18-05-PLAN.md — Observation window: historical backfill via disposable push branches, live advisory period, and the full metric block
