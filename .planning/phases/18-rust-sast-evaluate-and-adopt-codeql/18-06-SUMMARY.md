@@ -237,3 +237,9 @@ administrator to run by hand when a real ruleset update is next needed.
 ---
 *Phase: 18-rust-sast-evaluate-and-adopt-codeql*
 *Completed: 2026-08-25*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-06-SUMMARY.md`
+- FOUND commit: `df8dd9be` (Task 1)
+- FOUND commit: `50648fa9` (Task 2/3, hold-advisory)
