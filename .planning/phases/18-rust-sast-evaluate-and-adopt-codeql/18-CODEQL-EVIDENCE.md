@@ -71,6 +71,29 @@ contributes no metrics and is noted separately if it occurs.
 | 32877178870 | `refs/heads/eval/codeql-probe` | `04328647` | workflow_dispatch | success | 223 | warm (2nd-ever run) | 385 | 1 |
 | 32877627856 | `refs/heads/eval/codeql-probe` | `04328647` | workflow_dispatch | success | 220 | warm (3rd-ever run) | 385 | 1 |
 | 32884197028 | `refs/heads/eval/codeql-probe` | `f9bc44cb` | workflow_dispatch | success | 181 | warm (5th-ever run) | 385 | 2 |
+| 32889890607 | `refs/heads/eval/codeql-probe` | `c7e3bc84` | push | success | 168 | warm (6th-ever run) | 385 | 1 |
+| 32890183115 | `refs/heads/eval/codeql-probe` | `c7e3bc84` | workflow_dispatch | success | 188 | warm (7th-ever run) | 385 | 2 |
+
+**Run 32889890607** is the automatic push-triggered steady-state run (`scan_probe_fixture`
+unset, defaulting `false`) that fired when the diagnostic fixture variant was pushed. Unlike
+both prior pushes to this branch, it completed successfully (168s) rather than being cancelled
+— the following `workflow_dispatch` run (`32890183115`) was not dispatched until after it had
+already finished, so the two never collided in the concurrency group. Its `alerts_total=1` is
+the pre-existing corrected alert #28 only, consistent with every other steady-state result on
+this branch; not otherwise analysed further, since Task 2's steady-state exclusion was already
+proven independently and re-verifying it was not part of this diagnostic's scope.
+
+**Run 32890183115 (18-03 continuation, diagnostic iteration, 2026-08-25T19:32:52Z–19:36:00Z):**
+dispatched via `gh workflow run codeql.yml --ref eval/codeql-probe -f
+scan_probe_fixture=true` after pushing the diagnostic fixture variant (commit `c7e3bc84`) to
+`eval/codeql-probe`. Watched to completion, conclusion `success`, job wall-clock **3m8s
+(188s)**. `alerts_total=2` — see `## Diagnostic Iteration Result` below for the per-class
+breakdown.
+
+**`eval/codeql-probe` deleted again after this iteration's evidence capture** (`git push
+origin --delete eval/codeql-probe`), per the same D-09 posture applied after every prior probe
+run on this branch. Every analysis and alert referenced in this section remains queryable by
+commit SHA (`c7e3bc84`) independent of the branch's lifetime.
 
 **Run 32884197028 (18-03 continuation, re-probe against the redesigned fixture,
 2026-08-25T18:30:54Z–18:35:55Z):** dispatched via `gh workflow run codeql.yml --ref
@@ -810,6 +833,91 @@ this codebase's own production paths — so a scanner that only detects taint th
 `.unwrap()`/`.unwrap_or(...)` chains has a materially narrower real-world detection surface
 than a qualifying score alone would suggest. This limitation is carried forward to the final
 checkpoint for the user to weigh explicitly, regardless of which way the literal score lands.
+
+## Diagnostic Iteration Result
+
+**Run `32890183115`** (`eval/codeql-probe`, commit `c7e3bc84`, `workflow_dispatch` with
+`scan_probe_fixture=true`, conclusion `success`, 188s). Alerts read via
+`gh api "/repos/DF3NDR/paladin-dev-env/code-scanning/alerts?ref=refs/heads/eval/codeql-probe&tool_name=CodeQL&per_page=100"`
+(HTTP 200), cross-checked directly against the run's own raw SARIF (`rust.sarif`) — both
+report exactly **2 results**, identical in rule, path and line to the second probe's alerts:
+alert #29 (`credential.rs:25`) and the pre-existing corrected alert #28.
+
+**Coverage established before interpreting the result:** `scripts/codeql-analysed-files.sh
+32890183115` reports `probe_fixture_entries=7` (unchanged), `analysed_rs_files=385/385`
+(unchanged).
+
+### Per-class result: second-probe table vs. diagnostic table, side by side
+
+| Class | Second Probe (`?`, `format!`, run `32884197028`) | Diagnostic (`.unwrap()`/concatenation, run `32890183115`) |
+|---|---|---|
+| SQL injection | No | **No — unchanged** |
+| Path traversal | No | **No — unchanged** |
+| Hardcoded credential | **Yes** (#29) | **Yes — unchanged** (#29, same location) |
+| Regex injection | No | **No — unchanged** |
+| Command injection (known gap) | No (unscored) | No (unscored) — file untouched |
+| D-12 feature-gated variant | No | **No — unchanged** |
+
+**1 of 4 scoreable classes alerted on this run too — identical to the second probe's result.**
+No class flipped from missing to firing when every `?` on the taint path was replaced with
+`.unwrap()`/`.unwrap_or_default()` and `sql_injection.rs`'s `format!` was replaced with string
+concatenation.
+
+### Diagnosis against the pre-registered hypotheses
+
+**Hypothesis (a) — taint does not survive the `?` operator — is ruled out.** Every `?` on
+every missing class's taint path was removed in this variant, matching CodeQL's own upstream
+`.unwrap()`/`.unwrap_or(...)` test idiom exactly, and the result did not change. `?`-style
+error handling is not the (or not the sole) cause of these three classes missing.
+
+**The `format!`-macro-expansion defect is confirmed resolved for the SQL class, independent of
+the miss.** This run's `rust/log/database-index-files-*.log` shows the `macro expansion
+failed for 'format'` warning **only** for the untouched `command_injection.rs:27` — it no
+longer appears for `sql_injection.rs`, which now uses string concatenation. SQL injection
+still misses despite this defect being removed, so the `format!` defect was compounding, not
+solely causal, exactly as `## Diagnostic Iteration (pre-registered)` anticipated for that
+outcome.
+
+**No diagnosable extraction-level cause was found in the logs for any of the three still-missing
+classes** — no `WARN`/`ERROR` line anywhere in `database-index-files`, `database-trace-command`,
+or `dataset-import` mentions `sql_injection.rs`, `path_traversal.rs`, `regex_injection.rs`, or
+any `reqwest`/`sqlx`/`regex` resolution failure. All three files extracted cleanly
+(`LoadSource`/`Parse`/`Extract` steps present, no warnings), same as the second probe's
+path-traversal and regex-injection results. `feature_gated.rs` again shows the `semantic
+analyzer unavailable (not included as a module): macro expansion will be skipped` message,
+confirming the D-12 semantic-analysis-exclusion finding holds unchanged in this run too.
+
+**One additional, sub-warning-level signal from `database-interpret-results-*.log`:** all three
+missing queries ran to completion and produced legitimately empty result sets (not crashes, not
+timeouts) — `rust/regex-injection` and `rust/path-injection` both interpreted in `0ms`
+(essentially instantaneous, consistent with an empty relation), while `rust/sql-injection` took
+`13ms` (measurably nonzero, unlike the two 0ms queries, though still far short of producing an
+alert). This is not itself a diagnosis — it is recorded as the most granular evidence this
+iteration's log inspection could surface, consistent with hypothesis (b) (external-crate call
+resolution not matching the model library's qualified names for these specific call shapes) or
+an unidentified, deeper dataflow-modeling gap, without being conclusive proof of either.
+
+**Per the pre-registered protocol, no further fixture surgery or workspace-membership variant
+was attempted.** This is the single authorized diagnostic iteration; its result — hypothesis
+(a) ruled out, hypothesis (b) or a deeper gap unconfirmed but not ruled out, `format!` confirmed
+compounding-not-causal for SQL — is reported as-is.
+
+### Scoring against the pre-registered criteria (this table supersedes the second probe's, per `## Diagnostic Iteration (pre-registered)`)
+
+**1 of 4 scoreable classes alerted, same as the second probe.** Per the pre-registered scoring
+(fewer than 2 of 4 is disqualifying, 3 or more is qualifying), this **literally scores as
+disqualifying**, identically to the second probe. Wall-clock (188s) and analysed-file coverage
+(385/385) both clear their ceilings and are not disqualifying on their own.
+
+**What is different after this iteration, compared to before it:** the `?`-operator hypothesis
+that could have explained the misses as an artifact of unrealistic-for-CodeQL-testing fixture
+code is now ruled out — the misses persist under the tool's own preferred test idiom. This
+removes one candidate benign explanation and leaves the miss pattern **more**, not less,
+consistent with a genuine detection gap (or an unconfirmed external-crate-resolution defect)
+rather than a fixture-authoring artifact. The one class that fires (hardcoded credential)
+continues to demonstrate the extraction → semantic-analysis → alert pipeline works end-to-end
+on this exact fixture crate, under the `.unwrap()` idiom, ruling out "the whole crate is
+somehow invisible to analysis" as an alternative explanation for the other three.
 
 ## Promotion Status
 
