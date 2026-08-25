@@ -519,6 +519,13 @@ evidence document), and `bash scripts/check-workflow-triggers.sh` exits 0:
 
 ## Verdict
 
+**Closed 2026-08-25 (plan 18-07).** This section is the evaluation's closing verdict. Its
+conclusions — the disqualification, the version scope, and the advisory-retained disposition —
+back the rewritten "Known gap: no Rust SAST (measured 2026-08-25)" section in
+`.github/instructions/security.instructions.md`, propagated from there into `CLAUDE.md`,
+`.github/copilot-instructions.md`, `.planning/STATE.md` and `.planning/MILESTONES.md`. This
+document remains the source of record; those files carry only its conclusions.
+
 **SAST-01 verdict: `disqualified` (version-scoped: CodeQL `2.26.3` / `rust-queries` `0.1.40`).
 `codeql.yml` is retained, advisory-only, not promoted to a required check. Decided by the user
 at the fourth and final checkpoint on this plan (2026-08-25), closing the evaluation.**
