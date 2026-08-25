@@ -73,6 +73,37 @@ contributes no metrics and is noted separately if it occurs.
 | 32884197028 | `refs/heads/eval/codeql-probe` | `f9bc44cb` | workflow_dispatch | success | 181 | warm (5th-ever run) | 385 | 2 |
 | 32889890607 | `refs/heads/eval/codeql-probe` | `c7e3bc84` | push | success | 168 | warm (6th-ever run) | 385 | 1 |
 | 32890183115 | `refs/heads/eval/codeql-probe` | `c7e3bc84` | workflow_dispatch | success | 188 | warm (7th-ever run) | 385 | 2 |
+| 32894118236 | `refs/heads/eval/codeql-probe` | `70efbe23` | workflow_dispatch | success | 209 | warm (9th-ever run) | 386 | 2 |
+
+**Run 32893827932** (8th-ever run, push-triggered by the confound experiment's push) was
+cancelled by the same concurrency mechanism as every prior push-triggered run on this branch —
+`gh run view` reports conclusion `cancelled`, "Canceling since a higher priority waiting
+request ... exists," after 3m25s. Its partial code-scanning analysis (id `1671479428`,
+`results_count: 1`, `rules_count: 27`, created `2026-08-25T20:13:27Z`) is notably more complete
+than prior cancelled-run debris (which showed `results_count: 0, rules_count: 0` with an
+explicit `error` field) — this one may have completed its SARIF upload before the cancellation
+reached the post-analysis cleanup steps. Per this document's own convention, a `cancelled`
+conclusion contributes no metrics regardless of how far it progressed, and it does not appear
+as a data row above; run `32894118236` (the following `workflow_dispatch`) is the authoritative
+result for this iteration.
+
+**Run 32894118236 (18-03 continuation, workspace-member confound test,
+2026-08-25T20:13:39Z–20:17:08Z):** dispatched via `gh workflow run codeql.yml --ref
+eval/codeql-probe -f scan_probe_fixture=true` after pushing the confound experiment (commit
+`70efbe23`, containing both the unchanged excluded fixture AND the new workspace-member
+confound file `src/codeql_workspace_probe.rs`) to `eval/codeql-probe`. Watched to completion,
+conclusion `success`, job wall-clock **3m29s (209s)**. `analysed_rs_files=386` — one more than
+the 385 denominator, `difference=-1` — confirming the confound file was counted within the
+denominator-scoped `src/**/*.rs` glob (385 original first-party files + 1 new confound file).
+`alerts_total=2` — see `## Workspace-Member Confound Test Result` below for the per-class
+breakdown.
+
+**`eval/codeql-probe` deleted again after this iteration's evidence capture**, per the same
+D-09 posture applied after every prior probe run on this branch. Every analysis and alert
+referenced in this section remains queryable by commit SHA (`70efbe23`) independent of the
+branch's lifetime — though per the hard safety invariant, that commit itself was never part of
+this plan's own mergeable branch history (see `## Workspace-Member Confound Test Result` for
+the exact cleanup steps taken).
 
 **Run 32889890607** is the automatic push-triggered steady-state run (`scan_probe_fixture`
 unset, defaulting `false`) that fired when the diagnostic fixture variant was pushed. Unlike
@@ -1004,6 +1035,103 @@ the two explanations (tool gap vs. measurement artifact) applies to each of the 
 next checkpoint, informed by this result alongside every prior run's evidence. The record here
 is: how many of the 3 classes (SQL injection, path traversal, regex injection) fire as workspace
 members, named individually, not collapsed into a single pass/fail number.
+
+## Workspace-Member Confound Test Result
+
+### Execution record (hard safety invariant compliance)
+
+The experimental workspace-member code was created, committed, pushed, scanned and discarded
+exactly as pre-registered:
+
+1. Created `src/codeql_workspace_probe.rs` (three functions: SQL injection, path traversal,
+   regex injection — identical shapes to the diagnostic fixture variant, using the root
+   `paladin` crate's own real `reqwest`/`sqlx`/`regex` dependencies) and a temporary `mod
+   codeql_workspace_probe;` declaration in `src/lib.rs`.
+2. **Both were committed on a separate local branch, `scratch-eval-workspace-member-throwaway`,
+   created from this plan's own mergeable branch tip (`d27d4c33`) — never on the mergeable
+   branch itself.** One fix was needed and applied on that same scratch branch (amended, not a
+   new commit, since the branch is entirely throwaway): `String::from(...) + &untrusted_username`
+   does not resolve under this workspace's full `--all-features` clippy invocation the way it
+   does in the fixture crate's isolated dependency graph (compiles standalone; fails under the
+   full workspace feature union, per a `cargo clippy --workspace --all-targets --all-features`
+   run against the pre-push hook's exact flags) — switched to `.as_str()` for an unambiguous
+   `&str` conversion. Final scratch commit: `70efbe23`.
+3. **Only that scratch branch's tip was pushed to `refs/heads/eval/codeql-probe`** — `git push
+   origin HEAD:refs/heads/eval/codeql-probe` executed while `HEAD` was the scratch branch, not
+   the mergeable one.
+4. `codeql.yml` dispatched against `eval/codeql-probe` with `scan_probe_fixture=true`, watched
+   to completion (run `32894118236`), evidence captured (below).
+5. **Remote `eval/codeql-probe` deleted** (`git push origin --delete eval/codeql-probe`).
+6. **`git checkout` back to the mergeable `worktree-agent-a328ac09cefd2c593` branch** — this
+   branch's own history was never touched by any of steps 1–3; its tip remained `d27d4c33`
+   throughout.
+7. **Local scratch branch deleted** (`git branch -D scratch-eval-workspace-member-throwaway`),
+   removing the last local ref pointing at the vulnerable commit.
+8. **Verification, run and recorded here:**
+   - `git status --short` on the mergeable branch: clean, no output.
+   - `test -f src/codeql_workspace_probe.rs`: absent from the working tree.
+   - `grep -rn "codeql_workspace_probe" src/lib.rs`: no match (exit 1).
+   - `grep -rn` for all three confound function names
+     (`confound_sql_injection_from_remote_lookup`, `confound_path_traversal_from_remote_lookup`,
+     `confound_regex_injection_from_remote_lookup`) across the entire repository tree: no match
+     (exit 1) — the code does not exist anywhere in the checked-out mergeable tree.
+   - `git log --all --oneline | grep -i THROWAWAY`: no match (exit 1) — no ref reachable from
+     this worktree's local repository retains the throwaway commit.
+   - `git log --oneline -10` on the mergeable branch: tip is `d27d4c33` (this section's own
+     pre-registration commit), confirming the branch's history is exactly what it was before
+     the experiment began, plus this results commit.
+
+### Per-class result
+
+| Class | Excluded Fixture (both variants) | Workspace Member (run `32894118236`) |
+|---|---|---|
+| SQL injection | No (both `?` and `.unwrap()` variants) | **No — unchanged** |
+| Path traversal | No (both variants) | **No — unchanged** |
+| Regex injection | No (both variants) | **No — unchanged** |
+| (Hardcoded credential, for reference — not part of this confound) | Yes (#29) | n/a, not replanted here |
+
+**0 of 3 classes fired as workspace members.** Alerts on this run: alert #29
+(`fixtures/codeql-probe/src/credential.rs:25`, the excluded fixture's still-present, unmodified
+credential class) and the pre-existing corrected alert #28. Cross-checked directly against the
+run's own raw SARIF — exactly 2 results, identical rule/path/line to every prior run, confirming
+no pagination or dedup loss. Nothing on `src/codeql_workspace_probe.rs` anywhere in the alert
+store or the raw SARIF.
+
+### Coverage and extraction evidence for the confound file specifically
+
+`scripts/codeql-analysed-files.sh 32894118236`: `analysed_rs_files=386` (385 + the new confound
+file), `probe_fixture_entries=7` (unchanged). The run's own `rust/log/database-index-files-*.log`
+shows `src/codeql_workspace_probe.rs` extracted cleanly:
+`LoadSource` → `archived` → `Parse` → `creating trap file` → `Extract`, all at `ms: 0`, with
+**no** `macro expansion failed` warning (expected — no `format!` in this file) and **no**
+`semantic analyzer unavailable (not included as a module)` message (unlike `feature_gated.rs`
+in every prior run) — this file **was** included as a real, always-compiled module and
+semantically analysed, not skipped. `rust/log/database-interpret-results-*.log` shows the same
+non-zero-but-empty pattern as the diagnostic run: `rust/sql-injection` interpreted in `12ms`,
+`rust/path-injection` and `rust/regex-injection` each in `1ms` — all completed, all zero
+results. No `WARN`/`ERROR` line anywhere in the extraction logs names
+`codeql_workspace_probe.rs` or reports a `reqwest`/`sqlx`/`regex` resolution failure.
+
+### Diagnosis against the pre-registered interpretation
+
+**Per the pre-registered interpretation: 0 of 3 classes flipped from missing to firing when
+replanted as an ordinary, already-scanned workspace member using the crate's own real
+dependencies.** All three classes **miss in both** the workspace-member and the excluded-fixture
+form. Per the pre-registered reading, this result is consistent with **a genuine tool gap for
+these specific source/sink shapes at this CodeQL version, independent of workspace membership**
+— the workspace-exclusion / external-crate-resolution hypothesis (b) is not supported by this
+measurement for any of the three classes. The confound file's clean extraction, its confirmed
+semantic-module inclusion (unlike the fixture's `feature_gated.rs`), and its use of the exact
+same already-resolved `reqwest`/`sqlx`/`regex` canonical paths that steady-state code in this
+crate already relies on, together rule out "the confound file itself was invisible or
+unresolved to CodeQL" as an alternative explanation for the null result.
+
+**What remains outside this measurement's power to settle:** whether a *different* remote-source
+shape (not `reqwest::blocking::get(...).text()`), a *different* library version, or a future
+CodeQL Rust release would change this outcome. This confound test rules out workspace membership
+and external-crate path resolution as the explanation for these three specific misses on this
+specific CodeQL version (`2.26.3`, `rust-queries` `0.1.40`) — it does not, and was not
+pre-registered to, make a claim beyond that scope.
 
 ## Promotion Status
 
