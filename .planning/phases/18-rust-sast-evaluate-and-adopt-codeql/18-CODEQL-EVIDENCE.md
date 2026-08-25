@@ -84,8 +84,8 @@ cache figure is not yet established and will come from a subsequent run reusing 
 returned one analysis (`category: /language:rust`, `tool: CodeQL 2.26.3`, `results_count: 1`,
 `rules_count: 27`).
 
-**alerts_total=1 is a genuine first-party finding, not the D-11 probe** (the probe fixture does not
-exist yet — it is plan 18-02's deliverable). `GET .../code-scanning/alerts?ref=refs/heads/codeql-
+**alerts_total=1 is a real CodeQL alert instance, not a D-11 probe finding** (the probe fixture
+does not exist yet — it is plan 18-02's deliverable). `GET .../code-scanning/alerts?ref=refs/heads/codeql-
 tracer-18-01&tool_name=CodeQL` returned exactly one CodeQL-tool alert:
 
 | # | Rule | Severity | Path | State |
@@ -94,10 +94,13 @@ tracer-18-01&tool_name=CodeQL` returned exactly one CodeQL-tool alert:
 
 Per this phase's explicit out-of-scope boundary (18-CONTEXT.md: "fixing whatever real defects the
 scanner finds ... is its own work"), this finding is **recorded here, not remediated in this
-plan**. It is left open in the code-scanning alert store for triage in a follow-up plan or phase.
-It is also, incidentally, a first data point in the eventual D-14/D-15 true-positive/false-positive
-tally, once triaged — but one alert is not a sample, and it is not counted toward the Promotion
-Criteria's false-positive-rate ceiling here.
+plan**. It is left open in the code-scanning alert store. **Correction (18-03 continuation,
+2026-08-25):** this alert was originally described here as a "genuine first-party finding"
+requiring later triage; triage is now complete and it is a **test-code false positive** — see the
+full reframe in `## Verdict` → "Alert #28 correction" below. It is the first (and so far only)
+data point toward the eventual D-14/D-15 true-positive/false-positive tally: **1 triaged, 1 false
+positive**, recorded there rather than counted toward the Promotion Criteria's false-positive-rate
+ceiling in this section, since one alert is not a sample.
 
 **Tracer branch:** pushed to `refs/heads/codeql-tracer-18-01` on `origin`
 (`DF3NDR/paladin-dev-env`), watched to completion, evidence captured (this document, plus
@@ -169,14 +172,32 @@ been scanned.
 
 **Zero alerts were raised for all five planted classes.** The run's single reported alert
 (`results_count: 1`) is alert #28 (`rust/hard-coded-cryptographic-value`,
-`src/core/platform/manager/user_service.rs`) — the same genuine first-party finding the 18-01
-tracer run first surfaced, at a path entirely outside `fixtures/codeql-probe/`. It is not a probe
-finding and is excluded from the table above and from every count in this section. No other
-mechanism was needed to separate the two: the alerts endpoint returned exactly one alert total,
-and its location path does not match any fixture file, so there was nothing to filter out beyond
-confirming that one path directly.
+`src/core/platform/manager/user_service.rs`) — the same alert (a test-code false positive on
+triage, not a "genuine first-party finding" as first characterized — see the full reframe in
+`## Verdict` → "Alert #28 correction" below) the 18-01 tracer run first surfaced, at a path
+entirely outside `fixtures/codeql-probe/`. It is not a probe finding and is excluded from the
+table above and from every count in this section. No other mechanism was needed to separate the
+two: the alerts endpoint returned exactly one alert total, and its location path does not match
+any fixture file, so there was nothing to filter out beyond confirming that one path directly.
+
+**Correction (18-03 continuation, 2026-08-25): this zero-finding result is instrument-invalid, not
+disqualifying.** All five classes tabled above were structurally incapable of triggering any wired
+CodeQL Rust query — three lacked a recognized taint source under the default `remote` threat
+model, and two (the command-injection classes) target a CWE with no upstream Rust query at all.
+This was established from the query source code itself, not inferred from the zero result. The
+full per-class analysis, citations, and the resulting `instrument-invalid` verdict are in
+`## Verdict` below; this section is retained as an accurate historical record of what the first
+probe run actually measured.
 
 ## Baseline Comparison
+
+**Correction (18-03 continuation, 2026-08-25): the "equal-or-better than Snyk" and "disqualifies
+CodeQL" conclusions below do not hold — the underlying probe was instrument-invalid (see
+`## Verdict`).** This section's factual claims about what was measured (0 findings, coverage
+numbers, alert #28's existence) are accurate and left as recorded; its *interpretation* of those
+numbers as meaningful evidence about CodeQL's Rust detection capability is not, because none of
+the five planted classes could have alerted regardless of how well CodeQL actually performs. The
+comparison below is retained for the historical record, not as the basis for the verdict.
 
 **CodeQL's probe result: 0 findings across all five planted classes**, against confirmed coverage
 of all 6 fixture files (extraction proven directly, see above) and 27 executed `security-extended`
@@ -196,9 +217,11 @@ scanner analysed the code and found it clean" — Snyk Code ingests `.rs` files 
 Rust-specific taint rules to them. CodeQL's 0 here is accompanied by direct, independent proof
 of both extraction (all 6 fixture files confirmed present in the analysed source set) and rule
 execution against this exact tree (27 Rust `security-extended` rules ran against this checkout,
-and this very same run's SARIF surfaced a genuine, unrelated first-party finding — alert #28,
-`rust/hard-coded-cryptographic-value` — proving the credential-detection rule class fires on real
-code in this repository, not only in theory). No JavaScript control exists for CodeQL — it is a
+and this very same run's SARIF surfaced an unrelated alert — alert #28,
+`rust/hard-coded-cryptographic-value` — proving the extraction→taint→alert pipeline runs end to
+end against this repository's real code; on triage this alert is a test-code false positive, not
+the genuine production-credential finding first claimed here — see `## Verdict` → "Alert #28
+correction"). No JavaScript control exists for CodeQL — it is a
 genuine multi-language SAST product, not a single-purpose probe target the way the Snyk
 evaluation was — so the "equal-or-better" judgment here rests on coverage evidence rather than a
 cross-language control the way Snyk's did.
@@ -416,7 +439,133 @@ evidence document), and `bash scripts/check-workflow-triggers.sh` exits 0:
 
 ## Verdict
 
-pending — probe not yet run
+**instrument-invalid — probe redesign required (2026-08-25)**
+
+**This verdict was selected by the user at the Task 3 blocking `checkpoint:decision`, as an
+explicit, user-authorized deviation from the plan's three enumerated options** (`qualified`,
+`qualified-with-coverage-gap`, `disqualified`). The executor did not self-select this outcome and
+presented the plan's three options neutrally at the checkpoint, as required; the user chose a
+fourth path outside that set. It rests on evidence that the probe's five defect classes were
+**structurally incapable of firing against any of CodeQL's actual Rust `security-extended` query
+set** — evidence that was true *before* the probe ever ran (it is a property of the query source
+code itself, not an artifact of the zero result). **SAST-01 remains OPEN**, pending a redesigned
+probe (see `## Re-Probe Criteria` below). This is deliberately not recorded as `disqualified`:
+a probe that cannot detect its own planted defects by construction produced no information about
+whether CodeQL can detect real Rust defects, so no disqualifying evidence was actually gathered.
+
+### Per-class impossibility table
+
+| Class | Fixture File | Why it could not fire | Citation |
+|---|---|---|---|
+| Hardcoded credential | `credential.rs` | `rust/hard-coded-cryptographic-value`'s sinks are crypto-API arguments (modeled `credentials-{password,key,iv,nonce,salt}` sinks) plus a heuristic for call arguments whose **parameter name** is literally `password`/`iv`/`nonce`/`salt`. `format!("Bearer {…}")` building an `Authorization` header string matches neither shape — the fixture's own header comment claiming this was "the sink shape CodeQL looks for" was incorrect. | `rust/ql/lib/codeql/rust/security/HardcodedCryptographicValueExtensions.qll` |
+| Shell command injection via `sh -c` | `command_injection.rs` | No CWE-078 (OS command injection) query exists in `rust-queries` 0.1.40, and none exists upstream on `github/codeql` `main` as of this evaluation. Untestable by construction — no rule was ever capable of firing, regardless of fixture design. | `rust/ql/src/queries/security` (no `CWE-078` directory) |
+| Path traversal | `path_traversal.rs` | `rust/path-injection` is a taint query whose `Source` is `ActiveThreatModelSource` **only**. A `pub fn` parameter (`caller_input: &str`) is never itself a source — the fixture contained zero source nodes for this query to start from. | `TaintedPathExtensions.qll` |
+| SQL injection | `sql_injection.rs` | The **sink** was correctly modeled (`sqlx_core::query_as::query_as, Argument[0]`), but the fixture had the same missing-source problem as path traversal: CodeQL's own test for this query fires only from sources like `std::env::args()` or `reqwest::blocking::get(...)`, not a bare function parameter. | `rust/ql/lib/codeql/rust/frameworks/sqlx.model.yml`; `rust/ql/test/query-tests/security/CWE-089/sqlx.rs` |
+| Feature-gated command injection (D-12 probe) | `feature_gated.rs` | Same CWE-078 gap as the unconditional command-injection class — untestable by construction, independent of feature gating. This left D-12's *finding-status* signal vacuous; only the file-reach signal (extraction, not detection) was ever informative for this class. | Same as command injection above |
+
+**Root mechanism, common to three of the five classes:** CodeQL's default active threat model is
+`remote` only (`shared/threat-models/ext/threat-model-grouping.model.yml`); `env`/`args`/`stdin`/
+`file`-derived sources are grouped under `local`, which is **off by default**. The fixture's
+`pub fn(caller_input: &str)` shape treated the function parameter itself as the taint origin,
+which none of the wired taint queries recognize as a source under the default threat model. This
+is a probe-design defect, not a scanner-capability finding.
+
+**The query suite was not the problem.** `security-extended` was already selected
+(`.github/workflows/codeql.yml`'s `queries: security-extended`); the probe run's `rules_count: 27`
+matches upstream's full extended-suite rule count for Rust. Broadening the query suite would not
+have helped — the gap is in what the fixture's shapes could ever trigger, not in which rules were
+loaded.
+
+### Alert #28 correction
+
+**Alert #28 (`rust/hard-coded-cryptographic-value`, `src/core/platform/manager/user_service.rs:1582`)
+was recorded in the 18-01 tracer run's evidence, and repeated in this plan's `## Run Log`,
+`## Probe Result` and `## Baseline Comparison` sections above, as a "genuine first-party finding."
+That characterization is corrected here.** Direct inspection of the source (confirmed against
+this worktree's tree) shows the alert fires on the literal `"any-password"` passed as the first
+argument to `service.verify_password("any-password", "not-a-valid-phc-hash")` at line 1582,
+inside `#[tokio::test] async fn
+verify_password_against_a_malformed_hash_returns_a_hash_error()`, itself inside the
+`#[cfg(test)] mod tests` block that opens at line 491. **This is a test-code false positive, not
+a leaked production credential**: the rule's heuristic password-parameter sink (a literal passed
+to an argument named `password`) fired exactly as specified, on test fixture data, not on a real
+secret.
+
+This correction does **not** retract everything the earlier record drew from alert #28. It still
+directly demonstrates that CodeQL's extraction → taint-tracking → alert pipeline runs end-to-end
+against this repository's real code — the alert would not exist if the pipeline were broken.
+What it no longer supports is the earlier framing that this was evidence of the
+credential-detection rule "firing on real code ... not only in theory" in the sense of catching a
+genuine defect — on triage, it is a false positive.
+
+**Recorded false-positive-rate data point:** 1 alert triaged, 1 false positive → **1/1 = 100% FP
+rate**, against the Promotion Criteria's ≤20% ceiling. This is an **n=1 sample** — nowhere near
+sufficient to evaluate the ≤20% criterion on its own — but the single available data point points
+in the unfavorable direction, and is recorded here rather than omitted. It does not, by itself,
+change the "instrument-invalid" verdict above (which rests on the query-source impossibility
+analysis, not on this FP rate), but it is relevant context for the D-14/D-15 observation window
+this phase's later plans still depend on.
+
+Every earlier place in this document that referred to alert #28 as a "genuine first-party
+finding" (the `## Run Log`'s tracer-run and probe-run paragraphs, `## Probe Result`,
+`## Baseline Comparison`) should be read with this correction applied. Those sections are left as
+an accurate historical record of what was actually measured and are not rewritten line-by-line;
+this correction is authoritative for how to interpret them.
+
+## Re-Probe Criteria (pre-registered)
+
+*Pre-registered 2026-08-25, before the redesigned fixture exists and before any re-probe run —
+per the same T-18-13 discipline the original `## Promotion Criteria` followed ("threshold
+retrofitted to the numbers" is the threat this guards against). Committed in the same commit as
+the `## Verdict` correction above, strictly before any fixture file is touched or any dispatch
+happens.*
+
+### New rule-aligned, source-wired classes
+
+All five classes below are redesigned so that taint originates from a **default-threat-model
+`remote` source** — `reqwest::blocking::get(...).text()` — matching the shape CodeQL's own
+upstream test suite uses for these exact queries, rather than treating a bare function parameter
+as a source (the defect that invalidated the first probe).
+
+1. **SQL injection:** `reqwest` response body → `format!`-interpolated query string →
+   `sqlx::query_as` (the already-modeled sink, `sqlx_core::query_as::query_as, Argument[0]`).
+2. **Path traversal:** `reqwest` response body → `PathBuf::join` → `std::fs::read_to_string`.
+3. **Hardcoded credential:** a string literal `const` → passed as the argument to a local
+   function whose parameter is named `password` (the rule's heuristic sink). The synthetic,
+   low-entropy value property (D-10) is kept; gitleaks must still pass unmodified.
+4. **Regex injection (`rust/regex-injection`):** `reqwest` response body →
+   `regex::Regex::new(...)`. This replaces one of the two untestable command-injection slots with
+   a rule that actually exists upstream.
+5. **D-12 feature-gated variant:** identical shape to class 1 (SQL injection — now a genuinely
+   detectable class), planted behind the `probe-feature-gated` cargo feature, exactly as the
+   original fifth defect was structured.
+
+### Known-gap register row (recorded, not scored)
+
+**Command injection (CWE-078) has no upstream Rust query as of this evaluation.**
+`command_injection.rs` (the original `sh -c` shell command injection fixture) is **kept in the
+crate as documentation of this gap** — it remains a real, plausible Rust vulnerability shape this
+evaluation cannot test, because CodeQL cannot test it, not because the fixture is malformed. It
+is **not scored** in the qualification arithmetic below; its continued 0-finding result is
+expected and uninformative, not evidence of anything.
+
+### Scoring (pre-registered, before any new number exists)
+
+- **Disqualifying:** fewer than 2 of the 4 ungated, scoreable classes (SQL injection, path
+  traversal, hardcoded credential, regex injection) alert.
+- **Qualifying:** 3 or more of the 4 ungated, scoreable classes alert (any miss is documented
+  per-rule, naming which class and why).
+- **Hard disqualifier, unchanged from the original criteria:** 0 findings across all four
+  scoreable classes disqualifies the tool outright (D-11's shape recurring) — this floor is not
+  relaxed by the redesign.
+- **Carried over unchanged from the original `## Promotion Criteria`:** wall-clock ceiling ≤600s
+  per run; minimum analysed-file count ≥95% of the 385 denominator.
+- **Additional evidence goal:** any fixture finding on this redesigned probe also proves the
+  workspace-excluded, standalone `fixtures/codeql-probe` crate is **semantically analysed** (real
+  taint-tracking facts produced inside it), not merely **archived** into the extraction database —
+  closing the archiving≠analysis caveat recorded in `## Analysis Coverage` above (the original
+  probe's `probe_fixture_entries=6` proved presence in the source set, never proved semantic
+  analysis, since nothing in it could ever alert).
 
 ## Promotion Status
 
