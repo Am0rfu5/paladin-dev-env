@@ -349,6 +349,71 @@ available** from a standard `codeql-action` run without invoking the CLI directl
 downloaded database zip (out of scope for this plan) — no disagreement is recorded because no
 second number exists to disagree with the `src.zip`-derived count.
 
+## Steady-State Exclusion
+
+**Steady-state run: `32877627856`** (`refs/heads/eval/codeql-probe`, commit `04328647`,
+`workflow_dispatch` with `scan_probe_fixture` left `false` — the default path, selecting
+`.github/codeql/codeql-config.yml`, the config that carries `paths-ignore: [fixtures/codeql-probe]`).
+Watched to completion via `gh run watch 32877627856 --exit-status`, conclusion `success`, job
+wall-clock **3m40s (220s)**.
+
+This run was dispatched separately from Task 1's probe run rather than reusing the automatic
+push-triggered run (`32877168387`) that fired when `eval/codeql-probe` was first pushed, because
+that push-triggered run was itself cancelled by the workflow's own concurrency group when Task 1's
+`workflow_dispatch` run started moments later (see `## Run Log` above) — a cancelled run carries
+no metrics to read.
+
+**Two independent numbers, both confirming the exclusion held:**
+
+1. **`scripts/codeql-analysed-files.sh 32877627856` reports `probe_fixture_entries=0`.** Full
+   output:
+
+   ```
+   run_id=32877627856
+   analysed_rs_files=385
+   denominator=385
+   difference=0
+   probe_fixture_entries=0
+   feature_gated_present=src/infrastructure/web/mod.rs:yes
+   feature_gated_present=src/application/cli/commands/agent.rs:yes
+   feature_gated_present=crates/paladin-web/src/lib.rs:yes
+   src_zip_total_rs_entries=3434
+   src_zip_checkout_rs_entries=557
+   src_zip_toolchain_stdlib_rs_entries=2874
+   src_zip_other_vendored_rs_entries=3
+   ```
+
+   Zero fixture entries were extracted at all on the steady-state config — the `paths-ignore`
+   analysis-scope exclusion (18-02) kept the fixture out of CodeQL's database entirely, not merely
+   out of the alert store. (`analysed_rs_files=385`/`difference=0` and the three
+   `feature_gated_present=...:yes` lines are unchanged from every other run — the exclusion is
+   scoped precisely to `fixtures/codeql-probe/` and does not touch the first-party denominator or
+   the first-party feature-gated paths.)
+
+2. **Zero code-scanning alerts on this ref have a location path under `fixtures/codeql-probe/`.**
+   Read via `gh api "/repos/DF3NDR/paladin-dev-env/code-scanning/alerts?ref=refs/heads/eval/codeql-probe&per_page=100"`
+   (HTTP 200, 16 open alerts total on this ref across all tools — the repository's existing 15
+   `osv-scanner` alerts plus the one pre-existing CodeQL alert #28, all present on this branch
+   because it shares full history with the tip it was branched from). None of the 16 alert
+   locations start with `fixtures/codeql-probe/`. Cross-checked against the analyses endpoint:
+   this run's own CodeQL Rust analysis (id `1670538979`, created `2026-08-25T17:27:52Z`,
+   `results_count: 1`) reports the same single result as every other run on this tree — alert #28
+   — confirming the zero-fixture-alert count is not an artifact of a truncated read.
+
+**Both signals agree: the exclusion held with no surviving fixture alert to disposition.** Neither
+number is non-zero, so no alert requires the 18-04 governed-register disposition path, and
+`.github/codeql/codeql-config.yml` required no adjustment — its existing
+`paths-ignore: [fixtures/codeql-probe]` entry (18-02) is sufficient as written.
+
+`.github/workflows/codeql.yml` still declares no `paths`/`paths-ignore` key under any trigger
+(confirmed unchanged by this plan — `git diff` against this plan's own commits touches only this
+evidence document), and `bash scripts/check-workflow-triggers.sh` exits 0:
+
+```
+🔍 Checking workflow trigger surfaces against the recorded policy table ...
+✅ 7 workflow file(s) scanned, 7 policy-table row(s) read; coverage, drift, context and reachability clauses all pass.
+```
+
 ## Verdict
 
 pending — probe not yet run
