@@ -1184,12 +1184,69 @@ pre-registered to, make a claim beyond that scope.
 
 ## Promotion Status
 
-**advisory — context not pinned in any ruleset. Final, per the `## Verdict` above (SAST-01
-disqualified, 2026-08-25): this is not an interim state pending 18-06 promotion work — it is
-this plan's closing disposition.** `codeql.yml` runs on every push/PR/schedule and continues to
-surface findings (the credential class, and any future rule improvements) in the code-scanning
-UI, but never blocks a merge. Revisit only on a CodeQL/`rust-queries` version upgrade, per the
-version-scoping stated in `## Verdict`.
+**Decision: `hold-advisory`, recorded 2026-08-25.** `CodeQL Analysis (Rust)` is **not** promoted
+to a required status check on `main`. `.github/rulesets/protect-main-branch.json` keeps its
+44-entry `required_status_checks` array unchanged, the live ruleset (id `20868126`) is not
+re-applied, and `docs/src/appendix/branch-protection.md`'s required-check count and context list
+are untouched — there is nothing to reconcile across those places because none of them changed.
+
+This is not a deferral: it is the outcome the `## Promotion Criteria` (written 2026-08-25, before
+any measurement existed) compares against, and the measured numbers do not clear it. `codeql.yml`
+runs on every push/PR/schedule and continues to surface findings (the credential class, and any
+future `rust-queries` rule improvements) in the code-scanning UI, but never blocks a merge.
+
+**Measured numbers this decision rests on** (full detail in `## Verdict` and its subsections
+above):
+
+- **False-positive rate: 1 triaged alert, 1 false positive → 100% FP rate** (alert #28, a
+  test-fixture literal misclassified as `rust/hard-coded-cryptographic-value`; see `## Verdict` →
+  "Alert #28 correction"), against the Promotion Criteria's ≤20% ceiling — an n=1 sample, but the
+  only real-code data point available, and it is on the wrong side of the ceiling.
+- **Wall-clock: every recorded run landed between 168s and 223s** (cold-cache tracer run
+  `32868842656`: 212s; steady-state run `32889890607`: 168s; warm-cache probe runs ranged 181s–223s
+  — see `## Run Log`), comfortably inside the ≤600s ceiling. Wall-clock was never the blocker.
+- **Analysed-file coverage: 385/385 (100%) on every run without exception** (`## Analysis
+  Coverage`, `## Re-Probe Result`, `## Diagnostic Iteration Result`), comfortably inside the ≥95%
+  floor. Coverage was never the blocker.
+- **Disqualifying condition (D-11) triggered: the redesigned, rule-aligned probe scored 1 of 4
+  scoreable classes** (SQL injection, path traversal, hardcoded credential, regex injection —
+  `## Re-Probe Result`, reconfirmed unchanged by the diagnostic iteration and the workspace-member
+  confound test), against the pre-registered qualifying floor of 3 of 4 and the disqualifying
+  ceiling of fewer than 2 of 4. This is the actual blocker: the false-positive-rate and wall-clock
+  ceilings are secondary to a scanner that only detects 1 of 4 rule-aligned, source-wired classes
+  at this CodeQL/`rust-queries` version, per the `disqualified (version-scoped: CodeQL 2.26.3 /
+  rust-queries 0.1.40)` verdict.
+
+See `## Open Item — Promotion Held` below for the trigger condition, owner, and revisit date that
+make this a settled outcome rather than a silent deferral.
+
+## Open Item — Promotion Held
+
+**Threshold not met:** the `## Re-Probe Criteria`'s qualifying floor — at least 3 of the 4
+rule-aligned, source-wired scoreable classes (SQL injection, path traversal, hardcoded credential,
+regex injection) must alert for the redesigned probe to qualify.
+
+**Measured result: 1 of 4.** Only the hardcoded-credential class fired (alert #29). This result
+was reconfirmed unchanged across three independent measurements after the initial redesigned
+probe: the diagnostic iteration (`.unwrap()`/string-concatenation idiom, ruling out the `?`
+operator as the cause), and the workspace-member confound test (identical shapes planted in the
+real, already-scanned `paladin` crate, ruling out fixture workspace-exclusion as the cause). See
+`## Re-Probe Result`, `## Diagnostic Iteration Result`, and `## Workspace-Member Confound Test
+Result` for the full per-class detail.
+
+**Trigger condition:** re-run this evaluation's fixture (retained per D-09, specifically for
+reproducibility) against a future CodeQL engine / `rust-queries` release whose release notes report
+added or improved `rust/sql-injection`, `rust/path-injection`, or `rust/regex-injection` source
+recognition for `reqwest::blocking` response bodies, or that otherwise states it closes the
+detection gap measured here at CodeQL `2.26.3` / `rust-queries` `0.1.40` (see `## Verdict`). A bare
+CodeQL version bump with no stated change to these query families' source modeling is not
+sufficient on its own to re-open this item — the trigger is a specific capability claim in the
+upstream changelog, not the passage of time or a version number alone.
+
+**Owner:** Am0rfu5 (repository maintainer).
+
+**Revisit date:** 2027-02-25 (six months from this decision, 2026-08-25), or immediately upon the
+trigger condition above being met, whichever comes first.
 
 ## Observation Window
 

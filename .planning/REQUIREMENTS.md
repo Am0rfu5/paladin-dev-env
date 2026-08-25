@@ -48,9 +48,11 @@ from Phase 15.1 carrying `Requirements: TBD` into execution and settling it retr
       be path-filtered into silence.**
       Its workflow triggers on `pull_request` with no path filter, plus `push` on `main` and a
       schedule. This is a hard constraint rather than a preference: `scripts/check-workflow-triggers.sh`
-      Clause 4 exists because a required context living in a path-filtered workflow never reports
-      on a PR touching no matching path, and that PR is then unmergeable forever with no failing
-      check to point at. Cost note for planning: the repository is public, so GitHub code scanning
+      Clause 2 (drift) exists because a required context living in a workflow whose trigger surface
+      has silently narrowed — a filtered `pull_request` path, a dropped trigger type, a
+      reintroduced branch filter — never reports on a PR touching no matching path, and that PR is
+      then unmergeable forever with no failing check to point at. Cost note for planning: the
+      repository is public, so GitHub code scanning
       and CodeQL carry no licence cost, and `github/codeql-action/upload-sarif@v3` is already wired
       into `ci.yml` for OSV results — code scanning is enabled today. Unlike Snyk, no token or
       vendor account is required.
