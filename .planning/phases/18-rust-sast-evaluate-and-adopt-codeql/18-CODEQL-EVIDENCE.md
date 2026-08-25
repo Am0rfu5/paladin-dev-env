@@ -177,7 +177,7 @@ scanner finds ... is its own work"), this finding is **recorded here, not remedi
 plan**. It is left open in the code-scanning alert store. **Correction (18-03 continuation,
 2026-08-25):** this alert was originally described here as a "genuine first-party finding"
 requiring later triage; triage is now complete and it is a **test-code false positive** — see the
-full reframe in `## Verdict` → "Alert #28 correction" below. It is the first (and so far only)
+full reframe in the Verdict section → "Alert #28 correction" below. It is the first (and so far only)
 data point toward the eventual D-14/D-15 true-positive/false-positive tally: **1 triaged, 1 false
 positive**, recorded there rather than counted toward the Promotion Criteria's false-positive-rate
 ceiling in this section, since one alert is not a sample.
@@ -254,7 +254,7 @@ been scanned.
 (`results_count: 1`) is alert #28 (`rust/hard-coded-cryptographic-value`,
 `src/core/platform/manager/user_service.rs`) — the same alert (a test-code false positive on
 triage, not a "genuine first-party finding" as first characterized — see the full reframe in
-`## Verdict` → "Alert #28 correction" below) the 18-01 tracer run first surfaced, at a path
+the Verdict section → "Alert #28 correction" below) the 18-01 tracer run first surfaced, at a path
 entirely outside `fixtures/codeql-probe/`. It is not a probe finding and is excluded from the
 table above and from every count in this section. No other mechanism was needed to separate the
 two: the alerts endpoint returned exactly one alert total, and its location path does not match
@@ -266,14 +266,14 @@ CodeQL Rust query — three lacked a recognized taint source under the default `
 model, and two (the command-injection classes) target a CWE with no upstream Rust query at all.
 This was established from the query source code itself, not inferred from the zero result. The
 full per-class analysis, citations, and the resulting `instrument-invalid` verdict are in
-`## Verdict` below; this section is retained as an accurate historical record of what the first
+the Verdict section below; this section is retained as an accurate historical record of what the first
 probe run actually measured.
 
 ## Baseline Comparison
 
 **Correction (18-03 continuation, 2026-08-25): the "equal-or-better than Snyk" and "disqualifies
 CodeQL" conclusions below do not hold — the underlying probe was instrument-invalid (see
-`## Verdict`).** This section's factual claims about what was measured (0 findings, coverage
+the Verdict section).** This section's factual claims about what was measured (0 findings, coverage
 numbers, alert #28's existence) are accurate and left as recorded; its *interpretation* of those
 numbers as meaningful evidence about CodeQL's Rust detection capability is not, because none of
 the five planted classes could have alerted regardless of how well CodeQL actually performs. The
@@ -300,7 +300,7 @@ execution against this exact tree (27 Rust `security-extended` rules ran against
 and this very same run's SARIF surfaced an unrelated alert — alert #28,
 `rust/hard-coded-cryptographic-value` — proving the extraction→taint→alert pipeline runs end to
 end against this repository's real code; on triage this alert is a test-code false positive, not
-the genuine production-credential finding first claimed here — see `## Verdict` → "Alert #28
+the genuine production-credential finding first claimed here — see the Verdict section → "Alert #28
 correction"). No JavaScript control exists for CodeQL — it is a
 genuine multi-language SAST product, not a single-purpose probe target the way the Snyk
 evaluation was — so the "equal-or-better" judgment here rests on coverage evidence rather than a
@@ -519,19 +519,68 @@ evidence document), and `bash scripts/check-workflow-triggers.sh` exits 0:
 
 ## Verdict
 
-**instrument-invalid — probe redesign required (2026-08-25)**
+**SAST-01 verdict: `disqualified` (version-scoped: CodeQL `2.26.3` / `rust-queries` `0.1.40`).
+`codeql.yml` is retained, advisory-only, not promoted to a required check. Decided by the user
+at the fourth and final checkpoint on this plan (2026-08-25), closing the evaluation.**
 
-**This verdict was selected by the user at the Task 3 blocking `checkpoint:decision`, as an
-explicit, user-authorized deviation from the plan's three enumerated options** (`qualified`,
-`qualified-with-coverage-gap`, `disqualified`). The executor did not self-select this outcome and
-presented the plan's three options neutrally at the checkpoint, as required; the user chose a
-fourth path outside that set. It rests on evidence that the probe's five defect classes were
-**structurally incapable of firing against any of CodeQL's actual Rust `security-extended` query
-set** — evidence that was true *before* the probe ever ran (it is a property of the query source
-code itself, not an artifact of the zero result). **SAST-01 remains OPEN**, pending a redesigned
-probe (see `## Re-Probe Criteria` below). This is deliberately not recorded as `disqualified`:
-a probe that cannot detect its own planted defects by construction produced no information about
-whether CodeQL can detect real Rust defects, so no disqualifying evidence was actually gathered.
+**Decision basis.** Across four independent measurements — the original fixture (bare-parameter
+source), the redesigned fixture (`reqwest::blocking::get(...).text()` source, `?` operator,
+`format!`), the diagnostic iteration (`.unwrap()`/`.unwrap_or_default()`, string concatenation),
+and the workspace-member confound test (identical diagnostic shapes planted in the real,
+already-scanned `paladin` crate) — SQL injection, path traversal and regex injection built from
+a `reqwest` remote source **never fired, under any tested condition**. The null result held
+independent of probe design (fixture vs. workspace member), the `?` operator (removed and ruled
+out), the diagnosed `format!`-macro-expansion defect (removed for the SQL class specifically,
+result unchanged), and workspace membership (the confound file was semantically analysed —
+`analysed_rs_files=386`, no `semantic analyzer unavailable` message, using the crate's own
+already-resolved `sqlx`/`reqwest`/`regex` dependencies — and the relevant queries evaluated
+non-empty, `rust/sql-injection` interpreted in `12ms`, yet still returned nothing). This is a
+**genuine detection gap at this CodeQL/rust-queries version, not a measurement artifact** — the
+full diagnostic chain exists specifically to rule out the artifact explanations, and it did.
+
+**What CodeQL DID deliver, recorded honestly rather than omitted because the overall verdict is
+disqualifying:**
+- The hardcoded-credential class (`rust/hard-coded-cryptographic-value`, a local heuristic
+  parameter-name sink) fires **reliably** — reproduced identically across the redesigned,
+  diagnostic, and confound runs (alert #29).
+- **The extraction → semantic-analysis → alert pipeline is proven end-to-end** against this
+  repository's real code, independent of the probe (alerts #28 and #29 both real, both
+  investigated).
+- **385/385 first-party file coverage on every run without exception** — the specific Snyk
+  failure shape this whole evaluation exists to catch ("analysed 0 files" masquerading as "found
+  0 issues") **cannot recur**: coverage is proven, separately from findings, every time.
+- **But the one class that does fire carries a real false-positive cost**: alert #28, this
+  evaluation's only hit against genuinely pre-existing repository code (not a planted probe),
+  was a **test-code false positive** on triage (`## Verdict` → "Alert #28 correction" above) —
+  a literal test-fixture string flagged as a hardcoded credential, not a leaked secret. The
+  working class's real-world signal, on the one sample available, is 1 false positive out of 1
+  triaged alert.
+
+**Disposition: `codeql.yml` remains a NON-REQUIRED, advisory scan.** It stays wired
+(`.github/workflows/codeql.yml`, `security-extended` queries, `debug: true`), runs on every
+push/PR/schedule, and is **not** pinned in `.github/rulesets/protect-main-branch.json` or any
+other ruleset — it catches the credential class and benefits automatically from any future
+`rust-queries` rule improvements, at zero merge-gate risk, since a false-positive-prone,
+gap-ridden scanner is never allowed to block a merge.
+
+**This verdict is version-scoped and should be revisited on any CodeQL or `rust-queries`
+upgrade.** The disqualifying evidence is tied to `CodeQL 2.26.3` / `rust-queries 0.1.40`
+specifically (recorded throughout this document's run log); a future version that adds
+`rust/sql-injection`/`rust/path-injection`/`rust/regex-injection` source recognition for
+`reqwest::blocking` responses, or closes the CWE-078 gap, would warrant re-running this
+evaluation's fixture (kept, per D-09, precisely for this reproducibility) rather than assuming
+the disqualification still holds.
+
+**Forward pointer, not acted on here: the Semgrep contingency's trigger condition (D-20 — "no
+qualifying Rust SAST promoted") is now met.** This is recorded for whichever future plan takes
+up that contingency; no Semgrep evaluation work is performed as part of this plan.
+
+**Downstream note for plan 18-06:** because CodeQL is not promoted, 18-06's held-verdict branch
+applies — no ruleset write (`.github/rulesets/protect-main-branch.json`, 44 → 45) occurs, no
+`docs/src/appendix/branch-protection.md` count update occurs, and `scripts/check-workflow-triggers.sh`
+Clause 3 has no new required context to resolve. 18-06's remaining scope, if any, is limited to
+correcting the ruleset re-application procedure documentation itself (its other named
+deliverable), not promotion.
 
 ### Per-class impossibility table
 
@@ -1135,4 +1184,9 @@ pre-registered to, make a claim beyond that scope.
 
 ## Promotion Status
 
-advisory — context not pinned in any ruleset
+**advisory — context not pinned in any ruleset. Final, per the `## Verdict` above (SAST-01
+disqualified, 2026-08-25): this is not an interim state pending 18-06 promotion work — it is
+this plan's closing disposition.** `codeql.yml` runs on every push/PR/schedule and continues to
+surface findings (the credential class, and any future rule improvements) in the code-scanning
+UI, but never blocks a merge. Revisit only on a CodeQL/`rust-queries` version upgrade, per the
+version-scoping stated in `## Verdict`.
