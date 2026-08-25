@@ -68,6 +68,8 @@ contributes no metrics and is noted separately if it occurs.
 | run_id | ref | commit | event | conclusion | wall_clock_s | cache | analysed_rs_files | alerts_total |
 |---|---|---|---|---|---|---|---|---|
 | 32868842656 | `refs/heads/codeql-tracer-18-01` | `4b74cae7` | push | success | 212 | cold | 385 | 1 |
+| 32877178870 | `refs/heads/eval/codeql-probe` | `04328647` | workflow_dispatch | success | 223 | warm (2nd-ever run) | 385 | 1 |
+| 32877627856 | `refs/heads/eval/codeql-probe` | `04328647` | workflow_dispatch | success | 220 | warm (3rd-ever run) | 385 | 1 |
 
 **Run 32868842656 (Task 1 tracer, 2026-08-25T15:55:59Z–15:59:35Z):** the first-ever execution of
 `codeql.yml` against this repository. Pushed to a disposable branch (`codeql-tracer-18-01`,
@@ -105,7 +107,173 @@ posture of not leaving standing scan surfaces around. The code-scanning analysis
 remain queryable by commit SHA (`4b74cae7`) after the branch deletion; GitHub retains code-scanning
 history independent of ref lifetime.
 
+**Run 32877178870 (Task 1 probe run, 2026-08-25T17:19:11Z–17:22:54Z):** the D-09 dedicated
+evaluation branch `eval/codeql-probe` was pushed to `origin` at the current tree (commit
+`04328647`, the tip after wave 2's merge — plans 18-01 and 18-02 both landed), then
+`codeql.yml` was dispatched via `gh workflow run codeql.yml --ref eval/codeql-probe -f
+scan_probe_fixture=true`, selecting `.github/codeql/codeql-config-probe.yml` (fixture included
+in scope). Watched to completion via `gh run watch 32877178870 --exit-status`, conclusion
+`success`, job wall-clock **3m43s (223s)**.
+
+**A duplicate run was cancelled by the workflow's own concurrency group, exactly as designed.**
+Pushing `eval/codeql-probe` itself triggered a second, automatic `push`-event run
+(`32877168387`) under the identical concurrency group (`codeql-${{ github.head_ref ||
+github.ref }}`, `cancel-in-progress: true` off `main`) as the immediately-following
+`workflow_dispatch` run. GitHub cancelled the older push-triggered run 24 seconds in
+(`Canceling since a higher priority waiting request for
+codeql-refs/heads/eval/codeql-probe exists`). Per this task's own instruction, a `cancelled`
+conclusion contributes no metrics and is recorded here as cancelled rather than counted; it does
+not appear as a data row in the Run Log table above. This run happened to have been a
+steady-state-config run (no `workflow_dispatch` input, so `scan_probe_fixture` defaulted false)
+— its cancellation is why Task 2 required its own separate `workflow_dispatch` run
+(`32877627856`, see `## Steady-State Exclusion` below) rather than reusing this one.
+
+## Probe Result
+
+Read via `gh api "/repos/DF3NDR/paladin-dev-env/code-scanning/alerts?ref=refs/heads/eval/codeql-probe&tool_name=CodeQL&per_page=100"`
+(HTTP 200) against run `32877178870`. Cross-checked against
+`/repos/DF3NDR/paladin-dev-env/code-scanning/analyses?ref=refs/heads/eval/codeql-probe`: analysis
+id `1670508215`, category `/language:rust`, created `2026-08-25T17:22:27Z` (matching this run's
+window), `results_count: 1`, `rules_count: 27` — the same 27-rule `security-extended` query pack
+as the 18-01 tracer run, so rule selection did not narrow between runs. The alerts endpoint and
+the analyses endpoint's `results_count` agree exactly (1 each), so no page-2 result exists that a
+`per_page=100` single-page read could have missed (T-18-15).
+
+**Coverage established before interpreting the finding count (T-18-11):**
+`scripts/codeql-analysed-files.sh 32877178870` reports `probe_fixture_entries=6` — greater than
+zero. All six of the fixture's own files were directly confirmed present in the extracted
+`src.zip` source set (verified by unzipping the nested archive and filtering for
+`fixtures/codeql-probe`):
+
+```
+fixtures/codeql-probe/src/command_injection.rs
+fixtures/codeql-probe/src/credential.rs
+fixtures/codeql-probe/src/feature_gated.rs
+fixtures/codeql-probe/src/lib.rs
+fixtures/codeql-probe/src/path_traversal.rs
+fixtures/codeql-probe/src/sql_injection.rs
+```
+
+This is "analysed nothing" ruled out directly: the fixture crate's entire five-defect surface
+(plus `lib.rs`) was extracted into CodeQL's database. Against that confirmed six-file extraction,
+the finding count below is genuinely "found nothing," not an artifact of the fixture never having
+been scanned.
+
+| Class | Fixture File | Alert Raised | Rule ID | Severity |
+|---|---|---|---|---|
+| Hardcoded credential (D-08 #1) | `fixtures/codeql-probe/src/credential.rs` | No | — | — |
+| Shell command injection via `sh -c` (D-08 #2) | `fixtures/codeql-probe/src/command_injection.rs` | No | — | — |
+| Path traversal (D-08 #3) | `fixtures/codeql-probe/src/path_traversal.rs` | No | — | — |
+| SQL injection (D-08 #4) | `fixtures/codeql-probe/src/sql_injection.rs` | No | — | — |
+| Feature-gated command injection, D-12's coverage probe | `fixtures/codeql-probe/src/feature_gated.rs` | No | — | — |
+
+**Zero alerts were raised for all five planted classes.** The run's single reported alert
+(`results_count: 1`) is alert #28 (`rust/hard-coded-cryptographic-value`,
+`src/core/platform/manager/user_service.rs`) — the same genuine first-party finding the 18-01
+tracer run first surfaced, at a path entirely outside `fixtures/codeql-probe/`. It is not a probe
+finding and is excluded from the table above and from every count in this section. No other
+mechanism was needed to separate the two: the alerts endpoint returned exactly one alert total,
+and its location path does not match any fixture file, so there was nothing to filter out beyond
+confirming that one path directly.
+
+## Baseline Comparison
+
+**CodeQL's probe result: 0 findings across all five planted classes**, against confirmed coverage
+of all 6 fixture files (extraction proven directly, see above) and 27 executed `security-extended`
+Rust rules (per this run's own `rules_count: 27`).
+
+**Recorded Snyk baseline** (`.github/instructions/security.instructions.md`, "Snyk was evaluated
+and removed"): Snyk Code returned **0 findings** against the identical four-class Rust fixture
+(hardcoded credential, `sh -c` command injection, path traversal, SQL injection), and **3
+findings** (HIGH/MEDIUM/LOW) against the same four classes ported to JavaScript — proving the
+scanner and credentials worked and the Rust analysis specifically did not.
+
+**Comparison, stated plainly:** CodeQL's raw finding count on this Rust probe (0) is numerically
+**equal** to Snyk's raw finding count on the same four classes (0). Both scanners report zero
+Rust findings. But the two zeros rest on different evidence. Snyk's 0 was shown by its own
+JavaScript control to mean "this scanner carries no meaningful Rust rule coverage," not "this
+scanner analysed the code and found it clean" — Snyk Code ingests `.rs` files but applies no
+Rust-specific taint rules to them. CodeQL's 0 here is accompanied by direct, independent proof
+of both extraction (all 6 fixture files confirmed present in the analysed source set) and rule
+execution against this exact tree (27 Rust `security-extended` rules ran against this checkout,
+and this very same run's SARIF surfaced a genuine, unrelated first-party finding — alert #28,
+`rust/hard-coded-cryptographic-value` — proving the credential-detection rule class fires on real
+code in this repository, not only in theory). No JavaScript control exists for CodeQL — it is a
+genuine multi-language SAST product, not a single-purpose probe target the way the Snyk
+evaluation was — so the "equal-or-better" judgment here rests on coverage evidence rather than a
+cross-language control the way Snyk's did.
+
+On raw count alone, this result is **equal** to Snyk (0 = 0). On coverage evidence, it is
+**better**: proven extraction and proven rule execution stand behind CodeQL's zero, where no such
+evidence was ever established for Snyk's zero on this repository. Per D-11, **this coverage
+distinction does not exempt the tool from the disqualifying threshold** — a zero-finding result
+across all four (here, five) planted classes disqualifies CodeQL regardless of how well-evidenced
+the zero is. The coverage evidence explains why this particular zero can be trusted as a genuine
+"found nothing" rather than a mechanism failure; it does not change what D-11 says a genuine zero
+means for adoption.
+
 ## Analysis Coverage
+
+### Probe Run Coverage (32877178870, Task 1)
+
+`scripts/codeql-analysed-files.sh 32877178870` output, verbatim:
+
+```
+run_id=32877178870
+analysed_rs_files=385
+denominator=385
+difference=0
+probe_fixture_entries=6
+feature_gated_present=src/infrastructure/web/mod.rs:yes
+feature_gated_present=src/application/cli/commands/agent.rs:yes
+feature_gated_present=crates/paladin-web/src/lib.rs:yes
+src_zip_total_rs_entries=3440
+src_zip_checkout_rs_entries=563
+src_zip_toolchain_stdlib_rs_entries=2874
+src_zip_other_vendored_rs_entries=3
+```
+
+**385 of 385 — the denominator-scoped count is unchanged from the 18-01 tracer run.** `difference=0`.
+The fixture's own files (`fixtures/codeql-probe/**`) are outside the `crates/**/*.rs` and root
+`src/**/*.rs` globs that define the 385 denominator by design, so they do not inflate
+`analysed_rs_files` — `probe_fixture_entries=6` is reported as its own separate field for exactly
+this reason (D-13's "neither number is mistaken for the other").
+
+**D-12's two-signal answer, this time from both the first-party paths and the probe fixture
+itself:**
+
+- **Signal 1 (first-party feature-gated file reach, reconfirmed):** all three
+  `feature_gated_present` lines report `yes` on this run too
+  (`src/infrastructure/web/mod.rs`, `src/application/cli/commands/agent.rs`,
+  `crates/paladin-web/src/lib.rs`) — identical to the 18-01 tracer run's result. Buildless
+  extraction reaches feature-gated first-party code regardless of which cargo features are
+  active at scan time, reconfirmed on a second, independent run.
+- **Signal 2 (the probe fixture's own fifth defect):** `fixtures/codeql-probe/src/feature_gated.rs`
+  — gated behind the non-default `probe-feature-gated` cargo feature, never enabled anywhere in
+  this run — is directly confirmed present in the extracted source set (one of the 6
+  `probe_fixture_entries`, listed by name in `## Probe Result` above). Extraction reached it
+  exactly as it reached its four unconditional siblings in the same crate.
+
+**Both signals agree in the qualifying direction on the narrow, mechanistically-grounded question
+D-12 actually asks** — does buildless extraction reach code gated behind a non-default cargo
+feature at all — and no disagreement is recorded, because none exists: extraction reach is
+independently confirmed by both the first-party paths (Signal 1) and the probe fixture's own
+gated file (Signal 2). The *report status* half of Signal 2 (does the planted defect inside that
+gated file actually get flagged) is uninformative on its own here, because this run's finding
+count is 0 for every one of the five planted classes, gated or not — `feature_gated.rs`'s
+non-report cannot be distinguished from `command_injection.rs`'s non-report by report status
+alone. The file-reach evidence (both signals) is what answers D-12; the report-status evidence is
+subsumed by the `## Probe Result` disqualifying finding above and is not treated as a second,
+independent data point for D-12 specifically.
+
+**Cross-check against `codeql database print-baseline` (same check re-attempted on this run):**
+this run's debug artifact logs were checked for a `print-baseline` invocation or
+lines-of-code summary using the same log-file list the 18-01 tracer run checked. None appears
+here either — the absence is consistent across both runs, not a one-off omission, and no
+disagreement is recorded because no second number exists on either run to disagree with the
+`src.zip`-derived count.
+
+### Original Tracer Run Coverage (32868842656, 18-01)
 
 `scripts/codeql-analysed-files.sh 32868842656` output, verbatim:
 
