@@ -195,3 +195,7 @@ None found — this plan's new surface (a standalone fixture crate excluded from
 ---
 *Phase: 18-rust-sast-evaluate-and-adopt-codeql*
 *Completed: 2026-08-25*
+
+## Self-Check: PASSED
+
+All files created in this plan verified present on disk; commits `cebabb2e`, `fc2ae7b5`, and `30d3b79b` verified present in `git log --oneline`. No missing items.
