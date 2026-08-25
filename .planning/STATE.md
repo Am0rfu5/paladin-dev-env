@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 18
-status: milestone-ready
+current_phase_name: rust-sast-evaluate-and-adopt-codeql
+status: executing
 stopped_at: Phase 18 planned — 7 plans verified, execution not started
-last_updated: "2026-08-25T13:37:08.140Z"
-last_activity: 2026-08-24
-last_activity_desc: Milestone v0.8.0 completed and archived
+last_updated: "2026-08-25T13:59:28.610Z"
+last_activity: 2026-08-25
+last_activity_desc: Phase 18 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 7
   completed_plans: 0
-current_phase_name: null
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** v0.9.0 Security Tooling — Phase 18 (Rust SAST: evaluate and adopt CodeQL),
+**Current focus:** Phase 18 — rust-sast-evaluate-and-adopt-codeql
 not yet discussed or planned.
 
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 18 — Rust SAST: Evaluate and Adopt CodeQL (not started)
-Plan: None — run `/gsd-discuss-phase 18`, then `/gsd-plan-phase 18`
-Status: v0.9.0 Security Tooling open; v0.8.0 closed and archived 2026-08-24
-Last activity: 2026-08-24 — Milestone v0.8.0 completed and archived
+Phase: 18 (rust-sast-evaluate-and-adopt-codeql) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 18
+Last activity: 2026-08-25 — Phase 18 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
