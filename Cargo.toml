@@ -1,5 +1,12 @@
 [workspace]
 members = [".", "crates/*"]
+# fixtures/codeql-probe is a deliberately-vulnerable CodeQL SAST evaluation
+# fixture (Phase 18, D-07). It lives outside crates/ so the crates/* glob
+# above cannot auto-include it, and carries its own [workspace] table so
+# Cargo treats it as an independent workspace root; this exclude entry is
+# defence in depth on top of both, keeping the fixture out of every
+# workspace build, lint and coverage run.
+exclude = ["fixtures/codeql-probe"]
 resolver = "2"
 
 [workspace.dependencies]
