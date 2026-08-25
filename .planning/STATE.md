@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
-current_phase: 18
-current_phase_name: rust-sast-evaluate-and-adopt-codeql
-status: executing
+current_phase: 19
+current_phase_name: crates.io Trusted Publishing — Replace the Long-Lived Registry Token
+status: planning
 stopped_at: Phase 18 planned — 7 plans verified, execution not started
-last_updated: "2026-08-25T13:59:28.610Z"
+last_updated: "2026-08-25T23:09:22.679Z"
 last_activity: 2026-08-25
-last_activity_desc: Phase 18 execution started
+last_activity_desc: Phase 18 complete, transitioned to Phase 19
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 7
-  completed_plans: 0
+  completed_plans: 7
 ---
 
 # Project State
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 18 (rust-sast-evaluate-and-adopt-codeql) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 18
-Last activity: 2026-08-25 — Phase 18 execution started
+Phase: 19 — crates.io Trusted Publishing — Replace the Long-Lived Registry Token
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-25 — Phase 18 complete, transitioned to Phase 19
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -57,7 +57,7 @@ valid outcome, not a failure.
 
 **Velocity:**
 
-- Total plans completed: 162
+- Total plans completed: 169
 - Average duration: —
 - Total execution time: —
 
@@ -80,6 +80,7 @@ valid outcome, not a failure.
 | 15 | 10 | - | - |
 | 17 | 22 | - | - |
 | 16 | 14 | - | - |
+| 18 | 7 | - | - |
 
 *Updated after each plan completion*
 

@@ -178,7 +178,7 @@ Phase artifacts: `milestones/v0.8.0-phases/`
 
 **Security Tooling** — forward work opened by the v0.8.0 milestone audit (added 2026-08-24)
 
-- [ ] **Phase 18: Rust SAST — Evaluate and Adopt CodeQL** - Prove a Rust-capable SAST actually analyses this tree before adopting it, then wire it as a non-blocking scan and only afterwards as a required check
+- [x] **Phase 18: Rust SAST — Evaluate and Adopt CodeQL** - Prove a Rust-capable SAST actually analyses this tree before adopting it, then wire it as a non-blocking scan and only afterwards as a required check (completed 2026-08-25)
 - [ ] **Phase 19: crates.io Trusted Publishing — Replace the Long-Lived Registry Token** - Exchange the standing `CARGO_REGISTRY_TOKEN` secret for OIDC-issued ephemeral publish tokens, prove the new path works before revoking the old credential, and record the per-crate trust configuration the eleven-crate workspace needs
 - [ ] **Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate** - Make a re-run on the same tag the supported way to finish a half-published release, refuse to publish until tag, manifest versions, changelogs and the tagged commit's CI conclusion agree, and write the stuck-halfway runbook including a yank policy
 - [ ] **Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables** - Build the release body from the curated `CHANGELOG.md` section instead of a commit log, and make the attached distributables real: binaries that actually compile under the features their targets require, an image bound to the release by digest, and verifiable checksums
@@ -351,7 +351,7 @@ Plans:
 | 15.1 Git & CI Governance (INSERTED) | v0.8.0 | 10/10 | ✅ Complete | 2026-08-14 |
 | 16. Documentation Currency & the Architecture Gap | v0.8.0 | 14/14 | ✅ Complete | 2026-08-24 |
 | 17. Additional LLM Provider Adapters | v0.8.0 | 22/22 | ✅ Complete | 2026-08-23 |
-| 18. Rust SAST — Evaluate and Adopt CodeQL | v0.9.0 | 0/TBD | Not started | — |
+| 18. Rust SAST — Evaluate and Adopt CodeQL | v0.9.0 | 7/7 | Complete    | 2026-08-25 |
 | 19. crates.io Trusted Publishing | v0.9.0 | 0/TBD | Not started | — |
 | 20. Release Pipeline Recovery | v0.9.0 | 0/TBD | Not started | — |
 | 21. Release Artifacts | v0.9.0 | 0/TBD | Not started | — |

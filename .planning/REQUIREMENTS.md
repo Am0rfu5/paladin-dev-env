@@ -28,7 +28,7 @@ from Phase 15.1 carrying `Requirements: TBD` into execution and settling it retr
 
 ### Rust static analysis (SAST)
 
-- [ ] **SAST-01**: A candidate Rust SAST is **measured against a deliberate-vulnerability probe on
+- [x] **SAST-01**: A candidate Rust SAST is **measured against a deliberate-vulnerability probe on
       this tree before any adoption decision**, and the finding count is recorded either way.
       The probe is the one that disqualified Snyk, reused verbatim so the results are comparable: a
       Rust fixture carrying a hardcoded credential, command injection via `sh -c`, path traversal
@@ -44,7 +44,7 @@ from Phase 15.1 carrying `Requirements: TBD` into execution and settling it retr
       matching rather than interprocedural taint analysis and is therefore evaluated as a
       complement, not as the primary control.
 
-- [ ] **SAST-02**: If a scanner qualifies under SAST-01, it **runs on every pull request and cannot
+- [x] **SAST-02**: If a scanner qualifies under SAST-01, it **runs on every pull request and cannot
       be path-filtered into silence.**
       Its workflow triggers on `pull_request` with no path filter, plus `push` on `main` and a
       schedule. This is a hard constraint rather than a preference: `scripts/check-workflow-triggers.sh`
@@ -57,7 +57,7 @@ from Phase 15.1 carrying `Requirements: TBD` into execution and settling it retr
       into `ci.yml` for OSV results — code scanning is enabled today. Unlike Snyk, no token or
       vendor account is required.
 
-- [ ] **SAST-03**: The scanner **runs non-blocking first, and is promoted on measured behaviour.**
+- [x] **SAST-03**: The scanner **runs non-blocking first, and is promoted on measured behaviour.**
       A recorded observation window reports its false-positive rate and wall-clock cost against
       this tree's real size (385 `.rs` files, ~141,717 lines). Only then may it become a required
       check — and promotion updates all four places the required set is written down in a single
@@ -68,7 +68,7 @@ from Phase 15.1 carrying `Requirements: TBD` into execution and settling it retr
       routinely bypassed — the defect class Phase 12 deleted when it removed the duplicate audit
       job.
 
-- [ ] **SAST-04**: `.github/instructions/security.instructions.md`'s **"Known gap: no Rust SAST"
+- [x] **SAST-04**: `.github/instructions/security.instructions.md`'s **"Known gap: no Rust SAST"
       section is rewritten to match the measured outcome**, stating what the adopted tool does and
       does not cover and what the manual credential-handling review still owns.
       The section is narrowed or replaced by evidence, never deleted to imply coverage the probe
@@ -300,10 +300,10 @@ than during execution.*
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SAST-01 | Phase 18 | Pending |
-| SAST-02 | Phase 18 | Pending |
-| SAST-03 | Phase 18 | Pending |
-| SAST-04 | Phase 18 | Pending |
+| SAST-01 | Phase 18 | Complete |
+| SAST-02 | Phase 18 | Complete |
+| SAST-03 | Phase 18 | Complete |
+| SAST-04 | Phase 18 | Complete |
 | PUB-01 | Phase 19 | Pending |
 | PUB-02 | Phase 19 | Pending |
 | PUB-03 | Phase 19 | Pending |
@@ -325,6 +325,7 @@ than during execution.*
 
 - v0.9.0 requirements: **20 total** (4 Security Tooling, Phase 18; 5 Publishing Auth, Phase 19;
   5 Publish Operations, Phase 20; 6 Release Artifacts, Phase 21)
+
 - Mapped to phases: 20
 - Unmapped: 0 ✓
 - Duplicated across phases: 0 ✓
