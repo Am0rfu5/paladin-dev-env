@@ -234,7 +234,7 @@ Plans:
 - [x] 18-04-PLAN.md — Governed alert-dismissal register plus its offline guard, regression harness and required-check wiring
 - [x] 18-05-PLAN.md — Observation window: historical backfill via disposable push branches, live advisory period, and the full metric block
 - [x] 18-06-PLAN.md — Correct the ruleset re-application procedure, then promote across all four recorded places or record the hold with its trigger condition
-- [ ] 18-07-PLAN.md — SAST-04 close: rewrite the Rust-SAST section to the measured outcome and propagate the verdict everywhere it is asserted
+- [x] 18-07-PLAN.md — SAST-04 close: rewrite the Rust-SAST section to the measured outcome and propagate the verdict everywhere it is asserted
 
 ### Phase 19: crates.io Trusted Publishing — Replace the Long-Lived Registry Token
 
