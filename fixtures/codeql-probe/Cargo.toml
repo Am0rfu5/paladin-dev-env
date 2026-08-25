@@ -1,0 +1,42 @@
+# Deliberately-vulnerable CodeQL evaluation fixture (Phase 18, D-07..D-11).
+#
+# This crate exists ONLY to measure whether CodeQL's Rust SAST finds four
+# vulnerability classes reused verbatim from the Snyk evaluation methodology
+# (see .github/instructions/security.instructions.md, "Snyk was evaluated and
+# removed"), plus a fifth planted behind a non-default cargo feature (D-12).
+#
+# It must NEVER be referenced from real code, published, or treated as a
+# workspace member:
+#   - It lives outside `crates/`, so the root manifest's `crates/*` glob
+#     cannot auto-include it (RESEARCH.md Pitfall 2).
+#   - The root `Cargo.toml`'s `[workspace]` table also carries an explicit
+#     `exclude = ["fixtures/codeql-probe"]` entry as defence in depth.
+#   - This manifest declares its own empty `[workspace]` table so Cargo
+#     treats this directory as an independent workspace root rather than
+#     walking up to the repository root.
+#   - `publish = false` below prevents `cargo publish` from ever shipping it.
+[package]
+name = "paladin-codeql-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "CodeQL Rust SAST evaluation fixture — deliberately vulnerable, never built into the workspace"
+
+# Empty workspace table: this directory is its own workspace root, isolated
+# from the repository root's [workspace] table (Cargo reference:
+# https://doc.rust-lang.org/cargo/reference/workspaces.html).
+[workspace]
+
+[features]
+default = []
+# D-12's empirical probe: a fifth defect gated behind a non-default feature,
+# so whether buildless CodeQL extraction reaches feature-gated code is a
+# measured result rather than an assumption. See src/feature_gated.rs.
+probe-feature-gated = []
+
+[dependencies]
+# Same crate, version line and backend the root workspace manifest already
+# declares (workspace.dependencies.sqlx in the repository root Cargo.toml) —
+# no new, unaudited package name enters the tree, and CodeQL gets a SQL sink
+# it actually models (src/sql_injection.rs).
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite"] }

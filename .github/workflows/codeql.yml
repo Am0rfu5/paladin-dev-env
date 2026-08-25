@@ -48,7 +48,19 @@ on:
     branches: [ main, 'release/**' ]
   schedule:
     - cron: '0 7 * * 3'  # weekly, Wednesday 07:00 UTC — offset from benchmarks.yml's Monday 06:00 UTC slot
-  workflow_dispatch: {}
+  # `scan_probe_fixture` (Phase 18 plan 18-02, D-09/D-11) selects between the
+  # two committed CodeQL configs below: false (the default, used by every
+  # push/pull_request/schedule run) selects the steady-state config that
+  # excludes fixtures/codeql-probe/ from analysis scope; true — an explicit,
+  # on-demand dispatch choice only — selects the probe config that includes
+  # it, so the deliberately vulnerable fixture's finding count can be read
+  # off a run without it ever emitting standing alerts on a normal PR.
+  workflow_dispatch:
+    inputs:
+      scan_probe_fixture:
+        description: 'Include fixtures/codeql-probe/ in analysis scope (probe-mode config)'
+        type: boolean
+        default: false
 
 concurrency:
   # Same shape as ci.yml's group (see that file's comment for the full
@@ -93,6 +105,13 @@ jobs:
       # evidence (D-13) — the mechanism that distinguishes "analysed 0 files"
       # from "found 0 issues", which is precisely the distinction the Snyk
       # evaluation blurred.
+      #
+      # `config-file` selects between the two committed configs (18-02,
+      # D-09/D-11): the probe config (fixtures/codeql-probe/ included in
+      # scope) only when this run was an explicit workflow_dispatch with
+      # `scan_probe_fixture: true`; the steady-state config (fixture
+      # excluded) for every other trigger and for the default dispatch
+      # input value.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -100,6 +119,7 @@ jobs:
           build-mode: none
           queries: security-extended
           debug: true
+          config-file: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.scan_probe_fixture == 'true') && './.github/codeql/codeql-config-probe.yml' || './.github/codeql/codeql-config.yml' }}
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
