@@ -1190,3 +1190,45 @@ this plan's closing disposition.** `codeql.yml` runs on every push/PR/schedule a
 surface findings (the credential class, and any future rule improvements) in the code-scanning
 UI, but never blocks a merge. Revisit only on a CodeQL/`rust-queries` version upgrade, per the
 version-scoping stated in `## Verdict`.
+
+## Observation Window
+
+### Not Applicable — Promotion Not Pursued
+
+The D-14/D-15 observation-window measurement — a backfill table over sampled historical commits,
+a live advisory period over this phase's own pull requests, and the complete D-15 metric block
+(false-positive rate, cold/warm-cache wall-clock, analysed-file coverage) — is **NOT APPLICABLE**
+and was **not performed**.
+
+**Why.** `18-05-PLAN.md`'s Task 1 carries an explicit precondition: `18-CODEQL-EVIDENCE.md`'s
+`## Verdict` section must record `qualified` or `qualified-with-coverage-gap` before the backfill
+work begins. The `## Verdict` section above records the opposite: **`disqualified`
+(version-scoped: CodeQL `2.26.3` / `rust-queries` `0.1.40`)**, with `codeql.yml` retained
+advisory-only and explicitly **not** promoted to a required check (see `## Verdict` and
+`## Promotion Status` above). The precondition is unmet, and it is unmet by the settled outcome
+of the evaluation this phase exists to perform — not by an oversight or a blocked prerequisite
+that could be satisfied by re-running something.
+
+This plan's entire purpose was to produce the noise and latency numbers a *required check* would
+be pinned on before promotion — its own objective states "SAST-03 forbids promoting an unmeasured
+scanner; the promotion in 18-06 reads only what this plan records." With SAST-01 disqualified and
+`18-06`'s promotion path not taken (per `## Verdict`'s "Downstream note for plan 18-06"), there is
+no required check to baseline. Measuring backfill noise and CI wall-clock cost for a check that
+will never gate a merge would produce numbers nobody reads and that inform no decision — the
+measurement is moot, not merely postponed.
+
+**What was not done, explicitly.** No historical commits were sampled or backfilled; no
+`tmp/codeql-backfill-*` branches were pushed or deleted; no live advisory period was recorded; no
+new alerts were triaged beyond the ones already dispositioned in `## Verdict`'s "Alert #28
+correction"; no entries were added to `CODEQL-DISMISSALS.md` under this plan; no `git log`
+sampling command was run. None of Task 1's or Task 2's acceptance criteria were attempted.
+
+**Authorization.** This was decided by the user, not inferred by the executor, at the `18-03`
+verdict checkpoint on 2026-08-25 — the same checkpoint that settled the `disqualified` verdict
+recorded in `## Verdict` above. The instruction was to record this plan as resolved /
+not-applicable rather than to halt on the unmet precondition as a blocking checkpoint, and rather
+than to fabricate or proceed with a measurement that the settled verdict has already made moot.
+
+**Cross-reference.** See `## Verdict` (the disqualification and its version-scoping) and
+`## Promotion Status` ("this is not an interim state pending 18-06 promotion work — it is this
+plan's closing disposition") above for the full basis of this determination.
