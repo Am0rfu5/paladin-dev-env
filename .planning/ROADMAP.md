@@ -221,11 +221,17 @@ milestone.*
 
   6. **Nothing in this phase makes a green result mean less than it says.** If the scan is advisory, it is described as advisory. If it gates, it gates. No `continue-on-error` step is left reporting success on a job that did not run, and no documentation claims automated coverage the probe in criterion 1 did not demonstrate.
 
-**Plans**: TBD — run `/gsd-discuss-phase 18` then `/gsd-plan-phase 18`
+**Plans**: 7 plans
 
 Plans:
 
-- [ ] TBD (run `/gsd-plan-phase 18` to break down)
+- [ ] 18-01-PLAN.md — Tracer: wire CodeQL end-to-end (workflow + trigger-policy row in one commit), the analysed-file evidence script, and the evidence document with its promotion threshold written before any measurement
+- [ ] 18-02-PLAN.md — The workspace-excluded probe fixture: four planted defect classes in the recorded order, a fifth behind a non-default cargo feature, and the probe/steady-state scan split
+- [ ] 18-03-PLAN.md — Run the probe, record the per-class result beside the coverage evidence, and settle the SAST-01 verdict
+- [ ] 18-04-PLAN.md — Governed alert-dismissal register plus its offline guard, regression harness and required-check wiring
+- [ ] 18-05-PLAN.md — Observation window: historical backfill via disposable push branches, live advisory period, and the full metric block
+- [ ] 18-06-PLAN.md — Correct the ruleset re-application procedure, then promote across all four recorded places or record the hold with its trigger condition
+- [ ] 18-07-PLAN.md — SAST-04 close: rewrite the Rust-SAST section to the measured outcome and propagate the verdict everywhere it is asserted
 
 ## Progress
 
