@@ -232,7 +232,7 @@ Plans:
 - [x] 18-02-PLAN.md — The workspace-excluded probe fixture: four planted defect classes in the recorded order, a fifth behind a non-default cargo feature, and the probe/steady-state scan split
 - [x] 18-03-PLAN.md — Run the probe, record the per-class result beside the coverage evidence, and settle the SAST-01 verdict
 - [x] 18-04-PLAN.md — Governed alert-dismissal register plus its offline guard, regression harness and required-check wiring
-- [ ] 18-05-PLAN.md — Observation window: historical backfill via disposable push branches, live advisory period, and the full metric block
+- [x] 18-05-PLAN.md — Observation window: historical backfill via disposable push branches, live advisory period, and the full metric block
 - [ ] 18-06-PLAN.md — Correct the ruleset re-application procedure, then promote across all four recorded places or record the hold with its trigger condition
 - [ ] 18-07-PLAN.md — SAST-04 close: rewrite the Rust-SAST section to the measured outcome and propagate the verdict everywhere it is asserted
 
