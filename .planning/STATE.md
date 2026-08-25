@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
+current_phase: 18
 status: milestone-ready
-stopped_at: null
-last_updated: "2026-08-24T23:44:35.806Z"
+stopped_at: Phase 18 planned — 7 plans verified, execution not started
+last_updated: "2026-08-25T13:37:08.140Z"
 last_activity: 2026-08-24
 last_activity_desc: Milestone v0.8.0 completed and archived
 progress:
-  total_phases: 1
+  total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 7
   completed_plans: 0
-current_phase: null
 current_phase_name: null
 ---
 
@@ -678,6 +678,9 @@ requirement.
 - Phase 15.1 inserted after Phase 15: Git & CI Governance — branch protection, trigger surface, gitflow model, docs/BRANCH_PROTECTION.md (URGENT)
 - Phase 17 added: Additional LLM Provider Adapters — provider-selection study (PROV-01) then feature-gated adapters for survivors (PROV-02..04); first forward phase beyond the ingest
 - Phase 18 added: Rust SAST: evaluate and adopt CodeQL — new Security Tooling milestone; SAST-01..04 minted at roadmap time
+- Phase 19 added: crates.io Trusted Publishing — replace the long-lived CARGO_REGISTRY_TOKEN with OIDC-issued ephemeral tokens; PUB-01..PUB-05 minted at roadmap time
+- Phase 20 added: Release Pipeline Recovery — idempotent re-runs on the same tag, a pre-publish gate over tag/manifest/changelog/CI agreement, and a stuck-halfway runbook with a yank policy; PUBOPS-01..PUBOPS-05 minted at roadmap time
+- Phase 21 added: Release Artifacts — Curated Release Notes and Attached Distributables (v0.9.0; ARTIFACT-01..06 minted, twenty-second prefix)
 
 ## Deferred Items
 
@@ -752,14 +755,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 16 context gathered
+**Stopped at:** Phase 18 planned — 7 plans verified, execution not started
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-24T00:10:48.208Z
-Resume file: .planning/phases/16-documentation-currency-the-architecture-gap/16-CONTEXT.md
+Last session: 2026-08-25T13:37:08.109Z
+Resume file: .planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-01-PLAN.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
