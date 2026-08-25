@@ -9,17 +9,30 @@
 # pipeline weekly, including the hour-plus multi-architecture Docker build
 # (D-03, see ci.yml and benchmarks.yml's own comments on the same point).
 #
-# Advisory posture: this job is NOT YET pinned as a required check in any
-# ruleset. It genuinely fails when the scan fails — no error-suppressing
-# step flag anywhere in this file — and non-blocking is achieved purely by
-# the context not being in the ruleset yet (D-06). This deliberately inverts
-# the `osv-scanner` job in ci.yml, which stacks an error-suppressing flag on
-# both the scan and the SARIF upload step; that pattern would let a failed
-# or skipped analysis report success, which is exactly what SAST-01..04
-# exist to rule out. Promotion to a required check (SAST-03) happens later,
-# once a measured observation window qualifies, and touches four coordinated
-# places at once — this file's job name is one of them, so treat the job
-# `name:` below as a contract.
+# Advisory posture, settled 2026-08-25 (Phase 18, SAST-01/SAST-04): this job
+# is DELIBERATELY, PERMANENTLY-FOR-NOW not pinned as a required check in any
+# ruleset — not a "not yet" waiting on a pending observation window. CodeQL
+# was measured against a deliberate-vulnerability probe (four independent
+# runs; see .planning/phases/18-rust-sast-evaluate-and-adopt-codeql/
+# 18-CODEQL-EVIDENCE.md) and DISQUALIFIED as a required-check-grade Rust SAST
+# at this version (CodeQL 2.26.3 / rust-queries 0.1.40): SQL injection, path
+# traversal and regex injection built from a `reqwest` remote source never
+# fired, under any tested condition. It stays wired and advisory anyway,
+# because it genuinely fails when the scan fails — no error-suppressing step
+# flag anywhere in this file, and non-blocking is achieved purely by the
+# context not being pinned in a ruleset (D-06) — it still catches the one
+# class it does detect reliably (rust/hard-coded-cryptographic-value) and
+# benefits automatically from any future rust-queries improvement, at zero
+# merge-gate risk. This deliberately inverts the `osv-scanner` job in
+# ci.yml, which stacks an error-suppressing flag on both the scan and the
+# SARIF upload step; that pattern would let a failed or skipped analysis
+# report success, which is exactly what SAST-01..04 exist to rule out.
+# Re-promotion to a required check (SAST-03) is not scheduled work — it is
+# gated on a future CodeQL/rust-queries release closing the measured
+# detection gap (revisit 2027-02-25 or sooner on a qualifying changelog
+# entry; owner Am0rfu5) — and would touch four coordinated places at once —
+# this file's job name is one of them, so treat the job `name:` below as a
+# contract regardless.
 #
 # `push: branches: ['**']` matches every branch, same as ci.yml and for the
 # same reason: SAST-02/PROJECT.md ask for "push on main", but

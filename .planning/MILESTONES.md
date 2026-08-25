@@ -55,8 +55,15 @@ shipped as six new LLM provider adapters.
 
 ### Known Gaps
 
-- **No Rust SAST.** `cargo-audit`/`cargo-deny` scan dependencies; clippy is a lint. Owned by
-  Phase 18 (`SAST-01`…`SAST-04`), v0.9.0.
+- **No merge-gating Rust SAST — settled by Phase 18, 2026-08-25.** CodeQL was measured and
+  disqualified as a required-check-grade Rust SAST (version-scoped: CodeQL `2.26.3` /
+  `rust-queries` `0.1.40` — 3 of 4 rule-aligned, source-wired classes never fired across four
+  independent measurements; `385/385` file coverage held on every run). `.github/workflows/codeql.yml`
+  is retained advisory-only, not promoted to a required check. `cargo-audit`/`cargo-deny` scan
+  dependencies; clippy is a lint; the manual credential-handling review remains the primary
+  control. Open item — owner Am0rfu5, revisit 2027-02-25 or on a qualifying CodeQL/`rust-queries`
+  release, whichever is first. See
+  `.planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-CODEQL-EVIDENCE.md`.
 - **Local coverage reproduction unverified.** CI's 82.39% is confirmed (run `31727496744`); the
   documented local procedure has never been walked on a Docker-capable machine. Owner: repo
   maintainer.

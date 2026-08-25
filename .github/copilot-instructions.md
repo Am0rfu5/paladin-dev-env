@@ -544,8 +544,11 @@ make clean-code        # Format, lint, check
 ```
 
 Run `make security` and `cargo clippy -- -D warnings` on first-party code, and follow the manual
-credential-handling review in `.github/instructions/security.instructions.md`. Snyk was evaluated
-and removed (no Rust coverage) — do not reintroduce it.
+credential-handling review in `.github/instructions/security.instructions.md`. `codeql.yml` runs
+Rust static analysis **advisory-only** — CodeQL was evaluated and disqualified as a
+required-check-grade Rust SAST at CodeQL `2.26.3` (2026-08-25); it does not gate a merge, and the
+manual credential-handling review stays the primary control. Snyk was evaluated and removed (no
+Rust coverage) — do not reintroduce it.
 
 # Task List Management (Rust)
 
