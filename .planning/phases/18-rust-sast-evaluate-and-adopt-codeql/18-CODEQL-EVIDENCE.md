@@ -718,6 +718,99 @@ qualification, are **not decided here**. Wall-clock (181s) and analysed-file cov
 (385/385, 100%) both comfortably clear their carried-over ceilings and are not disqualifying on
 their own.
 
+## Diagnostic Iteration (pre-registered)
+
+*Pre-registered 2026-08-25T19:20:57Z, before the diagnostic fixture variant exists and before
+any dispatch — same T-18-13 discipline as the original `## Promotion Criteria` and the
+`## Re-Probe Criteria` above. The user, at the second checkpoint, authorized exactly one more
+diagnostic iteration to isolate why 3 of 4 scoreable classes missed on the redesigned fixture
+(`## Re-Probe Result`), then a final verdict — not an open-ended retry loop.*
+
+### Orchestrator-verified tool-side facts (not re-derived here, cited as given)
+
+For path traversal and regex injection specifically, the source, propagation and sink models
+are all confirmed present at the deployed CodeQL CLI version (`v2.26.3`):
+`blocking::get`'s `Ok` return field and `blocking::Response::text`'s summary as sources;
+`Path::join`'s taint summary (`stdlib/fs.model.yml` lines 64-65) as propagation;
+`std::fs::read_to_string Argument[0]` (`path-injection` sink) and
+`<regex::regex::string::Regex>::new` (`NewSink`) as sinks. **Both misses are therefore
+tool-side, with an undiagnosed cause** — not a missing model, which rules out the simplest
+explanation and motivates this diagnostic.
+
+### Two single-cause hypotheses, pre-stated before this run
+
+Two hypotheses each fully explain the observed 1/4 pattern from `## Re-Probe Result` on their
+own:
+
+- **(a) Taint does not survive the `?` operator.** All three missing classes (SQL injection,
+  path traversal, regex injection) unwrap `Result`s via `?` on the taint path
+  (`reqwest::blocking::get(lookup_url)?.text()?`, and again on the sink call). CodeQL's own
+  passing upstream tests for these queries use `.unwrap()` / `.unwrap_or(...)` instead. The one
+  class that *did* fire (hardcoded credential) involves no `Result`/`?` at all on its taint
+  path.
+- **(b) External-crate call resolution fails inside this nested, workspace-excluded crate.**
+  All three misses need a `reqwest`/`sqlx`/`regex` canonical path resolved by CodeQL's Rust
+  extractor to match the model library's qualified names; the one firing class needs only a
+  local, same-crate function call, no external-crate resolution at all.
+
+The diagnosed `format!`-macro-expansion failure (`sql_injection.rs:29`, 889× checkout-wide,
+recorded in `## Re-Probe Result`) is treated as an **additional, compounding defect specific to
+the SQL class only** — it does not explain path traversal's or regex injection's misses, which
+involve no `format!` call.
+
+### What changes in this diagnostic variant
+
+The three missing classes, plus the feature-gated variant (which mirrors SQL injection), are
+rewritten to match CodeQL's own upstream test idioms **exactly**, isolating hypothesis (a) as
+the single changed variable per class:
+
+- Every `?` on the taint path is replaced with `.unwrap()` (on `reqwest::blocking::get(...)`)
+  and `.unwrap_or_default()` (on `.text()`) — matching the unwrap/unwrap_or shape CodeQL's own
+  passing tests use, rather than early-return error propagation.
+- **`sql_injection.rs` additionally replaces `format!` with string concatenation**
+  (`String::from("SELECT id, name FROM users WHERE name = '") + &untrusted + "'"` — the
+  `unsafe_query_3` shape from CodeQL's own upstream sqlx test), so the SQL class isolates the
+  `?`-operator variable from the already-diagnosed `format!`-macro-expansion defect. If SQL
+  injection still misses on this variant, the miss cannot be blamed on `format!` — it must be
+  hypothesis (a), (b), or both.
+- `path_traversal.rs` and `regex_injection.rs` keep their existing (non-`format!`) sink shapes;
+  only the `?` unwrapping changes.
+- `feature_gated.rs` mirrors the new SQL-injection shape (concatenation + unwrap), unchanged in
+  its feature-gating.
+
+### Interpretation, pre-stated before any number exists
+
+- **A class flips from missing to firing** → implicates hypothesis (a) for that class (taint
+  broke on `?`-style error handling), and for SQL specifically also confirms the `format!`
+  defect as compounding rather than solely causal (since removing it, alongside removing `?`,
+  is what let it fire).
+- **A class still misses on this variant** → implicates hypothesis (b) (external-crate
+  resolution) or a deeper, still-undiagnosed extraction failure — `?` is no longer a live
+  explanation for that class once removed.
+- **No fixture-surgery beyond this single change-set is authorized.** If a class still misses,
+  the debug-artifact logs are grepped for unresolved-path / type-inference / semantic-analyzer
+  warnings naming the fixture files or `reqwest`/`sqlx`/`regex` resolution, and whatever is
+  found is recorded as (b)-hypothesis evidence — not chased with a further fixture rewrite or a
+  workspace-membership variant. One iteration, then the final checkpoint.
+
+### Scoring, pre-registered: this run's table supersedes, both are recorded
+
+**The diagnostic run's per-class results supersede the second probe's (`## Re-Probe Result`)
+for scoring against the `## Re-Probe Criteria` thresholds** (unchanged: fewer than 2 of 4
+scoreable classes alerting is disqualifying, 3 or more is qualifying, 0 is a hard
+disqualifier) — because the unwrap/unwrap_or idiom is realistic vulnerable Rust (not a
+contrivance) and matches CodeQL's own test corpus shape more closely than the `?`-based
+redesign did. **Both runs' per-class tables are kept side by side in the record; the earlier
+table is not deleted or overwritten.**
+
+**If the diagnostic qualifies on unwrap-shapes, the `?`-operator sensitivity discovered here is
+recorded as a first-class false-negative limitation, not silently absorbed into a passing
+score.** The `?` operator is the dominant Rust error-handling idiom in real code — including
+this codebase's own production paths — so a scanner that only detects taint through
+`.unwrap()`/`.unwrap_or(...)` chains has a materially narrower real-world detection surface
+than a qualifying score alone would suggest. This limitation is carried forward to the final
+checkpoint for the user to weigh explicitly, regardless of which way the literal score lands.
+
 ## Promotion Status
 
 advisory — context not pinned in any ruleset

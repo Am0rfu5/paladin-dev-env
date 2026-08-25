@@ -26,25 +26,38 @@
 //! It is excluded from the workspace build graph (see this crate's `Cargo.toml` header
 //! comment) and MUST NEVER be referenced from real code, published, or depended on by
 //! any workspace crate.
+//!
+//! **DIAGNOSTIC VARIANT 2026-08-25 (18-03 continuation, second checkpoint).** The
+//! rule-aligned redesign above fired on only 1 of 4 scoreable classes
+//! (`## Re-Probe Result`). `sql_injection.rs`, `path_traversal.rs`, `regex_injection.rs`
+//! and `feature_gated.rs` were further rewritten to replace every `?`-operator taint-path
+//! unwrap with `.unwrap()`/`.unwrap_or_default()`, matching CodeQL's own upstream test
+//! idiom, isolating the `?`-operator hypothesis pre-registered in
+//! `## Diagnostic Iteration (pre-registered)`. `sql_injection.rs` and `feature_gated.rs`
+//! additionally replace `format!` with string concatenation, isolating that class from
+//! the separately-diagnosed `format!`-macro-expansion defect. `credential.rs` and
+//! `command_injection.rs` are unchanged from the redesigned probe.
 #![allow(dead_code)]
 
-/// Class 1: SQL injection. `reqwest` response body -> `format!`-interpolated query
-/// string -> `sqlx::query_as` (the already-modeled sink,
+/// Class 1: SQL injection. `reqwest` response body (unwrapped, not `?`) -> string
+/// concatenation -> `sqlx::query_as` (the already-modeled sink,
 /// `sqlx_core::query_as::query_as, Argument[0]`). Scoreable.
 pub mod sql_injection;
 
-/// Class 2: Path traversal. `reqwest` response body -> `PathBuf::join` ->
-/// `std::fs::read_to_string`. Scoreable.
+/// Class 2: Path traversal. `reqwest` response body (unwrapped, not `?`) ->
+/// `PathBuf::join` -> `std::fs::read_to_string`. Scoreable.
 pub mod path_traversal;
 
 /// Class 3: Hardcoded credential. A string literal `const` passed as the argument to a
 /// local function whose parameter is named `password` — the rule's heuristic sink
-/// (`rust/hard-coded-cryptographic-value`). Scoreable.
+/// (`rust/hard-coded-cryptographic-value`). Scoreable. Unchanged from the redesigned
+/// probe (no `?`/`format!` on its taint path to begin with).
 pub mod credential;
 
-/// Class 4: Regex injection (`rust/regex-injection`). `reqwest` response body ->
-/// `regex::Regex::new(...)`. Replaces one of the original fixture's two untestable
-/// command-injection slots with a rule that actually exists upstream. Scoreable.
+/// Class 4: Regex injection (`rust/regex-injection`). `reqwest` response body
+/// (unwrapped, not `?`) -> `regex::Regex::new(...)`. Replaces one of the original
+/// fixture's two untestable command-injection slots with a rule that actually exists
+/// upstream. Scoreable.
 pub mod regex_injection;
 
 /// Known-gap class, kept but NOT scored: shell command injection via `sh -c`. No CWE-078
