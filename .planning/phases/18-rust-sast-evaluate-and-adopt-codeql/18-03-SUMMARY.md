@@ -211,3 +211,14 @@ None found beyond what this phase's own `<threat_model>` already registered (T-1
 ---
 *Phase: 18-rust-sast-evaluate-and-adopt-codeql*
 *Completed: 2026-08-25*
+
+## Self-Check: PASSED
+
+- `18-03-SUMMARY.md` verified present on disk at
+  `.planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-03-SUMMARY.md`.
+- All 11 commits verified present via `git log --oneline 04328647..HEAD`: `9dbea4df`,
+  `c65f2346`, `c08d3b4f`, `f9bc44cb`, `b3b53a03`, `c7e3bc84`, `5fb5b76a`, `d27d4c33`,
+  `ccdefde7`, `cb3d85f9`, `ad2e5c58`.
+- `git diff --stat 04328647 HEAD -- ':!.planning' ':!fixtures/codeql-probe'` re-confirmed
+  empty — no `src/` or other workspace changes anywhere in this plan's mergeable history.
+- No missing items.
