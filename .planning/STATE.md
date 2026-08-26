@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 19
-current_phase_name: crates.io Trusted Publishing — Replace the Long-Lived Registry Token
+current_phase_name: crates-io-trusted-publishing-replace-the-long-lived-registry
 status: executing
-stopped_at: Phase 19 context gathered
-last_updated: "2026-08-26T01:48:08.540Z"
-last_activity: 2026-08-25
-last_activity_desc: Phase 18 complete, transitioned to Phase 19
+stopped_at: "Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)"
+last_updated: "2026-08-26T02:10:47.788Z"
+last_activity: 2026-08-26
+last_activity_desc: Phase 19 execution started
 progress:
   total_phases: 4
   completed_phases: 1
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 18 — rust-sast-evaluate-and-adopt-codeql
+**Current focus:** Phase 19 — crates-io-trusted-publishing-replace-the-long-lived-registry
 not yet discussed or planned.
 
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 19 — crates.io Trusted Publishing — Replace the Long-Lived Registry Token
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-25 — Phase 18 complete, transitioned to Phase 19
+Phase: 19 (crates-io-trusted-publishing-replace-the-long-lived-registry) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 19
+Last activity: 2026-08-26 — Phase 19 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -756,14 +756,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 19 context gathered
+**Stopped at:** Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-26T00:54:28.966Z
-Resume file: .planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-CONTEXT.md
+Last session: 2026-08-26T02:10:47.754Z
+Resume file: .planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-PUBLISH-EVIDENCE.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
