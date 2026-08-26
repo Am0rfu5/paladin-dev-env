@@ -4,15 +4,15 @@ milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 19
 current_phase_name: crates.io Trusted Publishing — Replace the Long-Lived Registry Token
-status: planning
+status: executing
 stopped_at: Phase 19 context gathered
-last_updated: "2026-08-26T00:54:29.007Z"
+last_updated: "2026-08-26T01:48:08.540Z"
 last_activity: 2026-08-25
 last_activity_desc: Phase 18 complete, transitioned to Phase 19
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 7
+  total_plans: 12
   completed_plans: 7
 ---
 
@@ -45,7 +45,7 @@ not yet discussed or planned.
 
 Phase: 19 — crates.io Trusted Publishing — Replace the Long-Lived Registry Token
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-08-25 — Phase 18 complete, transitioned to Phase 19
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
