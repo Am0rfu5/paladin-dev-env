@@ -48,6 +48,21 @@ license = "MIT OR Apache-2.0"
 keywords = ["ai", "agents", "orchestration", "llm", "multi-agent"]
 categories = ["development-tools", "asynchronous", "api-bindings"]
 documentation = "https://df3ndr.github.io/paladin-dev-env/"
+# Package allowlist: the facade crate's root is the repo root, so without this
+# `cargo package` swallows the whole repository (docs/ 32M, .planning/, .claude/,
+# ...) and crates.io rejects the upload with 413 Payload Too Large (10 MiB max).
+# tests/, examples/ and benches/ stay listed because the explicit [[test]]/
+# [[example]]/[[bench]] targets below reference files in them.
+include = [
+    "src/**",
+    "tests/**",
+    "examples/**",
+    "benches/**",
+    "migrations/**",
+    "README.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+]
 
 [lib]
 name = "paladin"
