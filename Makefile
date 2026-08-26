@@ -296,7 +296,10 @@ lint-shell: ## Lint shell scripts with shellcheck (matches the pre-commit gate)
 		echo "$(RED)shellcheck not found. Install with 'sudo apt-get install shellcheck' (preinstalled in the devcontainer).$(NC)"; \
 		exit 1; \
 	}
-	@git ls-files -z '*.sh' | xargs -0 shellcheck --severity=warning
+	@# .claude/ is the vendored GSD toolchain (upstream-owned; excluded by the
+	@# pre-commit gate for the same reason) — its *.snippet.sh files are inlined
+	@# fragments with intentionally no shebang, which trips SC2148.
+	@git ls-files -z '*.sh' ':!:.claude/**' | xargs -0 shellcheck --severity=warning
 	@echo "$(GREEN)✅ shellcheck clean$(NC)"
 
 .PHONY: check
