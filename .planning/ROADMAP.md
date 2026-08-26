@@ -262,11 +262,15 @@ Plans:
 
   7. **Nothing in this phase claims a protection it did not establish.** If a crate cannot be linked — for instance one never yet published, which therefore has no crates.io entry to configure trust against — that crate is named, its interim auth path is stated plainly, and it is not described as covered.
 
-**Plans**: TBD — run `/gsd-discuss-phase 19` then `/gsd-plan-phase 19`
+**Plans**: 5 plans
 
 Plans:
 
-- [ ] TBD (run `/gsd-plan-phase 19` to break down)
+- [ ] 19-01-PLAN.md — Reconcile the eleven-crate publish set and bootstrap `paladin-herald` onto the registry (PUB-01)
+- [ ] 19-02-PLAN.md — Rewrite `publish-crates` to mint its credential via OIDC under the `crates-io` environment, and delete the silent-skip branch (PUB-02, PUB-05)
+- [ ] 19-03-PLAN.md — Create eleven trust configurations and prove the OIDC path publishes, before anything is revoked (PUB-03)
+- [ ] 19-04-PLAN.md — Revoke at crates.io, then delete the repository secret, recording both (PUB-04)
+- [ ] 19-05-PLAN.md — Document the trust table, the credential history and the claim boundaries (PUB-05, PUB-01, PUB-04)
 
 ### Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
 
