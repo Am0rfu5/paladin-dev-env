@@ -5,8 +5,8 @@ milestone_name: Security Tooling
 current_phase: 19
 current_phase_name: crates.io Trusted Publishing — Replace the Long-Lived Registry Token
 status: planning
-stopped_at: Phase 18 planned — 7 plans verified, execution not started
-last_updated: "2026-08-25T23:09:22.679Z"
+stopped_at: Phase 19 context gathered
+last_updated: "2026-08-26T00:54:29.007Z"
 last_activity: 2026-08-25
 last_activity_desc: Phase 18 complete, transitioned to Phase 19
 progress:
@@ -756,14 +756,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 18 planned — 7 plans verified, execution not started
+**Stopped at:** Phase 19 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-25T13:37:08.109Z
-Resume file: .planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-01-PLAN.md
+Last session: 2026-08-26T00:54:28.966Z
+Resume file: .planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
