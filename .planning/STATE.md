@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
-status: milestone-ready
-stopped_at: null
-last_updated: "2026-08-24T23:44:35.806Z"
-last_activity: 2026-08-24
-last_activity_desc: Milestone v0.8.0 completed and archived
+current_phase: 19
+current_phase_name: crates-io-trusted-publishing-replace-the-long-lived-registry
+status: executing
+stopped_at: "Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)"
+last_updated: "2026-08-26T02:10:47.788Z"
+last_activity: 2026-08-26
+last_activity_desc: Phase 19 execution started
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-current_phase: null
-current_phase_name: null
+  total_phases: 4
+  completed_phases: 1
+  total_plans: 12
+  completed_plans: 7
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** v0.9.0 Security Tooling — Phase 18 (Rust SAST: evaluate and adopt CodeQL),
+**Current focus:** Phase 19 — crates-io-trusted-publishing-replace-the-long-lived-registry
 not yet discussed or planned.
 
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 18 — Rust SAST: Evaluate and Adopt CodeQL (not started)
-Plan: None — run `/gsd-discuss-phase 18`, then `/gsd-plan-phase 18`
-Status: v0.9.0 Security Tooling open; v0.8.0 closed and archived 2026-08-24
-Last activity: 2026-08-24 — Milestone v0.8.0 completed and archived
+Phase: 19 (crates-io-trusted-publishing-replace-the-long-lived-registry) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 19
+Last activity: 2026-08-26 — Phase 19 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -57,7 +57,7 @@ valid outcome, not a failure.
 
 **Velocity:**
 
-- Total plans completed: 162
+- Total plans completed: 169
 - Average duration: —
 - Total execution time: —
 
@@ -80,6 +80,7 @@ valid outcome, not a failure.
 | 15 | 10 | - | - |
 | 17 | 22 | - | - |
 | 16 | 14 | - | - |
+| 18 | 7 | - | - |
 
 *Updated after each plan completion*
 
@@ -678,6 +679,9 @@ requirement.
 - Phase 15.1 inserted after Phase 15: Git & CI Governance — branch protection, trigger surface, gitflow model, docs/BRANCH_PROTECTION.md (URGENT)
 - Phase 17 added: Additional LLM Provider Adapters — provider-selection study (PROV-01) then feature-gated adapters for survivors (PROV-02..04); first forward phase beyond the ingest
 - Phase 18 added: Rust SAST: evaluate and adopt CodeQL — new Security Tooling milestone; SAST-01..04 minted at roadmap time
+- Phase 19 added: crates.io Trusted Publishing — replace the long-lived CARGO_REGISTRY_TOKEN with OIDC-issued ephemeral tokens; PUB-01..PUB-05 minted at roadmap time
+- Phase 20 added: Release Pipeline Recovery — idempotent re-runs on the same tag, a pre-publish gate over tag/manifest/changelog/CI agreement, and a stuck-halfway runbook with a yank policy; PUBOPS-01..PUBOPS-05 minted at roadmap time
+- Phase 21 added: Release Artifacts — Curated Release Notes and Attached Distributables (v0.9.0; ARTIFACT-01..06 minted, twenty-second prefix)
 
 ## Deferred Items
 
@@ -752,14 +756,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 16 context gathered
+**Stopped at:** Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-24T00:10:48.208Z
-Resume file: .planning/phases/16-documentation-currency-the-architecture-gap/16-CONTEXT.md
+Last session: 2026-08-26T02:10:47.754Z
+Resume file: .planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-PUBLISH-EVIDENCE.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 

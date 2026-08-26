@@ -128,12 +128,21 @@ jobs:
       - name: Check workflow trigger policy
         run: ./scripts/check-workflow-triggers.sh
 
+      # 18-04: CODEQL-DISMISSALS.md is the governed register for dismissed
+      # CodeQL alerts (T-18-16..20). This guard is offline and validates
+      # only the register's own internal consistency and staleness -- it
+      # is not itself a claim that codeql.yml is a required check (it is
+      # advisory-only per 18-CODEQL-EVIDENCE.md's Verdict).
+      - name: Check CodeQL dismissal register
+        run: ./scripts/check-codeql-dismissals.sh
+
       # Closes a pre-existing gap (D-09b, plan 15.1-09): the sibling
       # check-workflow-suppressions_test.sh regression harness has existed
       # since Phase 12 but was wired only into `make test-shell-guards`,
       # which no workflow invoked -- so it never ran in CI. This one step
-      # now runs both that harness and the new check-workflow-triggers_test.sh
-      # harness added alongside it.
+      # now runs that harness, check-workflow-triggers_test.sh and
+      # check-codeql-dismissals_test.sh (18-04), all three added alongside
+      # each other into the same aggregate.
       - name: Run shell-guard regression tests
         run: make test-shell-guards
 

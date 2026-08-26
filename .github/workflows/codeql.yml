@@ -1,0 +1,140 @@
+# CodeQL Rust static analysis (SAST-01/SAST-02, Phase 18). Advanced setup — a
+# committed workflow file, not GitHub's default setup — because
+# scripts/check-workflow-triggers.sh Clause 3 requires every required-status-
+# check context pinned in .github/rulesets/protect-main-branch.json to
+# resolve to a job display name declared in some workflow file, and default
+# setup declares no job anywhere in the tree (D-01). Its own file rather than
+# a job inside ci.yml, because this scanner needs a `schedule` trigger and
+# ci.yml deliberately carries none — a cron there would fire the entire
+# pipeline weekly, including the hour-plus multi-architecture Docker build
+# (D-03, see ci.yml and benchmarks.yml's own comments on the same point).
+#
+# Advisory posture, settled 2026-08-25 (Phase 18, SAST-01/SAST-04): this job
+# is DELIBERATELY, PERMANENTLY-FOR-NOW not pinned as a required check in any
+# ruleset — not a "not yet" waiting on a pending observation window. CodeQL
+# was measured against a deliberate-vulnerability probe (four independent
+# runs; see .planning/phases/18-rust-sast-evaluate-and-adopt-codeql/
+# 18-CODEQL-EVIDENCE.md) and DISQUALIFIED as a required-check-grade Rust SAST
+# at this version (CodeQL 2.26.3 / rust-queries 0.1.40): SQL injection, path
+# traversal and regex injection built from a `reqwest` remote source never
+# fired, under any tested condition. It stays wired and advisory anyway,
+# because it genuinely fails when the scan fails — no error-suppressing step
+# flag anywhere in this file, and non-blocking is achieved purely by the
+# context not being pinned in a ruleset (D-06) — it still catches the one
+# class it does detect reliably (rust/hard-coded-cryptographic-value) and
+# benefits automatically from any future rust-queries improvement, at zero
+# merge-gate risk. This deliberately inverts the `osv-scanner` job in
+# ci.yml, which stacks an error-suppressing flag on both the scan and the
+# SARIF upload step; that pattern would let a failed or skipped analysis
+# report success, which is exactly what SAST-01..04 exist to rule out.
+# Re-promotion to a required check (SAST-03) is not scheduled work — it is
+# gated on a future CodeQL/rust-queries release closing the measured
+# detection gap (revisit 2027-02-25 or sooner on a qualifying changelog
+# entry; owner Am0rfu5) — and would touch four coordinated places at once —
+# this file's job name is one of them, so treat the job `name:` below as a
+# contract regardless.
+#
+# `push: branches: ['**']` matches every branch, same as ci.yml and for the
+# same reason: SAST-02/PROJECT.md ask for "push on main", but
+# scripts/check-workflow-triggers.sh Clause 2 fails any workflow whose
+# `on.push.branches` is a list other than `['**']` unless the file is one of
+# the two documented exceptions (docs.yml, release.yml). Matching every
+# branch conforms to the guard unchanged and is a strict superset of "push on
+# main" (D-04), so the requirement is satisfied by over-coverage rather than
+# by minting a third exception. Cost is absorbed by the `concurrency` block
+# below.
+#
+# `pull_request` deliberately carries NO `paths:`/`paths-ignore:` filter.
+# Clause 4 of the same guard exists because a required-status-check context
+# living in a path-filtered workflow never reports on a PR that touches no
+# matching path, leaving that PR permanently unmergeable with no failing
+# check to explain why (this is also SAST-02's explicit text). A PR touching
+# zero `.rs` files must still produce a `CodeQL Analysis (Rust)` check run.
+#
+# `schedule` is new to this workflow — the only other schedule-bearing file
+# is benchmarks.yml (Monday 06:00 UTC). This cadence is offset to Wednesday
+# 07:00 UTC so the two scheduled runs never collide.
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ main, 'release/**' ]
+  schedule:
+    - cron: '0 7 * * 3'  # weekly, Wednesday 07:00 UTC — offset from benchmarks.yml's Monday 06:00 UTC slot
+  # `scan_probe_fixture` (Phase 18 plan 18-02, D-09/D-11) selects between the
+  # two committed CodeQL configs below: false (the default, used by every
+  # push/pull_request/schedule run) selects the steady-state config that
+  # excludes fixtures/codeql-probe/ from analysis scope; true — an explicit,
+  # on-demand dispatch choice only — selects the probe config that includes
+  # it, so the deliberately vulnerable fixture's finding count can be read
+  # off a run without it ever emitting standing alerts on a normal PR.
+  workflow_dispatch:
+    inputs:
+      scan_probe_fixture:
+        description: 'Include fixtures/codeql-probe/ in analysis scope (probe-mode config)'
+        type: boolean
+        default: false
+
+concurrency:
+  # Same shape as ci.yml's group (see that file's comment for the full
+  # rationale): collapses the duplicate push+pull_request runs the `['**']`
+  # push filter creates, and is not cancel-in-progress on main so a
+  # completed run there stays a record rather than being pre-empted.
+  group: codeql-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # D-02: this job's display name is a single stable literal — no
+  # `strategy.matrix`, no `${{ }}` expression — because it becomes the pinned
+  # required-check context on promotion (SAST-03) and
+  # scripts/check-workflow-triggers.sh's Clause 3 matches a literal name
+  # exactly. Renaming this job later silently drops that future gate.
+  codeql:
+    name: CodeQL Analysis (Rust)
+    runs-on: ubuntu-latest
+    # Job-level (not workflow-level) permissions, matching ci.yml's
+    # `osv-scanner` job — the only existing precedent in this repo for a
+    # SARIF-producing job's permission scoping.
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # CodeQL's Rust extraction requires rustup and cargo present on the
+      # runner even though it never invokes a full `cargo build` (build-mode
+      # `none`, the only mode Rust supports — it uses an internal
+      # rust-analyzer to expand macros and run build.rs scripts instead).
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      # `debug: true` is what produces the `src.zip` debug artifact Task 2's
+      # scripts/codeql-analysed-files.sh reads for the analysed-file-count
+      # evidence (D-13) — the mechanism that distinguishes "analysed 0 files"
+      # from "found 0 issues", which is precisely the distinction the Snyk
+      # evaluation blurred.
+      #
+      # `config-file` selects between the two committed configs (18-02,
+      # D-09/D-11): the probe config (fixtures/codeql-probe/ included in
+      # scope) only when this run was an explicit workflow_dispatch with
+      # `scan_probe_fixture: true`; the steady-state config (fixture
+      # excluded) for every other trigger and for the default dispatch
+      # input value.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: rust
+          build-mode: none
+          queries: security-extended
+          debug: true
+          config-file: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.scan_probe_fixture == 'true') && './.github/codeql/codeql-config-probe.yml' || './.github/codeql/codeql-config.yml' }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:rust'

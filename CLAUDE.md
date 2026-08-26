@@ -68,7 +68,10 @@ make health               # Service status
   conventional-commit message. Stop after each major task and wait for go-ahead.
 - **Security**: run `make security` (cargo-audit + cargo-deny) and `cargo clippy -- -D warnings`
   on new/modified code, plus the manual credential-handling review in the imported
-  `security.instructions.md`. Snyk was evaluated and removed — it has no Rust coverage; do not
+  `security.instructions.md`. `codeql.yml` runs Rust static analysis **advisory-only** — CodeQL
+  was evaluated and disqualified as a required-check-grade Rust SAST at CodeQL `2.26.3`
+  (2026-08-25); it does not gate a merge, and the manual credential-handling review stays the
+  primary control. Snyk was evaluated and removed — it has no Rust coverage; do not
   reintroduce a Snyk step or record a phase as blocked on one.
 - Avoid `unwrap()`/`expect()` and `panic!` in library code — return `Result`. Prefer borrowing
   over cloning; keep iterators lazy until you need a collection.

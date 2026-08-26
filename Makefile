@@ -180,13 +180,18 @@ check-workflow-suppressions: ## Verify no workflow file passes an advisory-ignor
 check-workflow-triggers: ## Verify every workflow's trigger surface matches the recorded policy table
 	@./scripts/check-workflow-triggers.sh
 
+.PHONY: check-codeql-dismissals
+check-codeql-dismissals: ## Verify CODEQL-DISMISSALS.md is schema-complete, non-drifted, non-stale and self-consistent
+	@./scripts/check-codeql-dismissals.sh
+
 .PHONY: check-gates
-check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions check-workflow-triggers ## Run all offline release-gate guards
+check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions check-workflow-triggers check-codeql-dismissals ## Run all offline release-gate guards
 
 .PHONY: test-shell-guards
 test-shell-guards: ## Run regression tests for the offline gate guard scripts (not part of check-gates)
 	@./tests/scripts/check-workflow-suppressions_test.sh
 	@./tests/scripts/check-workflow-triggers_test.sh
+	@./tests/scripts/check-codeql-dismissals_test.sh
 
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode

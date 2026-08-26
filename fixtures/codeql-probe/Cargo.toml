@@ -1,0 +1,57 @@
+# Deliberately-vulnerable CodeQL evaluation fixture (Phase 18, D-07..D-11).
+#
+# REDESIGNED 2026-08-25 (18-03 continuation, user-authorized checkpoint deviation): the
+# original four-class fixture (reused verbatim from the Snyk evaluation methodology, see
+# .github/instructions/security.instructions.md) was instrument-invalid — every planted
+# class was structurally incapable of firing any wired CodeQL Rust `security-extended`
+# query. See .planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-CODEQL-EVIDENCE.md
+# ("## Verdict" -> per-class impossibility table) for the full analysis and upstream
+# citations. This crate now carries five rule-aligned, source-wired classes plus one
+# known-untestable class kept for documentation (see lib.rs), per the pre-registered
+# "## Re-Probe Criteria" in that same evidence document.
+#
+# It must NEVER be referenced from real code, published, or treated as a workspace member:
+#   - It lives outside `crates/`, so the root manifest's `crates/*` glob cannot
+#     auto-include it (RESEARCH.md Pitfall 2).
+#   - The root `Cargo.toml`'s `[workspace]` table also carries an explicit
+#     `exclude = ["fixtures/codeql-probe"]` entry as defence in depth.
+#   - This manifest declares its own empty `[workspace]` table so Cargo treats this
+#     directory as an independent workspace root rather than walking up to the
+#     repository root.
+#   - `publish = false` below prevents `cargo publish` from ever shipping it.
+[package]
+name = "paladin-codeql-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "CodeQL Rust SAST evaluation fixture — deliberately vulnerable, never built into the workspace"
+
+# Empty workspace table: this directory is its own workspace root, isolated
+# from the repository root's [workspace] table (Cargo reference:
+# https://doc.rust-lang.org/cargo/reference/workspaces.html).
+[workspace]
+
+[features]
+default = []
+# D-12's empirical probe: the SQL-injection class replanted behind a non-default feature,
+# so whether buildless CodeQL extraction (and, this time, semantic analysis) reaches
+# feature-gated code is a measured result rather than an assumption. See
+# src/feature_gated.rs.
+probe-feature-gated = []
+
+[dependencies]
+# sqlx: same crate, version line and backend the root workspace manifest already declares
+# (workspace.dependencies.sqlx in the repository root Cargo.toml) — no new, unaudited
+# package name enters the tree, and CodeQL gets a SQL sink it actually models
+# (src/sql_injection.rs, src/feature_gated.rs).
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite"] }
+# reqwest (blocking feature): same version line the root workspace manifest already
+# declares (reqwest = { version = "0.12.4", ... }, crates/paladin-web's own
+# `features = ["blocking", "stream"]`) — provides the default-threat-model `remote`
+# taint source (`reqwest::blocking::get(...).text()`) every redesigned class now starts
+# from, matching the shape CodeQL's own upstream test suite uses for these queries.
+reqwest = { version = "0.12.4", default-features = false, features = ["blocking", "rustls-tls"] }
+# regex: same version line the root workspace manifest already declares (regex = "1.11.1")
+# — sink for the new regex-injection class (src/regex_injection.rs), a rule that
+# actually exists upstream (`rust/regex-injection`), unlike the CWE-078 gap it replaces.
+regex = "1.11.1"

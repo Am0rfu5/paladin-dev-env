@@ -44,6 +44,12 @@ services:
       # instead. Verified empirically against Claude Code 2.1.239. Must stay identical
       # to the mount target above.
       - CLAUDE_CONFIG_DIR=/home/vscode/.claude
+      # BASH_ENV makes NON-INTERACTIVE bash source paladin-env.sh. ~/.bashrc sources
+      # it too, but only after Debian's `case $- in *i*)` early exit, so `bash -c`
+      # and `bash -l` -- the shells used by tooling, git hooks and AI coding agents
+      # -- never reached it and saw no credentials. Set here so it applies to every
+      # process in the container and survives rebuilds.
+      - BASH_ENV=/workspace/.devcontainer/paladin-env.sh
       # LLM credentials. Bare names (no "=") pass through from the host shell only
       # when set there, and stay UNSET otherwise. When unset, paladin-env.sh reads
       # them from the bind-mounted key files above.
@@ -55,6 +61,7 @@ services:
       - MOONSHOT_API_KEY
       - DASHSCOPE_API_KEY
       - OPENAI_COMPATIBLE_API_KEY
+      - GH_TOKEN
     depends_on:
       - redis
       - minio

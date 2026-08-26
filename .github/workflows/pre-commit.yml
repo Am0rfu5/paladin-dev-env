@@ -41,6 +41,18 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Install pinned toolchain (rust-toolchain.toml)
+        # rust-toolchain.toml pins an exact release that overrides the stable
+        # toolchain installed above. Without this step, the pinned toolchain is
+        # installed on demand by the first hook that invokes cargo — an opaque
+        # path inside pre-commit that failed with a corrupted partial install
+        # and no clean retry (run 32964912309: "recovering from a partially
+        # installed toolchain" → conflict on bin/cargo-clippy). Installing it
+        # in its own step surfaces any failure directly and keeps the hooks'
+        # cargo invocations install-free. With no arguments, `rustup toolchain
+        # install` reads rust-toolchain.toml, including its components list.
+        run: rustup toolchain install
+
       - name: Cache cargo
         uses: actions/cache@v4
         with:

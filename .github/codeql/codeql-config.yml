@@ -1,0 +1,24 @@
+# CodeQL Rust analysis config — STEADY-STATE scope (Phase 18, D-09).
+#
+# This is one of two named, committed CodeQL configurations
+# (.github/codeql/codeql-config.yml and .github/codeql/codeql-config-probe.yml).
+# This one is selected by default (codeql.yml's `scan_probe_fixture`
+# workflow_dispatch input is `false` unless explicitly overridden) and is
+# used for every push/pull_request/schedule run.
+#
+# It excludes fixtures/codeql-probe/ from analysis scope so the deliberately
+# vulnerable probe fixture does NOT emit four (or five) standing alerts on
+# every pull request forever. Silencing those standing alerts would require
+# routine dismissals in the code-scanning alert store — exactly the kind of
+# erosion this phase exists to prevent (D-09). The probe is instead scanned
+# on demand via the codeql-config-probe.yml configuration, dispatched
+# explicitly when the fixture itself needs re-evaluating.
+#
+# NOTE: `paths-ignore` here is an ANALYSIS-SCOPE filter (which files CodeQL's
+# extractor indexes), not a workflow TRIGGER path filter (which pushes/PRs
+# invoke the workflow at all). SAST-02 forbids the latter — a required-check
+# workflow must run on every push/PR regardless of which paths changed — and
+# this file has no effect on that; codeql.yml's `on:` block carries no
+# `paths:`/`paths-ignore:` key of its own.
+paths-ignore:
+  - fixtures/codeql-probe
