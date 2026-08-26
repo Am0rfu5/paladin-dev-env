@@ -139,7 +139,27 @@ curl -sf -H 'User-Agent: paladin-release-check (github.com/DF3NDR/paladin-dev-en
 
 ## Bootstrap Publish (old credential)
 
-*Filled by Task 2 (decision) and Task 3 (execution) of this plan.*
+### Task 2 decision: the one-way door
+
+**Decision:** `bootstrap-now`
+**Date:** 2026-08-26
+**Deciding actor:** GSD orchestrator (auto-mode chain, `19-01` plan execution), applying CONTEXT.md's locked decisions D-02 and D-03 rather than introducing new judgment. Auto-mode was active at the orchestrator level for this chain (the plan-local config read inside this executor's worktree showed `workflow._auto_chain_active: false` because the flag was toggled at the orchestrator after this worktree forked — an isolation artifact of worktree execution, not a live re-evaluation).
+**Exact version to be published:** `0.8.1-rc.1` (all eleven crates, in lockstep, per `make release VERSION=0.8.1-rc.1`)
+
+**Rationale:** `bootstrap-now` is the option CONTEXT.md already locked, not a fresh choice —
+D-02 explicitly chose closing the `paladin-herald` gap in this phase over recording it as a
+named exclusion, and 19-RESEARCH.md's Summary settled D-03's open question: crates.io cannot
+configure Trusted Publishing for a crate that has never been published, so a first publish
+through the still-live `CARGO_REGISTRY_TOKEN` during the proof window is the only viable
+route to ever covering `paladin-herald`. Choosing `defer-herald` here would leave `cargo
+publish -p paladin-ai` permanently broken against the registry and hand Phase 20's
+pre-publish gate the same defect PUB-01 exists to close.
+
+The one-way, irreversible act itself — actually running `make release VERSION=0.8.1-rc.1`
+from `main`, which pushes a tag and spends the standing publish credential — remains gated
+behind Task 3's `checkpoint:human-action`. That gate is not auto-approved: a human with push
+access to `main` and crates.io account ownership must perform it. This Task 2 record settles
+*which path* the plan takes; it does not itself publish anything.
 
 ## OIDC Proof Event (PUB-03)
 
