@@ -5,15 +5,15 @@ milestone_name: Security Tooling
 current_phase: 19
 current_phase_name: crates-io-trusted-publishing-replace-the-long-lived-registry
 status: executing
-stopped_at: "Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)"
-last_updated: "2026-08-26T02:10:47.788Z"
+stopped_at: null
+last_updated: "2026-08-26T20:45:00.000Z"
 last_activity: 2026-08-26
-last_activity_desc: Phase 19 execution started
+last_activity_desc: Plan 19-01 complete — eleven crates bootstrap-published at 0.8.1-rc.1
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 12
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -44,9 +44,9 @@ not yet discussed or planned.
 ## Current Position
 
 Phase: 19 (crates-io-trusted-publishing-replace-the-long-lived-registry) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 19
-Last activity: 2026-08-26 — Phase 19 execution started
+Plan: 2 of 5 (19-01 complete)
+Status: Executing Phase 19 — wave 1 done, wave 2 (19-02) next
+Last activity: 2026-08-26 — Plan 19-01 complete: eleven crates bootstrap-published at 0.8.1-rc.1
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable

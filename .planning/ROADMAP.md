@@ -267,7 +267,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 19-01-PLAN.md — Reconcile the eleven-crate publish set and bootstrap `paladin-herald` onto the registry (PUB-01)
+- [x] 19-01-PLAN.md — Reconcile the eleven-crate publish set and bootstrap `paladin-herald` onto the registry (PUB-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

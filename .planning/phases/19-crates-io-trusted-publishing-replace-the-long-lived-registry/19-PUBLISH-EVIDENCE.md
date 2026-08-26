@@ -161,6 +161,115 @@ behind Task 3's `checkpoint:human-action`. That gate is not auto-approved: a hum
 access to `main` and crates.io account ownership must perform it. This Task 2 record settles
 *which path* the plan takes; it does not itself publish anything.
 
+### Task 3 execution: the bootstrap publish
+
+**Date:** 2026-08-26
+**Actor:** Am0rfu5 (repository owner; workflow dispatches and PR merges performed by
+Claude Code operating with the owner's fine-grained PAT, at the owner's explicit
+request after the checkpoint was presented)
+**Credential used:** the standing `CARGO_REGISTRY_TOKEN` repository secret — token
+publish, inside the pre-revocation window D-05 step 2 permits. This run is
+deliberately NOT evidence about the OIDC path.
+**Release tag:** `v0.8.1-rc.1` → commit `828515b3` (annotated tag object `18ac0996`)
+
+#### Deviation 1: the documented `make release` flow is dead — PR flow substituted
+
+`make release`'s `git push origin HEAD` to `main` is blocked by the "Protect main
+branch" ruleset (PR-only, zero bypass actors; `GH013: Changes must be made through
+a pull request`). That flow last worked at v0.5.1 (2026-06-04); local-only tags
+`v0.7.0`/`v0.7.1` corroborate that pushes stopped reaching the remote after the
+ruleset landed. The release was therefore decomposed into the same steps in
+rules-compliant order:
+
+1. `cargo release version 0.8.1-rc.1 --execute --no-confirm --workspace` +
+   changelog finalization + OpenAPI baseline regeneration (`make openapi` — the
+   baseline embeds the crate version; `make release` does not automate this and
+   `release-check` fails without it) on branch `chore/release-0.8.1-rc.1`.
+2. `make release-check` locally: passed end-to-end (exit 0).
+3. PR #36 → merged to `main` as `828515b3`.
+4. Tag `v0.8.1-rc.1` created on `828515b3` and pushed directly — permitted by the
+   "Protect release tags" ruleset's repository-admin bypass.
+
+Updating `Makefile`/operator docs to match the ruleset reality is 19-05 territory.
+
+#### Deviation 2: three workflow runs, one partial publish, one packaging defect
+
+| Run | Trigger | Outcome |
+|---|---|---|
+| [32985190305](https://github.com/DF3NDR/paladin-dev-env/actions/runs/32985190305) | tag push | `startup_failure`, 0 jobs — GitHub Actions major outage (githubstatus.com incident, confirmed; unrelated workflows failed identically) |
+| [32996942576](https://github.com/DF3NDR/paladin-dev-env/actions/runs/32996942576) | `workflow_dispatch tag=v0.8.1-rc.1` after recovery | `verify-tag-source` ✓, tests ✓; `publish-crates` published **10 of 11** in the committed order, then failed on `paladin-ai` |
+| [32998197346](https://github.com/DF3NDR/paladin-dev-env/actions/runs/32998197346) | re-dispatch | ten already-published crates correctly tolerance-skipped (`already exists` branch — the re-runnability truth held); `paladin-ai` failed again: **`413 Payload Too Large: max upload size is 10485760`** |
+| [33009214745](https://github.com/DF3NDR/paladin-dev-env/actions/runs/33009214745) | re-dispatch after fix | `publish-crates` **success** — `paladin-ai` published |
+
+The `413` was deterministic, not transient: `paladin-ai`'s package root is the
+repository root and the root `[package]` had no `include` list, so `cargo package`
+bundled 2,425 files (`docs/` 32MB, `.planning/` 19MB, `.claude/` 9.6MB) — over
+crates.io's 10 MiB cap. A local `cargo publish --dry-run` had NOT caught this:
+dry-run aborts before the upload where the server enforces size. Fix: `include`
+allowlist in the root `Cargo.toml` (PR #37, merged as `a5f27791`) — 442 files,
+3.9 MiB raw, 799.7 KiB compressed, package verification build green. The ten
+`crates/*` packages were never affected (their package roots are their own
+subdirectories).
+
+**Content note, stated plainly:** the published `paladin-ai-0.8.1-rc.1.crate` was
+built from `main` at `a5f27791` (dispatch-mode checkout uses `main`), i.e. the tag
+content **plus** the packaging-manifest fix. The ten other crates were built from
+`828515b3`, byte-identical to the tag. The tag was not moved; this difference is
+one `Cargo.toml` `include` list and nothing else.
+
+The `create-release` job (`actions/create-release@v1`) fails on re-dispatch when
+the GitHub release already exists; the stale release object was deleted (tag
+preserved) before each re-dispatch. A re-runnable release workflow should
+tolerate an existing release — 19-05/Phase 20 material, recorded here.
+
+Separately: all four Build Binaries matrix jobs failed in every run — systematic,
+still undiagnosed at this writing, and not on the publish path (`publish-crates`
+needs only `test` + `create-release`). Tracked as an open item below.
+
+#### Registry verification (all eleven crates)
+
+Measured 2026-08-26 (post-publish), one call per crate:
+
+```
+curl -sf -H 'User-Agent: paladin-release-check (github.com/DF3NDR/paladin-dev-env)' \
+  https://crates.io/api/v1/crates/<name>/0.8.1-rc.1
+```
+
+| crates.io package | HTTP | `trustpub_data` | published (UTC) |
+|---|---|---|---|
+| `paladin-ai-core` | 200 | `null` | 2026-08-26T18:01:22 |
+| `paladin-ports` | 200 | `null` | 2026-08-26T18:01:50 |
+| `paladin-herald` | 200 | `null` | 2026-08-26T18:02:13 |
+| `paladin-battalion` | 200 | `null` | 2026-08-26T18:02:43 |
+| `paladin-llm` | 200 | `null` | 2026-08-26T18:03:17 |
+| `paladin-memory` | 200 | `null` | 2026-08-26T18:03:42 |
+| `paladin-web` | 200 | `null` | 2026-08-26T18:04:25 |
+| `paladin-notifications` | 200 | `null` | 2026-08-26T18:04:48 |
+| `paladin-content` | 200 | `null` | 2026-08-26T18:05:19 |
+| `paladin-storage` | 200 | `null` | 2026-08-26T18:05:42 |
+| `paladin-ai` | 200 | `null` | 2026-08-26T20:25:02 |
+
+`paladin-herald` exists on crates.io for the first time (crate-level endpoint now
+HTTP 200, was 404 pre-bootstrap) — the precondition for creating its Trusted
+Publishing configuration in 19-03 is met. `trustpub_data` is `null` on all eleven
+versions: every one was token-published. That is what makes a non-null
+`trustpub_data` in 19-03's proof event mean something.
+
+The timestamps also show the publish order held in practice: the first ten landed
+in the committed array order at ~25-35s intervals (run 32996942576), `paladin-ai`
+last (run 33009214745). `paladin-herald` published at position 3 with no
+dependency-resolution error — the corrected insertion point (after
+`paladin-ports`, before `paladin-ai`) is validated by the registry itself.
+
+#### Open items from this bootstrap
+
+- Build Binaries matrix (4 targets): failed in all runs, cause not yet diagnosed;
+  does not gate crates publishing.
+- `make release` + operator docs contradict the `main` ruleset (Deviation 1) —
+  fold into 19-05.
+- `actions/create-release@v1` is not re-run tolerant (archived action; also flagged
+  deprecated by Node runtime warnings) — candidate for Phase 20 hardening.
+
 ## OIDC Proof Event (PUB-03)
 
 *Filled by plan 19-03.*
