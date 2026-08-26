@@ -404,9 +404,27 @@ jobs:
           set -euo pipefail
           # Canonical dependency-first publish order (package names):
           #   core -> ports -> leaf tier -> facade.
+          #
+          # paladin-herald sits AFTER paladin-ports, not directly after
+          # paladin-ai-core, despite depending only on paladin-ai-core as a
+          # normal [dependencies] edge. crates/paladin-herald/Cargo.toml also
+          # carries a version-pinned [dev-dependencies] edge on paladin-ports;
+          # cargo records a version-carrying dev-dependency in the published
+          # manifest and crates.io validates it against the index, so
+          # paladin-ports must already be on the registry before
+          # paladin-herald is published. Placing it after paladin-ai-core
+          # (its normal dependency), after paladin-ports (its dev-dependency)
+          # and before paladin-ai (its only dependent) satisfies all three
+          # constraints at once. Eleven crates total (D-01/D-02) -- this
+          # array is reconciled against `cargo metadata` and
+          # `.crate-names.txt` by Phase 19 plan 19-01; see
+          # 19-PUBLISH-EVIDENCE.md's "Dependency-Order Constraints" section
+          # for the superseded (wrong) insertion point 19-PATTERNS.md and
+          # 19-RESEARCH.md both proposed.
           CRATES=(
             paladin-ai-core
             paladin-ports
+            paladin-herald
             paladin-battalion
             paladin-llm
             paladin-memory
