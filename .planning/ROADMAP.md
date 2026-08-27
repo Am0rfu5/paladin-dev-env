@@ -283,7 +283,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 19-05-PLAN.md — Document the trust table, the credential history and the claim boundaries (PUB-05, PUB-01, PUB-04)
+- [x] 19-05-PLAN.md — Document the trust table, the credential history and the claim boundaries (PUB-05, PUB-01, PUB-04)
 
 ### Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
 
