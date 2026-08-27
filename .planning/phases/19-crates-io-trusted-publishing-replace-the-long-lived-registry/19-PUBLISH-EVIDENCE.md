@@ -335,6 +335,68 @@ working. This matches the live state (`protection_rules` holds only the
 posture, not a deviation. Enabling one later remains a `gh api`/settings change
 plus a doc-table update in 19-05.
 
+### Trust Link Ledger
+
+**Date:** 2026-08-27
+**Actor:** Am0rfu5 (repository owner / crates.io crate-owner). Configurations created
+manually through the crates.io web UI — no API or CLI exists for this step (D-13); the
+executor presented the checkpoint instructions and paused, the human performed the
+eleven UI visits, and the executor recorded this ledger on resume.
+
+**Resolution as reported:** the human's resume signal was the bare word **"linked"** —
+no count given, no crate named as unconfigurable. Per the checkpoint contract stated in
+19-03-PLAN.md's `<resume-signal>` ("Type 'linked' with the count actually saved, or name
+the crates that could not be configured"), a bare "linked" with nothing named as failed
+is recorded as **all eleven saved, none reported unconfigurable**. This executor did not
+independently re-open crate settings pages to verify — crates.io exposes no public API
+for reading back a Trusted Publishing configuration, and settings pages require an
+authenticated crate-owner session this agent does not hold. The re-verification named in
+the plan's `<verification>` (reopening two or three pages including `paladin-ai-core` and
+`paladin-herald`) is therefore a human-reported claim, not an executor-confirmed fact.
+Task 2's proof release is the mechanism that will falsify any silently missing or
+misconfigured link: a crate whose configuration was not actually saved, or was saved
+with the wrong environment string, will fail at the `Authenticate with crates.io` step
+or at that crate's publish step rather than passing silently.
+
+Every configuration was instructed to carry the same four values:
+
+| Field | Value |
+|---|---|
+| GitHub repository owner | `DF3NDR` |
+| Repository name | `paladin-dev-env` |
+| Workflow filename | `release.yml` |
+| Environment | `crates-io` |
+
+The instructions given at the checkpoint stated plainly that the environment field is
+optional in the crates.io UI but must be populated on every configuration regardless
+(D-06) — a blank environment field would let any workflow in this repository holding
+`id-token: write` mint a publish token for that crate, defeating the pinned-environment
+protection. The instructions also stated plainly that "Trusted Publishing Only"
+enforcement mode must **not** be enabled on any crate in this task, so the old
+`CARGO_REGISTRY_TOKEN` credential stays usable as fallback until 19-04's revocation.
+Both instructions are recorded here as given; their execution rests on the human's
+"linked" confirmation per the paragraph above, not on independent re-verification.
+
+| Package name | Source directory | Workflow | Environment | Link date | Status |
+|---|---|---|---|---|---|
+| `paladin-ai-core` | `crates/paladin-core` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-ports` | `crates/paladin-ports` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-herald` | `crates/paladin-herald` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-battalion` | `crates/paladin-battalion` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-llm` | `crates/paladin-llm` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-memory` | `crates/paladin-memory` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-web` | `crates/paladin-web` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-notifications` | `crates/paladin-notifications` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-content` | `crates/paladin-content` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-storage` | `crates/paladin-storage` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-ai` | workspace root (`Cargo.toml`) | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+
+Eleven data rows, matching the eleven-crate set reconciled in Task 1 of 19-01. No crate
+was named by the human as unconfigurable, so no row is recorded as not-covered and no
+interim auth path is stated for any crate. If Task 2's proof release later reveals a
+silently missing or misconfigured link for any crate, that crate's status here will be
+corrected and the discrepancy recorded rather than left standing.
+
 ## Credential Revocation (PUB-04)
 
 *Filled by plan 19-04.*
