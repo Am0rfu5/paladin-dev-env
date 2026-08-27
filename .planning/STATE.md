@@ -8,12 +8,12 @@ status: executing
 stopped_at: null
 last_updated: "2026-08-26T20:45:00.000Z"
 last_activity: 2026-08-26
-last_activity_desc: Plan 19-01 complete — eleven crates bootstrap-published at 0.8.1-rc.1
+last_activity_desc: Plan 19-02 complete — publish-crates mints its credential via OIDC
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -44,9 +44,9 @@ not yet discussed or planned.
 ## Current Position
 
 Phase: 19 (crates-io-trusted-publishing-replace-the-long-lived-registry) — EXECUTING
-Plan: 2 of 5 (19-01 complete)
-Status: Executing Phase 19 — wave 1 done, wave 2 (19-02) next
-Last activity: 2026-08-26 — Plan 19-01 complete: eleven crates bootstrap-published at 0.8.1-rc.1
+Plan: 3 of 5 (19-01, 19-02 complete)
+Status: Executing Phase 19 — waves 1-2 done, wave 3 (19-03) next
+Last activity: 2026-08-27 — Plan 19-02 complete: publish-crates mints its credential via OIDC, silent-skip deleted
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable

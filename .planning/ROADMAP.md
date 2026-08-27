@@ -271,7 +271,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 19-02-PLAN.md — Rewrite `publish-crates` to mint its credential via OIDC under the `crates-io` environment, and delete the silent-skip branch (PUB-02, PUB-05)
+- [x] 19-02-PLAN.md — Rewrite `publish-crates` to mint its credential via OIDC under the `crates-io` environment, and delete the silent-skip branch (PUB-02, PUB-05)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
