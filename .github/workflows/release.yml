@@ -128,10 +128,15 @@ jobs:
           else
             CHANGELOG=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
           fi
+          # Use a random, unique delimiter rather than the literal "EOF" --
+          # a commit subject line that is exactly "EOF" would otherwise
+          # terminate the heredoc early and let subsequent content inject
+          # arbitrary key=value lines into $GITHUB_OUTPUT.
+          delim="EOF_$(openssl rand -hex 8)"
           {
-            echo "changelog<<EOF"
+            echo "changelog<<${delim}"
             echo "$CHANGELOG"
-            echo "EOF"
+            echo "${delim}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
