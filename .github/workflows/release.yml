@@ -71,7 +71,12 @@ jobs:
           fi
 
   # Full test suite — gates crates.io publishing (a release must not publish if
-  # tests fail).
+  # tests fail). Docker images (build-docker) and release binaries
+  # (build-binaries) below are NOT gated on this job -- they depend only on
+  # create-release, so a release with a failing test suite can still push a
+  # tagged Docker image to ghcr.io and attach binaries to the GitHub release,
+  # just not publish to crates.io. This asymmetry is a documented choice
+  # (WR-05), not a latent surprise.
   test:
     name: Test Suite
     runs-on: ubuntu-latest
@@ -166,7 +171,8 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
 
-  # Build and push multi-arch Docker images
+  # Build and push multi-arch Docker images. Intentionally not gated on the
+  # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
   build-docker:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
@@ -229,7 +235,8 @@ jobs:
             echo "::warning::Image size (${SIZE_MB} MB) exceeds 500 MB target"
           fi
 
-  # Build binaries for multiple platforms
+  # Build binaries for multiple platforms. Intentionally not gated on the
+  # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
   build-binaries:
     name: Build Binaries
     runs-on: ${{ matrix.os }}
