@@ -272,7 +272,12 @@ jobs:
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        # Pinned to a commit SHA rather than the mutable `@master` branch ref
+        # (WR-02) -- this job holds contents: write. Still the `master` ref's
+        # action code (not `@stable`/`@beta`/`@nightly`), which is required
+        # for the `toolchain:` input mechanism the comment above depends on;
+        # only the ref is pinned, not the toolchain-selection design.
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master, as of 2026-08-27
         with:
           toolchain: ${{ steps.rust_pin.outputs.channel }}
           targets: ${{ matrix.target }}
