@@ -275,7 +275,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 19-03-PLAN.md — Create eleven trust configurations and prove the OIDC path publishes, before anything is revoked (PUB-03)
+- [x] 19-03-PLAN.md — Create eleven trust configurations and prove the OIDC path publishes, before anything is revoked (PUB-03)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
