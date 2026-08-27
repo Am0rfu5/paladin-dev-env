@@ -561,3 +561,26 @@ accepted as residual, not blocking:
 
 Per this task's own acceptance criteria, this record cites the eleven-row provenance table
 above as the evidence the decision rests on, and Tasks 2 and 3 now proceed.
+
+### Revocation Ledger
+
+**Epistemic status, stated plainly:** every row below rests on operator attestation, not
+independent verification. This agent never held the token value, crates.io exposes no
+API to read back a token's existence or its metadata, and no other channel gives this
+executor visibility into the account's token list. That is the same epistemic status the
+Trust Link Ledger's "linked" confirmation carries above — a human-reported fact this
+agent cannot re-check from its own side. Per this plan's kept prohibition, fields the
+operator did not attest are recorded as **"not reported by operator,"** never inferred
+or invented.
+
+| # | Event | Date | Actor | What was observed |
+|---|---|---|---|---|
+| 1 | crates.io publish token revoked | 2026-08-27 | Am0rfu5, via the crates.io UI (Account Settings → API Tokens) | Confirmation text: the bare word **"revoked"**. Token name: **"Paladin"** (reported in a follow-up message). Last-used timestamp: **not reported by operator**. Revocation timestamp: **not reported by operator**. Presence of any other publish-scoped token on the account: **not reported by operator** — the sweep this task's instructions requested (checking for a second forgotten token) was not attested to either way. |
+
+**Requested but not attested, stated explicitly:** Task 2's instructions asked the operator
+to report the token's last-used timestamp, the revocation timestamp, and whether any other
+publish-scoped token exists on the account. None of the three were provided in either reply.
+This row does not invent values for them — they read "not reported by operator" and stay
+that way unless a further follow-up supplies them. The threat register's T-19-21 (a second
+forgotten publish-scoped token) is therefore **not closed by this row**; it is recorded here
+as an open, unattested question rather than silently assumed answered.
