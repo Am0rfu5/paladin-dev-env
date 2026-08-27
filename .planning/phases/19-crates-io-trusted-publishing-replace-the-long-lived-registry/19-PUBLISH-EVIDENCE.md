@@ -397,6 +397,66 @@ interim auth path is stated for any crate. If Task 2's proof release later revea
 silently missing or misconfigured link for any crate, that crate's status here will be
 corrected and the discrepancy recorded rather than left standing.
 
+### Proof Release Run (Task 2)
+
+**Precondition resolution:** Task 2's stated precondition — "the 19-02 commit rewriting
+`publish-crates` is contained in `origin/main`" — was unmet when this executor first
+reached this task (`b12789a6` was not yet an ancestor of `origin/main`; the whole phase
+sat on `chore/19-trusted-publishing`, unmerged). Resolved via option 1 (merge now):
+`chore/19-trusted-publishing` → **PR #38** → merge commit `08aa4528` on `main`. Verified:
+`git merge-base --is-ancestor b12789a6 origin/main` now succeeds.
+
+**Version:** `0.8.1-rc.2`, bumped in lockstep across all eleven crates plus changelog and
+OpenAPI baseline, on branch `chore/release-0.8.1-rc.2`, following the same PR-decomposed
+flow Deviation 1 recorded for the `0.8.1-rc.1` bootstrap (the documented `make release`
+direct-push flow is dead under the PR-only `main` ruleset).
+**Release PR:** **PR #39**, merge commit `40990087`.
+**Tag:** `v0.8.1-rc.2`, annotated, created on `40990087` and pushed.
+**Actor:** Am0rfu5 (repository owner; PR merges and the tag push performed by Claude Code
+operating with the owner's fine-grained PAT, at the owner's explicit delegation — same
+posture as the `0.8.1-rc.1` bootstrap record).
+
+**Trigger:** the tag push itself, **not** `workflow_dispatch` — this is what the plan's
+Task 2 instructions specifically called for, to avoid resting the proof on RESEARCH.md
+assumption A1 (`workflow_dispatch` eligibility for Trusted Publishing), which no source
+confirms or denies.
+
+**Run:** [33089177606](https://github.com/DF3NDR/paladin-dev-env/actions/runs/33089177606)
+**Date:** 2026-08-27
+**Event:** `push` (confirmed via `gh run view 33089177606 --json event` → `push`)
+**Overall conclusion:** `failure` — but sourced entirely from the four pre-existing Build
+Binaries matrix jobs (`ubuntu-latest`/`macos-latest` × two targets each), the same
+undiagnosed, not-on-the-publish-path defect recorded in the bootstrap section's open
+items. Every job on the actual publish path succeeded: `Verify Tag From Main`,
+`Test Suite`, `Create Release`, and `Publish to crates.io` all report `conclusion:
+success`. Judging this run by its overall conclusion rather than by the publish-path
+jobs would misread a known, unrelated CI defect as a Trusted Publishing failure —
+19-RESEARCH.md's Common Pitfall 3 is exactly this trap.
+
+**`Publish to crates.io` job, step timing** (`gh run view 33089177606 --json jobs`):
+
+| Step | Conclusion | Started | Completed |
+|---|---|---|---|
+| Determine publish mode | success | 15:48:39Z | 15:48:39Z |
+| Authenticate with crates.io | success | 15:48:39Z | 15:48:40Z |
+| Publish crates in dependency order | success | 15:48:40Z | 15:55:58Z |
+
+**No repository secret was read.** `grep -c 'secrets.CARGO_REGISTRY_TOKEN'
+.github/workflows/release.yml` returns `0` at this HEAD — the job has no path back to the
+standing token at all; the credential was minted per-run from the eleven Trusted
+Publishing configurations via `rust-lang/crates-io-auth-action@v1`.
+
+**Auth-to-last-publish span:** the `Authenticate with crates.io` step completed at
+`15:48:40Z`; the last crate's registry `created_at` (`paladin-ai`, published last in the
+committed order) reads `15:55:35.670096Z` — a span of **~6m56s**. Measured against
+crates.io's approximately 30-minute Trusted Publishing token lifetime (19-RESEARCH.md),
+this run used roughly 23% of the token's life. That margin is comfortable for eleven
+crates at this run's per-crate publish pace, but it is recorded as a **residual risk, not
+a closed one** — T-19-19 in this plan's threat register accepts it explicitly rather than
+restructuring the publish loop, and a slower run (larger crates, registry backpressure, a
+future twelfth crate) could still approach the boundary. Re-running the job mints a fresh
+token; loop restructuring is out of this phase's scope.
+
 ## Credential Revocation (PUB-04)
 
 *Filled by plan 19-04.*
