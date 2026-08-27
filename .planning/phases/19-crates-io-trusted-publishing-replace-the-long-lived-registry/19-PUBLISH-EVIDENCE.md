@@ -274,6 +274,51 @@ dependency-resolution error — the corrected insertion point (after
 
 *Filled by plan 19-03.*
 
+### Environment Posture
+
+**Date:** 2026-08-27
+**Created via:** `gh api` (both calls returned 2xx on the first attempt — no 403,
+no human-UI fallback needed)
+
+- **Name:** `crates-io`, created on `DF3NDR/paladin-dev-env`
+  (`repos/DF3NDR/paladin-dev-env/environments/crates-io`). This is the literal
+  string embedded in the OIDC subject claim
+  `repo:DF3NDR/paladin-dev-env:environment:crates-io` that each of the eleven
+  crates' Trusted Publishing configurations pins in 19-03 (D-06).
+- **Deployment branch policy:** `custom_branch_policies: true`,
+  `protected_branches: false`, with exactly one policy entry —
+  `{"name": "v*.*.*", "type": "tag"}`. A branch push cannot reach this
+  environment; only a ref matching `v*.*.*` typed as a tag can.
+- **Reviewer gate:** deliberately absent (D-08). `protection_rules` holds only
+  the one `branch_policy` type entry created above — no `required_reviewers`
+  entry exists. Tag-push releases stay unattended; the ref restriction is the
+  protection, not a human approval step. This is a reversible settings choice
+  in both directions — enabling a reviewer gate later is a `gh api` call plus a
+  one-line doc update in 19-05's trust table, not a workflow rewrite.
+- **Secrets/variables:** none added. `environments/crates-io/secrets`
+  `total_count` reads `0`. The environment exists to constrain identity via the
+  OIDC subject claim, not to hold credentials — giving it a secret store would
+  reintroduce the standing-token pattern this phase removes.
+
+Live-state verification commands and results (2026-08-27):
+
+```
+$ gh api repos/DF3NDR/paladin-dev-env/environments --jq '[.environments[].name]'
+["crates-io","github-pages"]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io --jq '.deployment_branch_policy'
+{"protected_branches":false,"custom_branch_policies":true}
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/deployment-branch-policies --jq '[.branch_policies[]|{name,type}]'
+[{"name":"v*.*.*","type":"tag"}]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io --jq '[.protection_rules[].type]'
+["branch_policy"]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/secrets --jq '.total_count'
+0
+```
+
 ## Credential Revocation (PUB-04)
 
 *Filled by plan 19-04.*
