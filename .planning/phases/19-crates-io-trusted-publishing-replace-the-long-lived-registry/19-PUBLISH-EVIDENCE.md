@@ -319,6 +319,22 @@ $ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/secrets --jq '.tota
 0
 ```
 
+### Human Confirmation (Task 3, 19-02 checkpoint)
+
+**Date:** 2026-08-27
+**Actor:** Am0rfu5 (repository owner). Checkpoint presented and approved via the GSD
+orchestrator's `checkpoint:human-verify` gate.
+**Resolution:** "approved" — all four verification points (environment deployment
+rule, `environment: crates-io` + job-scoped `id-token: write` in `release.yml`, the
+two-outcome mode step with the silent-skip branch deleted, and the D-08
+reviewer-gate posture) stand as presented in the checkpoint.
+**Reviewer-gate decision:** none — deliberate (D-08). No required-reviewer
+protection rule is added to `crates-io`; unattended tag-push releases stay
+working. This matches the live state (`protection_rules` holds only the
+`branch_policy` entry, no `required_reviewers`) and is the plan's default
+posture, not a deviation. Enabling one later remains a `gh api`/settings change
+plus a doc-table update in 19-05.
+
 ## Credential Revocation (PUB-04)
 
 *Filled by plan 19-04.*
