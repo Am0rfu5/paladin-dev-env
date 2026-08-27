@@ -1,6 +1,6 @@
 [package]
 name = "paladin-ai-core"
-version = "0.8.1-rc.1"
+version = "0.8.1-rc.2"
 edition = "2024"
 authors = ["Am0rfu5"]
 license = "MIT OR Apache-2.0"
