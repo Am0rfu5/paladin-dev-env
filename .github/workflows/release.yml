@@ -361,16 +361,28 @@ jobs:
           asset_content_type: application/json
 
   # Publish workspace crates to crates.io in dependency order (Milestone 10
-  # Epic 3). Gated on the test suite passing and on the release being created.
-  # When the workflow is dispatched with `dry_run=true`, this runs
-  # `cargo publish --dry-run` for each crate instead of a real publish and does
-  # not require the registry token.
+  # Epic 3), authenticating via crates.io Trusted Publishing (Phase 19). The
+  # job mints a short-lived (~30 minute) publish token per run from its own
+  # GitHub OIDC identity via `rust-lang/crates-io-auth-action@v1`; there is no
+  # repository secret to be absent, and the action's own post step revokes the
+  # token at job end. The job runs only under the `crates-io` GitHub
+  # Environment, whose deployment policy admits exclusively `v*.*.*` tags —
+  # that environment name is embedded in the OIDC subject claim crates.io
+  # validates, so only a release tag from this repository can ever mint a
+  # token. When the workflow is dispatched with `dry_run=true`, this runs
+  # `cargo publish --dry-run` for each crate instead and mints no token at
+  # all. Known accepted risk (T-19-13): a single mint must outlive the whole
+  # eleven-crate sequential loop, including its index-wait sleeps — a
+  # late-loop authentication failure is that risk materialising, not a
+  # workflow bug; re-running the job mints a fresh token.
   publish-crates:
     name: Publish to crates.io
     runs-on: ubuntu-latest
     needs: [test, create-release]
+    environment: crates-io
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -380,25 +392,23 @@ jobs:
 
       - name: Determine publish mode
         id: mode
-        env:
-          # Repository secret with crates.io publish scope. Empty if unset.
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           DRY_RUN="${{ github.event.inputs.dry_run }}"
           if [ "$DRY_RUN" = "true" ]; then
             echo "dry_run=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Dry-run mode — will run 'cargo publish --dry-run' and NOT publish."
-          elif [ -n "$CARGO_REGISTRY_TOKEN" ]; then
-            echo "dry_run=false" >> "$GITHUB_OUTPUT"
           else
-            echo "dry_run=skip" >> "$GITHUB_OUTPUT"
-            echo "::warning::CARGO_REGISTRY_TOKEN is not set — skipping crates.io publish."
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Authenticate with crates.io
+        id: auth
+        if: steps.mode.outputs.dry_run != 'true'
+        uses: rust-lang/crates-io-auth-action@v1
+
       - name: Publish crates in dependency order
-        if: steps.mode.outputs.dry_run != 'skip'
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
           DRY_RUN: ${{ steps.mode.outputs.dry_run }}
         run: |
           set -euo pipefail
