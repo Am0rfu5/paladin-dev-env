@@ -522,4 +522,42 @@ established by anything in this phase.
 
 ## Credential Revocation (PUB-04)
 
-*Filled by plan 19-04.*
+### Task 1 decision: the one-way door
+
+**Decision:** `revoke-now`
+**Date:** 2026-08-27
+**Deciding actor:** Am0rfu5 (repository owner and crates.io crate owner), resolved via the
+`checkpoint:decision` this plan's Task 1 presented. No concerns were named; the decision
+proceeds on D-05 steps 3 and 4 exactly as this plan specifies.
+
+**Evidence the decision rests on** (both conditions this task's `<context>` names as the
+prerequisite for `revoke-now`, read directly from this file's `## OIDC Proof Event (PUB-03)`
+section rather than re-derived):
+
+- **Eleven Trust Publisher Configurations, populated `environment` field.** The Trust Link
+  Ledger above records all eleven crates as `linked (reported)`, each carrying the same
+  `crates-io` environment value, with none named by the human operator as unconfigurable.
+- **Registry-side, non-dry-run, non-self-reported provenance.** The Registry-Side Provenance
+  (Task 3) table above shows all eleven `0.8.1-rc.2` versions carrying the identical non-null
+  `trustpub_data` object (`provider: github`, `repository: DF3NDR/paladin-dev-env`,
+  `run_id: 33089177606`, `sha: 40990087...`), against the `0.8.1-rc.1` baseline where the same
+  eleven crates read `trustpub_data: null` under the standing token. Both conditions hold, so
+  per this task's own framing the answer is `revoke-now` rather than `hold`.
+
+**Accepted limits.** The proof's stated boundaries were presented alongside the decision and
+accepted as residual, not blocking:
+
+- **`workflow_dispatch` eligibility (assumption A1) remains untested under OIDC.** The proof
+  release used a tag push deliberately, to avoid depending on A1; whether a
+  `workflow_dispatch`-triggered run can mint a Trusted Publishing token is still not
+  established by anything in this phase.
+- **Dry-run behavior under OIDC is not established.** `cargo publish --dry-run` mints no
+  credential of any kind by design, so nothing in this phase's evidence speaks to dry-run
+  behavior specifically — every publish recorded above is a real, non-dry-run upload.
+- **No instant fallback after revocation.** Once the crates.io token is revoked, the OIDC path
+  is the only publish path; recovery from an OIDC failure after this point means minting a new
+  token by hand and temporarily reverting the workflow (T-19-24, accepted in this plan's threat
+  register), not falling back to a live standing credential.
+
+Per this task's own acceptance criteria, this record cites the eleven-row provenance table
+above as the evidence the decision rests on, and Tasks 2 and 3 now proceed.
