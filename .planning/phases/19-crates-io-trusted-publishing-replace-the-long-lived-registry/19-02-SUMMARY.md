@@ -133,3 +133,13 @@ None - no external service configuration required. The `gh api` environment crea
 ---
 *Phase: 19-crates-io-trusted-publishing-replace-the-long-lived-registry*
 *Completed: 2026-08-27*
+
+## Self-Check: PASSED
+
+- FOUND: `.github/workflows/release.yml`
+- FOUND: `.planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-PUBLISH-EVIDENCE.md`
+- FOUND: `.planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-02-SUMMARY.md`
+- FOUND commit: `19285c39` (Task 1)
+- FOUND commit: `b12789a6` (Task 2)
+- FOUND commit: `0e860e71` (Task 3)
+- FOUND commit: `19d6b573` (this SUMMARY)
