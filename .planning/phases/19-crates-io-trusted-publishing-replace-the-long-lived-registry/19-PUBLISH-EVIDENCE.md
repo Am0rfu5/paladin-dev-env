@@ -161,9 +161,241 @@ behind Task 3's `checkpoint:human-action`. That gate is not auto-approved: a hum
 access to `main` and crates.io account ownership must perform it. This Task 2 record settles
 *which path* the plan takes; it does not itself publish anything.
 
+### Task 3 execution: the bootstrap publish
+
+**Date:** 2026-08-26
+**Actor:** Am0rfu5 (repository owner; workflow dispatches and PR merges performed by
+Claude Code operating with the owner's fine-grained PAT, at the owner's explicit
+request after the checkpoint was presented)
+**Credential used:** the standing `CARGO_REGISTRY_TOKEN` repository secret — token
+publish, inside the pre-revocation window D-05 step 2 permits. This run is
+deliberately NOT evidence about the OIDC path.
+**Release tag:** `v0.8.1-rc.1` → commit `828515b3` (annotated tag object `18ac0996`)
+
+#### Deviation 1: the documented `make release` flow is dead — PR flow substituted
+
+`make release`'s `git push origin HEAD` to `main` is blocked by the "Protect main
+branch" ruleset (PR-only, zero bypass actors; `GH013: Changes must be made through
+a pull request`). That flow last worked at v0.5.1 (2026-06-04); local-only tags
+`v0.7.0`/`v0.7.1` corroborate that pushes stopped reaching the remote after the
+ruleset landed. The release was therefore decomposed into the same steps in
+rules-compliant order:
+
+1. `cargo release version 0.8.1-rc.1 --execute --no-confirm --workspace` +
+   changelog finalization + OpenAPI baseline regeneration (`make openapi` — the
+   baseline embeds the crate version; `make release` does not automate this and
+   `release-check` fails without it) on branch `chore/release-0.8.1-rc.1`.
+2. `make release-check` locally: passed end-to-end (exit 0).
+3. PR #36 → merged to `main` as `828515b3`.
+4. Tag `v0.8.1-rc.1` created on `828515b3` and pushed directly — permitted by the
+   "Protect release tags" ruleset's repository-admin bypass.
+
+Updating `Makefile`/operator docs to match the ruleset reality is 19-05 territory.
+
+#### Deviation 2: three workflow runs, one partial publish, one packaging defect
+
+| Run | Trigger | Outcome |
+|---|---|---|
+| [32985190305](https://github.com/DF3NDR/paladin-dev-env/actions/runs/32985190305) | tag push | `startup_failure`, 0 jobs — GitHub Actions major outage (githubstatus.com incident, confirmed; unrelated workflows failed identically) |
+| [32996942576](https://github.com/DF3NDR/paladin-dev-env/actions/runs/32996942576) | `workflow_dispatch tag=v0.8.1-rc.1` after recovery | `verify-tag-source` ✓, tests ✓; `publish-crates` published **10 of 11** in the committed order, then failed on `paladin-ai` |
+| [32998197346](https://github.com/DF3NDR/paladin-dev-env/actions/runs/32998197346) | re-dispatch | ten already-published crates correctly tolerance-skipped (`already exists` branch — the re-runnability truth held); `paladin-ai` failed again: **`413 Payload Too Large: max upload size is 10485760`** |
+| [33009214745](https://github.com/DF3NDR/paladin-dev-env/actions/runs/33009214745) | re-dispatch after fix | `publish-crates` **success** — `paladin-ai` published |
+
+The `413` was deterministic, not transient: `paladin-ai`'s package root is the
+repository root and the root `[package]` had no `include` list, so `cargo package`
+bundled 2,425 files (`docs/` 32MB, `.planning/` 19MB, `.claude/` 9.6MB) — over
+crates.io's 10 MiB cap. A local `cargo publish --dry-run` had NOT caught this:
+dry-run aborts before the upload where the server enforces size. Fix: `include`
+allowlist in the root `Cargo.toml` (PR #37, merged as `a5f27791`) — 442 files,
+3.9 MiB raw, 799.7 KiB compressed, package verification build green. The ten
+`crates/*` packages were never affected (their package roots are their own
+subdirectories).
+
+**Content note, stated plainly:** the published `paladin-ai-0.8.1-rc.1.crate` was
+built from `main` at `a5f27791` (dispatch-mode checkout uses `main`), i.e. the tag
+content **plus** the packaging-manifest fix. The ten other crates were built from
+`828515b3`, byte-identical to the tag. The tag was not moved; this difference is
+one `Cargo.toml` `include` list and nothing else.
+
+The `create-release` job (`actions/create-release@v1`) fails on re-dispatch when
+the GitHub release already exists; the stale release object was deleted (tag
+preserved) before each re-dispatch. A re-runnable release workflow should
+tolerate an existing release — 19-05/Phase 20 material, recorded here.
+
+Separately: all four Build Binaries matrix jobs failed in every run — systematic,
+still undiagnosed at this writing, and not on the publish path (`publish-crates`
+needs only `test` + `create-release`). Tracked as an open item below.
+
+#### Registry verification (all eleven crates)
+
+Measured 2026-08-26 (post-publish), one call per crate:
+
+```
+curl -sf -H 'User-Agent: paladin-release-check (github.com/DF3NDR/paladin-dev-env)' \
+  https://crates.io/api/v1/crates/<name>/0.8.1-rc.1
+```
+
+| crates.io package | HTTP | `trustpub_data` | published (UTC) |
+|---|---|---|---|
+| `paladin-ai-core` | 200 | `null` | 2026-08-26T18:01:22 |
+| `paladin-ports` | 200 | `null` | 2026-08-26T18:01:50 |
+| `paladin-herald` | 200 | `null` | 2026-08-26T18:02:13 |
+| `paladin-battalion` | 200 | `null` | 2026-08-26T18:02:43 |
+| `paladin-llm` | 200 | `null` | 2026-08-26T18:03:17 |
+| `paladin-memory` | 200 | `null` | 2026-08-26T18:03:42 |
+| `paladin-web` | 200 | `null` | 2026-08-26T18:04:25 |
+| `paladin-notifications` | 200 | `null` | 2026-08-26T18:04:48 |
+| `paladin-content` | 200 | `null` | 2026-08-26T18:05:19 |
+| `paladin-storage` | 200 | `null` | 2026-08-26T18:05:42 |
+| `paladin-ai` | 200 | `null` | 2026-08-26T20:25:02 |
+
+`paladin-herald` exists on crates.io for the first time (crate-level endpoint now
+HTTP 200, was 404 pre-bootstrap) — the precondition for creating its Trusted
+Publishing configuration in 19-03 is met. `trustpub_data` is `null` on all eleven
+versions: every one was token-published. That is what makes a non-null
+`trustpub_data` in 19-03's proof event mean something.
+
+The timestamps also show the publish order held in practice: the first ten landed
+in the committed array order at ~25-35s intervals (run 32996942576), `paladin-ai`
+last (run 33009214745). `paladin-herald` published at position 3 with no
+dependency-resolution error — the corrected insertion point (after
+`paladin-ports`, before `paladin-ai`) is validated by the registry itself.
+
+#### Open items from this bootstrap
+
+- Build Binaries matrix (4 targets): failed in all runs, cause not yet diagnosed;
+  does not gate crates publishing.
+- `make release` + operator docs contradict the `main` ruleset (Deviation 1) —
+  fold into 19-05.
+- `actions/create-release@v1` is not re-run tolerant (archived action; also flagged
+  deprecated by Node runtime warnings) — candidate for Phase 20 hardening.
+
 ## OIDC Proof Event (PUB-03)
 
 *Filled by plan 19-03.*
+
+### Environment Posture
+
+**Date:** 2026-08-27
+**Created via:** `gh api` (both calls returned 2xx on the first attempt — no 403,
+no human-UI fallback needed)
+
+- **Name:** `crates-io`, created on `DF3NDR/paladin-dev-env`
+  (`repos/DF3NDR/paladin-dev-env/environments/crates-io`). This is the literal
+  string embedded in the OIDC subject claim
+  `repo:DF3NDR/paladin-dev-env:environment:crates-io` that each of the eleven
+  crates' Trusted Publishing configurations pins in 19-03 (D-06).
+- **Deployment branch policy:** `custom_branch_policies: true`,
+  `protected_branches: false`, with exactly one policy entry —
+  `{"name": "v*.*.*", "type": "tag"}`. A branch push cannot reach this
+  environment; only a ref matching `v*.*.*` typed as a tag can.
+- **Reviewer gate:** deliberately absent (D-08). `protection_rules` holds only
+  the one `branch_policy` type entry created above — no `required_reviewers`
+  entry exists. Tag-push releases stay unattended; the ref restriction is the
+  protection, not a human approval step. This is a reversible settings choice
+  in both directions — enabling a reviewer gate later is a `gh api` call plus a
+  one-line doc update in 19-05's trust table, not a workflow rewrite.
+- **Secrets/variables:** none added. `environments/crates-io/secrets`
+  `total_count` reads `0`. The environment exists to constrain identity via the
+  OIDC subject claim, not to hold credentials — giving it a secret store would
+  reintroduce the standing-token pattern this phase removes.
+
+Live-state verification commands and results (2026-08-27):
+
+```
+$ gh api repos/DF3NDR/paladin-dev-env/environments --jq '[.environments[].name]'
+["crates-io","github-pages"]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io --jq '.deployment_branch_policy'
+{"protected_branches":false,"custom_branch_policies":true}
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/deployment-branch-policies --jq '[.branch_policies[]|{name,type}]'
+[{"name":"v*.*.*","type":"tag"}]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io --jq '[.protection_rules[].type]'
+["branch_policy"]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/secrets --jq '.total_count'
+0
+```
+
+### Human Confirmation (Task 3, 19-02 checkpoint)
+
+**Date:** 2026-08-27
+**Actor:** Am0rfu5 (repository owner). Checkpoint presented and approved via the GSD
+orchestrator's `checkpoint:human-verify` gate.
+**Resolution:** "approved" — all four verification points (environment deployment
+rule, `environment: crates-io` + job-scoped `id-token: write` in `release.yml`, the
+two-outcome mode step with the silent-skip branch deleted, and the D-08
+reviewer-gate posture) stand as presented in the checkpoint.
+**Reviewer-gate decision:** none — deliberate (D-08). No required-reviewer
+protection rule is added to `crates-io`; unattended tag-push releases stay
+working. This matches the live state (`protection_rules` holds only the
+`branch_policy` entry, no `required_reviewers`) and is the plan's default
+posture, not a deviation. Enabling one later remains a `gh api`/settings change
+plus a doc-table update in 19-05.
+
+### Trust Link Ledger
+
+**Date:** 2026-08-27
+**Actor:** Am0rfu5 (repository owner / crates.io crate-owner). Configurations created
+manually through the crates.io web UI — no API or CLI exists for this step (D-13); the
+executor presented the checkpoint instructions and paused, the human performed the
+eleven UI visits, and the executor recorded this ledger on resume.
+
+**Resolution as reported:** the human's resume signal was the bare word **"linked"** —
+no count given, no crate named as unconfigurable. Per the checkpoint contract stated in
+19-03-PLAN.md's `<resume-signal>` ("Type 'linked' with the count actually saved, or name
+the crates that could not be configured"), a bare "linked" with nothing named as failed
+is recorded as **all eleven saved, none reported unconfigurable**. This executor did not
+independently re-open crate settings pages to verify — crates.io exposes no public API
+for reading back a Trusted Publishing configuration, and settings pages require an
+authenticated crate-owner session this agent does not hold. The re-verification named in
+the plan's `<verification>` (reopening two or three pages including `paladin-ai-core` and
+`paladin-herald`) is therefore a human-reported claim, not an executor-confirmed fact.
+Task 2's proof release is the mechanism that will falsify any silently missing or
+misconfigured link: a crate whose configuration was not actually saved, or was saved
+with the wrong environment string, will fail at the `Authenticate with crates.io` step
+or at that crate's publish step rather than passing silently.
+
+Every configuration was instructed to carry the same four values:
+
+| Field | Value |
+|---|---|
+| GitHub repository owner | `DF3NDR` |
+| Repository name | `paladin-dev-env` |
+| Workflow filename | `release.yml` |
+| Environment | `crates-io` |
+
+The instructions given at the checkpoint stated plainly that the environment field is
+optional in the crates.io UI but must be populated on every configuration regardless
+(D-06) — a blank environment field would let any workflow in this repository holding
+`id-token: write` mint a publish token for that crate, defeating the pinned-environment
+protection. The instructions also stated plainly that "Trusted Publishing Only"
+enforcement mode must **not** be enabled on any crate in this task, so the old
+`CARGO_REGISTRY_TOKEN` credential stays usable as fallback until 19-04's revocation.
+Both instructions are recorded here as given; their execution rests on the human's
+"linked" confirmation per the paragraph above, not on independent re-verification.
+
+| Package name | Source directory | Workflow | Environment | Link date | Status |
+|---|---|---|---|---|---|
+| `paladin-ai-core` | `crates/paladin-core` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-ports` | `crates/paladin-ports` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-herald` | `crates/paladin-herald` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-battalion` | `crates/paladin-battalion` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-llm` | `crates/paladin-llm` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-memory` | `crates/paladin-memory` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-web` | `crates/paladin-web` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-notifications` | `crates/paladin-notifications` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-content` | `crates/paladin-content` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-storage` | `crates/paladin-storage` | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+| `paladin-ai` | workspace root (`Cargo.toml`) | `release.yml` | `crates-io` | 2026-08-27 | linked (reported) |
+
+Eleven data rows, matching the eleven-crate set reconciled in Task 1 of 19-01. No crate
+was named by the human as unconfigurable, so no row is recorded as not-covered and no
+interim auth path is stated for any crate. If Task 2's proof release later reveals a
+silently missing or misconfigured link for any crate, that crate's status here will be
+corrected and the discrepancy recorded rather than left standing.
 
 ## Credential Revocation (PUB-04)
 

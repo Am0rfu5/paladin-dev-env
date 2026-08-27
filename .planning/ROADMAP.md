@@ -267,11 +267,11 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 19-01-PLAN.md — Reconcile the eleven-crate publish set and bootstrap `paladin-herald` onto the registry (PUB-01)
+- [x] 19-01-PLAN.md — Reconcile the eleven-crate publish set and bootstrap `paladin-herald` onto the registry (PUB-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 19-02-PLAN.md — Rewrite `publish-crates` to mint its credential via OIDC under the `crates-io` environment, and delete the silent-skip branch (PUB-02, PUB-05)
+- [x] 19-02-PLAN.md — Rewrite `publish-crates` to mint its credential via OIDC under the `crates-io` environment, and delete the silent-skip branch (PUB-02, PUB-05)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
