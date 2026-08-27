@@ -38,29 +38,37 @@ Run and require success for:
 
 ## 5. Dry-Run Publish Validation
 
-Run dependency-first dry-runs:
+Run dependency-first dry-runs, in the real eleven-crate order:
 
-1. paladin-core
+1. paladin-ai-core
 2. paladin-ports
-3. leaf crates
-4. paladin
+3. paladin-herald
+4. paladin-battalion, paladin-llm, paladin-memory, paladin-web, paladin-notifications,
+   paladin-content, paladin-storage (leaf tier)
+5. paladin-ai
 
 Use:
 
 - cargo publish --dry-run -p <crate>
 
-If upstream crates are not yet on crates.io, execute dry-runs in publish order and expect dependent dry-runs to fail until prerequisites are available.
+If upstream crates are not yet on crates.io, execute dry-runs in publish order and expect dependent dry-runs to fail until prerequisites are available. This caveat is strictly more accurate now that paladin-herald is included: it depends on both paladin-ai-core and paladin-ports being present before its own dry-run can pass.
 
 ## 6. Publish
 
 Publish in dependency-first order:
 
-1. paladin-core
+1. paladin-ai-core
 2. paladin-ports
-3. leaf crates
-4. paladin
+3. paladin-herald
+4. paladin-battalion, paladin-llm, paladin-memory, paladin-web, paladin-notifications,
+   paladin-content, paladin-storage (leaf tier)
+5. paladin-ai
 
 After each publish, verify crate availability on crates.io before continuing.
+
+Publishing authenticates through crates.io Trusted Publishing, from the `publish-crates` job under
+the `crates-io` GitHub Environment — there is no token to configure. See the per-crate trust table
+and credential history in [Release Automation](release-automation.md#trusted-publishing).
 
 ## 7. Tag and Announcement
 
