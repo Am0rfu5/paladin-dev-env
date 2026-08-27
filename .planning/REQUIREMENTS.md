@@ -120,7 +120,7 @@ during execution.*
       recorded exchange. The ordering is itself the requirement: revoking first and testing second
       leaves the project unable to ship a release until the new path is debugged under pressure.
 
-- [ ] **PUB-04**: **The long-lived credential is revoked at crates.io and deleted from repository
+- [x] **PUB-04**: **The long-lived credential is revoked at crates.io and deleted from repository
       secrets, and both actions are recorded with a date and an actor.**
       A migration that leaves `CARGO_REGISTRY_TOKEN` in place has added a publish path rather than
       replaced one, which is a net increase in attack surface. **Revocation at crates.io is the
@@ -307,7 +307,7 @@ than during execution.*
 | PUB-01 | Phase 19 | Pending |
 | PUB-02 | Phase 19 | Complete |
 | PUB-03 | Phase 19 | Complete |
-| PUB-04 | Phase 19 | Pending |
+| PUB-04 | Phase 19 | Complete |
 | PUB-05 | Phase 19 | Complete |
 | PUBOPS-01 | Phase 20 | Pending |
 | PUBOPS-02 | Phase 20 | Pending |
