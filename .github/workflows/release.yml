@@ -37,6 +37,8 @@ jobs:
 
       - name: Resolve release commit
         id: resolve
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -44,7 +46,7 @@ jobs:
             # so an annotated tag does not collide with a pre-existing lightweight
             # ref (`would clobber existing tag`).
             git fetch --tags --force --quiet origin
-            SHA=$(git rev-list -n 1 "${{ inputs.tag }}")
+            SHA=$(git rev-list -n 1 -- "$RELEASE_TAG")
           else
             # On a tag push the checked-out commit is already the release commit.
             SHA="${{ github.sha }}"
@@ -103,9 +105,11 @@ jobs:
 
       - name: Get version
         id: get_version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           else
             echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
@@ -331,6 +335,11 @@ jobs:
     needs: create-release
     permissions:
       contents: write
+    env:
+      # Indirect through env: rather than interpolating the tainted output
+      # directly into run:/with: blocks (CR-01) -- the version ultimately
+      # traces back to the workflow_dispatch `tag` input.
+      RELEASE_VERSION: ${{ needs.create-release.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -348,7 +357,7 @@ jobs:
         run: |
           cargo cyclonedx --all --format json
           # The root package SBOM is the primary deliverable.
-          cp paladin-ai.cdx.json "paladin-${{ needs.create-release.outputs.version }}.cdx.json"
+          cp paladin-ai.cdx.json "paladin-${RELEASE_VERSION}.cdx.json"
 
       - name: Upload SBOM to release
         uses: actions/upload-release-asset@v1
@@ -356,8 +365,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: paladin-${{ needs.create-release.outputs.version }}.cdx.json
-          asset_name: paladin-${{ needs.create-release.outputs.version }}.cdx.json
+          asset_path: paladin-${{ env.RELEASE_VERSION }}.cdx.json
+          asset_name: paladin-${{ env.RELEASE_VERSION }}.cdx.json
           asset_content_type: application/json
 
   # Publish workspace crates to crates.io in dependency order (Milestone 10
