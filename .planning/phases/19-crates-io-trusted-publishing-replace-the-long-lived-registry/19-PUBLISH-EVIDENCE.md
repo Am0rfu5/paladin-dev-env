@@ -274,6 +274,67 @@ dependency-resolution error — the corrected insertion point (after
 
 *Filled by plan 19-03.*
 
+### Environment Posture
+
+**Date:** 2026-08-27
+**Created via:** `gh api` (both calls returned 2xx on the first attempt — no 403,
+no human-UI fallback needed)
+
+- **Name:** `crates-io`, created on `DF3NDR/paladin-dev-env`
+  (`repos/DF3NDR/paladin-dev-env/environments/crates-io`). This is the literal
+  string embedded in the OIDC subject claim
+  `repo:DF3NDR/paladin-dev-env:environment:crates-io` that each of the eleven
+  crates' Trusted Publishing configurations pins in 19-03 (D-06).
+- **Deployment branch policy:** `custom_branch_policies: true`,
+  `protected_branches: false`, with exactly one policy entry —
+  `{"name": "v*.*.*", "type": "tag"}`. A branch push cannot reach this
+  environment; only a ref matching `v*.*.*` typed as a tag can.
+- **Reviewer gate:** deliberately absent (D-08). `protection_rules` holds only
+  the one `branch_policy` type entry created above — no `required_reviewers`
+  entry exists. Tag-push releases stay unattended; the ref restriction is the
+  protection, not a human approval step. This is a reversible settings choice
+  in both directions — enabling a reviewer gate later is a `gh api` call plus a
+  one-line doc update in 19-05's trust table, not a workflow rewrite.
+- **Secrets/variables:** none added. `environments/crates-io/secrets`
+  `total_count` reads `0`. The environment exists to constrain identity via the
+  OIDC subject claim, not to hold credentials — giving it a secret store would
+  reintroduce the standing-token pattern this phase removes.
+
+Live-state verification commands and results (2026-08-27):
+
+```
+$ gh api repos/DF3NDR/paladin-dev-env/environments --jq '[.environments[].name]'
+["crates-io","github-pages"]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io --jq '.deployment_branch_policy'
+{"protected_branches":false,"custom_branch_policies":true}
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/deployment-branch-policies --jq '[.branch_policies[]|{name,type}]'
+[{"name":"v*.*.*","type":"tag"}]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io --jq '[.protection_rules[].type]'
+["branch_policy"]
+
+$ gh api repos/DF3NDR/paladin-dev-env/environments/crates-io/secrets --jq '.total_count'
+0
+```
+
+### Human Confirmation (Task 3, 19-02 checkpoint)
+
+**Date:** 2026-08-27
+**Actor:** Am0rfu5 (repository owner). Checkpoint presented and approved via the GSD
+orchestrator's `checkpoint:human-verify` gate.
+**Resolution:** "approved" — all four verification points (environment deployment
+rule, `environment: crates-io` + job-scoped `id-token: write` in `release.yml`, the
+two-outcome mode step with the silent-skip branch deleted, and the D-08
+reviewer-gate posture) stand as presented in the checkpoint.
+**Reviewer-gate decision:** none — deliberate (D-08). No required-reviewer
+protection rule is added to `crates-io`; unattended tag-push releases stay
+working. This matches the live state (`protection_rules` holds only the
+`branch_policy` entry, no `required_reviewers`) and is the plan's default
+posture, not a deviation. Enabling one later remains a `gh api`/settings change
+plus a doc-table update in 19-05.
+
 ## Credential Revocation (PUB-04)
 
 *Filled by plan 19-04.*

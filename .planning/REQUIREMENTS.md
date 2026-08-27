@@ -102,7 +102,7 @@ during execution.*
       crate this workflow never publishes. Closing the gap and recording it as a deliberate
       exclusion are both acceptable outcomes; carrying it forward unexamined is not.
 
-- [ ] **PUB-02**: **Publishing authenticates through an OIDC exchange rather than a stored
+- [x] **PUB-02**: **Publishing authenticates through an OIDC exchange rather than a stored
       secret.** The `publish-crates` job obtains a short-lived crates.io token at run time via
       `rust-lang/crates-io-auth-action`, which `cargo publish` then consumes. `id-token: write` is
       granted **on that job alone**, never at workflow level: `release.yml` already declares
@@ -128,7 +128,7 @@ during execution.*
       token valid wherever else it was ever pasted. Recording follows the convention Phase 9/12
       established for advisory suppressions: an owner and a date, not an implication.
 
-- [ ] **PUB-05**: **No release silently skips publishing while reporting success, and the per-crate
+- [x] **PUB-05**: **No release silently skips publishing while reporting success, and the per-crate
       trust configuration is documented.**
       `release.yml`'s `dry_run=skip` branch currently emits `::warning::CARGO_REGISTRY_TOKEN is not
       set — skipping crates.io publish.` and lets the job finish green. Under Trusted Publishing
@@ -305,10 +305,10 @@ than during execution.*
 | SAST-03 | Phase 18 | Complete |
 | SAST-04 | Phase 18 | Complete |
 | PUB-01 | Phase 19 | Pending |
-| PUB-02 | Phase 19 | Pending |
+| PUB-02 | Phase 19 | Complete |
 | PUB-03 | Phase 19 | Pending |
 | PUB-04 | Phase 19 | Pending |
-| PUB-05 | Phase 19 | Pending |
+| PUB-05 | Phase 19 | Complete |
 | PUBOPS-01 | Phase 20 | Pending |
 | PUBOPS-02 | Phase 20 | Pending |
 | PUBOPS-03 | Phase 20 | Pending |
