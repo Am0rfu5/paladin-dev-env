@@ -112,7 +112,7 @@ during execution.*
       the `github-pages` environment, so the mechanism is established in this repository rather
       than introduced by this phase.
 
-- [ ] **PUB-03**: **The new path is proven to publish before the old credential is destroyed, and
+- [x] **PUB-03**: **The new path is proven to publish before the old credential is destroyed, and
       the proof is not a dry run.**
       `cargo publish --dry-run` requires no credential whatsoever, so a green dry run is evidence
       about packaging and nothing at all about the OIDC exchange. Acceptable evidence shows a token
@@ -306,7 +306,7 @@ than during execution.*
 | SAST-04 | Phase 18 | Complete |
 | PUB-01 | Phase 19 | Pending |
 | PUB-02 | Phase 19 | Complete |
-| PUB-03 | Phase 19 | Pending |
+| PUB-03 | Phase 19 | Complete |
 | PUB-04 | Phase 19 | Pending |
 | PUB-05 | Phase 19 | Complete |
 | PUBOPS-01 | Phase 20 | Pending |
