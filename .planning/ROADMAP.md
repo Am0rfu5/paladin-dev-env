@@ -279,7 +279,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 19-04-PLAN.md — Revoke at crates.io, then delete the repository secret, recording both (PUB-04)
+- [x] 19-04-PLAN.md — Revoke at crates.io, then delete the repository secret, recording both (PUB-04)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 

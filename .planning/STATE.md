@@ -8,12 +8,12 @@ status: executing
 stopped_at: null
 last_updated: "2026-08-26T20:45:00.000Z"
 last_activity: 2026-08-26
-last_activity_desc: Plan 19-03 complete — OIDC publish proven, trustpub_data non-null on all eleven rc.2 versions
+last_activity_desc: Plan 19-04 complete — standing credential destroyed on both sides, PUB-04 closed
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -44,9 +44,9 @@ not yet discussed or planned.
 ## Current Position
 
 Phase: 19 (crates-io-trusted-publishing-replace-the-long-lived-registry) — EXECUTING
-Plan: 4 of 5 (19-01..19-03 complete)
-Status: Executing Phase 19 — waves 1-3 done, wave 4 (19-04) next
-Last activity: 2026-08-27 — Plan 19-03 complete: OIDC publish proven (run 33089177606), PUB-03 closed
+Plan: 5 of 5 (19-01..19-04 complete)
+Status: Executing Phase 19 — waves 1-4 done, wave 5 (19-05) next
+Last activity: 2026-08-27 — Plan 19-04 complete: crates.io token revoked, CARGO_REGISTRY_TOKEN secret deleted, PUB-04 closed
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
