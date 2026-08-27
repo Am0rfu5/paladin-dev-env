@@ -457,6 +457,69 @@ restructuring the publish loop, and a slower run (larger crates, registry backpr
 future twelfth crate) could still approach the boundary. Re-running the job mints a fresh
 token; loop restructuring is out of this phase's scope.
 
+### Registry-Side Provenance (Task 3)
+
+Per-crate query, `https://crates.io/api/v1/crates/<name>/0.8.1-rc.2`, `.version.trustpub_data`,
+each independently re-queried by this executor (not taken solely from the workflow's
+self-report):
+
+| Package | Version | HTTP | `trustpub_data` verdict | Raw provenance value |
+|---|---|---|---|---|
+| `paladin-ai-core` | `0.8.1-rc.2` | 200 | **OIDC** | `{provider: github, repository: DF3NDR/paladin-dev-env, run_id: 33089177606, sha: 40990087...}` |
+| `paladin-ports` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-herald` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-battalion` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-llm` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-memory` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-web` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-notifications` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-content` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-storage` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+| `paladin-ai` | `0.8.1-rc.2` | 200 | **OIDC** | same provider/repository/run_id/sha |
+
+All eleven carry the identical, non-null provenance object:
+`{"provider":"github","repository":"DF3NDR/paladin-dev-env","run_id":"33089177606","sha":"40990087ffe0795740d44c6718b00a5165f8c212"}` —
+`run_id` matches the tag-push run above; `sha` matches release-PR merge commit `40990087`.
+
+**The baseline contrast, stated explicitly rather than left implicit:** the same eleven
+crates, same registry, eleven days apart:
+
+| Version | Credential path | `trustpub_data` (all eleven) |
+|---|---|---|
+| `0.8.1-rc.1` (bootstrap, 2026-08-26) | standing `CARGO_REGISTRY_TOKEN` | `null` |
+| `0.8.1-rc.2` (this proof, 2026-08-27) | OIDC exchange via `rust-lang/crates-io-auth-action@v1` | non-null, `provider: github` |
+
+Same eleven crates, same registry, same publishing mechanism in the workflow file except
+for the credential step — the only variable that changed between the two runs is whether
+the credential came from a long-lived secret or a per-run OIDC mint, and the registry's
+own provenance field tracks that difference precisely. This is the whole proof.
+
+**Assumption A1 (`workflow_dispatch` eligibility) remains untested.** This proof used a
+tag push, per Task 2's instructions, specifically to avoid depending on A1. Whether a
+`workflow_dispatch`-triggered run can mint a Trusted Publishing token is still not
+established by anything in this phase.
+
+### What This Proof Does Not Establish
+
+- **It does not establish that the old credential is gone.** `CARGO_REGISTRY_TOKEN` was
+  not read by this run (verified: zero references in `release.yml` at this HEAD), but the
+  secret itself has not been revoked or deleted from the repository — that is 19-04's
+  job, and it has not started.
+- **It does not establish that a `workflow_dispatch`-triggered run can mint a token.**
+  This proof deliberately used a tag push to sidestep RESEARCH.md assumption A1, which no
+  authoritative source confirms or denies. A1 stays untested.
+- **It does not establish anything about dry runs.** `cargo publish --dry-run` mints no
+  credential of any kind by design — a green dry run would be evidence about packaging
+  and nothing else, and none of the evidence here is a dry run; every publish above is a
+  real, non-dry-run upload with registry-observed provenance.
+- **It does not establish the OIDC path's behavior under failure conditions** — an
+  expired token mid-loop, a misconfigured Trust Publisher Configuration, or a revoked
+  environment policy were not exercised. This run's Trust Link Ledger (Task 1) rests on
+  the human's unverified "linked" report; had one of the eleven configurations actually
+  been missing or misconfigured, this run's all-success outcome demonstrates that it was
+  not, but the *mechanism* for what would happen if one were missing (a per-crate auth
+  failure, not a whole-job failure) was not separately tested.
+
 ## Credential Revocation (PUB-04)
 
 *Filled by plan 19-04.*
