@@ -90,7 +90,7 @@ during execution.*
 
 ### Publish credential (PUB)
 
-- [ ] **PUB-01**: The **publishable crate set is enumerated from `Cargo.toml` and reconciled with
+- [x] **PUB-01**: The **publishable crate set is enumerated from `Cargo.toml` and reconciled with
       the publish order in `release.yml` before any trust link is created.**
       crates.io Trusted Publishing is configured per crate, which promotes the crate list from an
       implementation detail to the security boundary — an unlisted crate is an unprotected crate.
@@ -304,7 +304,7 @@ than during execution.*
 | SAST-02 | Phase 18 | Complete |
 | SAST-03 | Phase 18 | Complete |
 | SAST-04 | Phase 18 | Complete |
-| PUB-01 | Phase 19 | Pending |
+| PUB-01 | Phase 19 | Complete |
 | PUB-02 | Phase 19 | Complete |
 | PUB-03 | Phase 19 | Complete |
 | PUB-04 | Phase 19 | Complete |

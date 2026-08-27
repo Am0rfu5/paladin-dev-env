@@ -639,28 +639,19 @@ guide live in **[Release Automation](../appendix/release-automation.md)**; the m
 
 ### Cutting a release
 
-A release is cut locally with a single command (CI does the publishing):
-
-```bash
-# 0. Ensure your release commit is merged and you are on an up-to-date main.
-git checkout main && git pull --ff-only origin main
-
-# Bumps all crates in lockstep, finalizes CHANGELOG.md, commits, tags v<version>, and pushes.
-make release VERSION=0.4.0
-```
-
-`make release`:
-
-1. Validates `VERSION` is valid semver (fails fast otherwise).
-2. Runs `make release-check` (format, lint, full tests, audit, release build).
-3. Bumps every public crate to `VERSION` in lockstep via `cargo release version` and updates
-   internal dependency pins.
-4. Moves the `## [Unreleased]` changelog section under a new `## [VERSION] - <date>` heading.
-5. Commits, creates the `v VERSION` tag, and pushes the branch and tag.
+A release is cut through a version-bump PR merged to `main`, followed by an annotated tag pushed
+directly to the merge commit; CI does the publishing. `make release`'s automatic push to `main` no
+longer completes — the "Protect main branch" ruleset blocks a direct push — so the push half of
+the release is done through a PR by hand. See
+**[Release Automation → Operator Guide](../appendix/release-automation.md#operator-guide-cutting-a-release)**
+for the exact, current step-by-step procedure; it is not duplicated here to avoid a second,
+drifting copy.
 
 Pushing the `v*.*.*` tag triggers the release pipeline, which runs the test suite and then publishes
-the crates to crates.io in dependency order (`paladin-core` → `paladin-ports` → leaf crates →
-`paladin`), builds Docker images and binaries, generates the SBOM, and creates the GitHub release.
+the eleven workspace crates to crates.io in dependency order (see
+[Release Automation](../appendix/release-automation.md#canonical-publish-order) for the canonical,
+up-to-date order — it changes if a new crate is added, so it is not restated here), builds Docker
+images and binaries, generates the SBOM, and creates the GitHub release.
 
 Install the tool once with:
 
@@ -668,11 +659,13 @@ Install the tool once with:
 cargo install --locked cargo-release
 ```
 
-### Required secret
+### Publish credential
 
-crates.io publishing requires a repository secret **`CARGO_REGISTRY_TOKEN`** (a crates.io API token
-with publish scope). If it is not set, the publish job is skipped with a warning and the rest of the
-release still runs.
+Publishing to crates.io authenticates via crates.io Trusted Publishing — the `publish-crates` job
+mints a short-lived token per run from its GitHub OIDC identity, under the `crates-io` GitHub
+Environment. There is nothing for a contributor to configure. See
+[Release Automation](../appendix/release-automation.md#trusted-publishing) for the mechanism, the
+per-crate trust table, and the credential history.
 
 ### Dry run (no live publish)
 
