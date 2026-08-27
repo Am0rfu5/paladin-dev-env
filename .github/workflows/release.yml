@@ -284,7 +284,7 @@ jobs:
 
       - name: Install cross (for Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: cargo install cross
+        run: cargo install cross --locked --version 0.2.5
 
       - name: Build binary
         run: |
