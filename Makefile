@@ -184,6 +184,20 @@ check-workflow-triggers: ## Verify every workflow's trigger surface matches the 
 check-codeql-dismissals: ## Verify CODEQL-DISMISSALS.md is schema-complete, non-drifted, non-stale and self-consistent
 	@./scripts/check-codeql-dismissals.sh
 
+.PHONY: check-release-consistency
+# Deliberately NOT part of check-gates: every sibling guard above is a
+# no-argument offline check runnable against the current tree as-is: this
+# one requires a release tag (RELEASE_TAG) to check against, so it cannot be
+# folded into the no-argument composite without a default/guessed tag,
+# which is exactly the silent-wrong-tag failure mode this gate exists to
+# prevent (see the guard's own MISSING_TAG check).
+check-release-consistency: ## Verify a release tag's version matches every publishable manifest (RELEASE_TAG=vX.Y.Z required)
+	@if [ -z "$(RELEASE_TAG)" ]; then \
+		echo "$(RED)❌ RELEASE_TAG is required. Usage: make check-release-consistency RELEASE_TAG=v0.8.1-rc.2$(NC)"; \
+		exit 1; \
+	fi
+	@./scripts/check-release-consistency.sh --tag "$(RELEASE_TAG)"
+
 .PHONY: check-gates
 check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions check-workflow-triggers check-codeql-dismissals ## Run all offline release-gate guards
 
@@ -192,6 +206,7 @@ test-shell-guards: ## Run regression tests for the offline gate guard scripts (n
 	@./tests/scripts/check-workflow-suppressions_test.sh
 	@./tests/scripts/check-workflow-triggers_test.sh
 	@./tests/scripts/check-codeql-dismissals_test.sh
+	@./tests/scripts/check-release-consistency_test.sh
 
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode

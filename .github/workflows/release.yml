@@ -348,6 +348,58 @@ jobs:
           asset_name: ${{ matrix.artifact_name }}.tar.gz.sha256
           asset_content_type: text/plain
 
+  # Pre-publish consistency gate (PUBOPS-01): fails closed if the release
+  # tag's version disagrees with any publishable crate's manifest version.
+  # Runs the exact script `make check-release-consistency` runs locally --
+  # no gate logic is duplicated in this YAML (D-07). Added to
+  # `publish-crates`'s `needs` below so no `cargo publish` can start before
+  # this job has passed. Deliberately NOT added to `create-release`,
+  # `build-docker`, `build-binaries` or `sbom` -- WR-05's documented
+  # asymmetry (a release with a failing gate can still produce a GitHub
+  # release, Docker image, binaries and SBOM; it just cannot publish to
+  # crates.io) is preserved deliberately, not by oversight.
+  #
+  # This job satisfies D-03 by construction: it only reads (cargo metadata
+  # over the checked-out tree) and writes nothing, keeping no state between
+  # runs. Both "Re-run failed jobs" and "Re-run all jobs" therefore
+  # re-evaluate it from scratch and reach the same verdict on the same tag.
+  # A future change that introduces caching or a state file here would be a
+  # regression against that property.
+  check-release-consistency:
+    name: Pre-Publish Consistency Gate
+    runs-on: ubuntu-latest
+    needs: verify-tag-source
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Get version
+        id: get_version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run pre-publish consistency gate
+        env:
+          # Indirect through env: rather than interpolating the tainted
+          # output directly into the run: block (CR-01) -- the version
+          # ultimately traces back to the workflow_dispatch `tag` input.
+          RELEASE_TAG: ${{ steps.get_version.outputs.version }}
+        run: ./scripts/check-release-consistency.sh --tag "$RELEASE_TAG"
+
   # Generate a CycloneDX Software Bill of Materials (SBOM) from the locked
   # dependency graph and attach it to the GitHub release (Milestone 10 Epic 2).
   sbom:
@@ -408,7 +460,7 @@ jobs:
   publish-crates:
     name: Publish to crates.io
     runs-on: ubuntu-latest
-    needs: [test, create-release]
+    needs: [test, create-release, check-release-consistency]
     environment: crates-io
     permissions:
       contents: read
