@@ -18,9 +18,8 @@
 # reads: given the same tag and the same metadata, running it twice produces
 # byte-identical output and the same exit code.
 #
-# Clause implemented in this plan (D-08 clause 1 of 4 -- manifest agreement;
-# the remaining three clauses, changelog dates / CI conclusion / SHA
-# agreement, are added by a later plan):
+# Clauses implemented so far (D-08 clauses 1-2 of 4 -- CI conclusion, clause
+# 3, is added later in this same plan; SHA agreement is future scope):
 #
 #   1. Manifest agreement. Every publishable package in the Cargo workspace
 #      -- discovered via `cargo metadata --no-deps --format-version 1`,
@@ -33,6 +32,19 @@
 #      `publish = false` (`cargo metadata` reports this as an empty list)
 #      is excluded by design, never counted as a mismatch.
 #
+#   2. Changelog-section agreement. Every publishable package's own
+#      changelog -- `CHANGELOG.md` in the directory containing that
+#      package's `manifest_path`, never a hardcoded `crates/*/CHANGELOG.md`
+#      glob (the root package's manifest sits at the workspace root, so its
+#      changelog is the root `CHANGELOG.md`; every crate resolves to its own
+#      file) -- carries a heading matching `## [<exact tag version>]`,
+#      optionally followed by a dated suffix (`## [1.2.3] - 2026-01-01`
+#      satisfies `--tag v1.2.3`; `## [1.2.3-rc.1]` and `## [1.2.30]` do not,
+#      because the match is on the bracketed content exactly, never a
+#      prefix). A changelog file that is entirely absent and one that exists
+#      but carries no section for this version are two distinct failure
+#      messages, never conflated into one.
+#
 # Discovering zero publishable packages is a named ZERO_PACKAGES failure
 # with a non-zero exit -- a broken enumeration must never present as a pass
 # over an empty set, matching the convention `check-changelogs.sh` and
@@ -40,9 +52,9 @@
 # scripts.
 #
 # Reserved flags: --sha and --ci-runs-json are accepted but currently
-# unused -- a later plan gives them behaviour (the SHA-agreement and
-# CI-conclusion clauses). Passing them today is a silent no-op, not a usage
-# error, so this plan's CLI surface does not need to change shape again.
+# unused by clauses 1-2 above; clause 3 (CI conclusion, this same plan's
+# second task) gives them behaviour. Passing them today without clause 3
+# wired is a silent no-op, not a usage error.
 #
 # Sourcing seam: set CHECK_RELEASE_CONSISTENCY_LIB_ONLY=1 before sourcing
 # this file to load the check_release_consistency_main function without
@@ -60,8 +72,10 @@
 #         --metadata-json is supplied. An unrecognised flag is a usage
 #         error.
 # Exit:   0 if every publishable package's manifest version exactly equals
-#         the tag version (status OK); non-zero for MISMATCH, ZERO_PACKAGES,
-#         MISSING_TAG, or a usage error (unknown flag / missing python3).
+#         the tag version AND every publishable package's own changelog
+#         carries a section for it (status OK); non-zero for MISMATCH,
+#         CHANGELOG_MISMATCH, ZERO_PACKAGES, MISSING_TAG, or a usage error
+#         (unknown flag / missing python3).
 
 set -euo pipefail
 
@@ -164,6 +178,8 @@ check_release_consistency_main() {
 
         REPORT=$(python3 - "${METADATA_PATH}" "${TAG_VERSION}" <<'PY'
 import json
+import os
+import re
 import sys
 
 metadata_path = sys.argv[1]
@@ -192,23 +208,93 @@ if not publishable:
           "by design, not a bug.")
     sys.exit(0)
 
-mismatches = []
+# Clause 1: manifest version agreement. String equality only, no semver
+# coercion -- "0.8.1" and "0.8.1-rc.2" are different strings.
+version_failures = []
 for p in publishable:
     name = p.get("name", "<unknown>")
     version = p.get("version", "")
     if version != tag_version:
-        mismatches.append((name, version))
+        version_failures.append(
+            (name, f"{name}: manifest version {version!r} != tag version {tag_version!r}")
+        )
 
-if mismatches:
-    print("MISMATCH")
-    print(f"FAIL: tag version {tag_version!r} does not match {len(mismatches)} of "
-          f"{len(publishable)} publishable package(s):")
-    for name, version in sorted(mismatches, key=lambda t: t[0]):
-        print(f"  - {name}: manifest version {version!r} != tag version {tag_version!r}")
+# Clause 2: changelog-section agreement. A package's changelog is
+# CHANGELOG.md in the directory containing its own manifest_path -- this is
+# what makes the root package (manifest at the workspace root) resolve to
+# the root CHANGELOG.md and each crate resolve to its own file, with no
+# special-casing and no hardcoded crates/*/CHANGELOG.md glob. The heading
+# pattern anchors immediately after the bracketed version so a longer
+# version sharing a prefix, or a prerelease variant, never satisfies a
+# stable tag.
+heading_re = re.compile(r"^##\s*\[" + re.escape(tag_version) + r"\](\s|$)")
+changelog_failures = []
+for p in publishable:
+    name = p.get("name", "<unknown>")
+    manifest_path = p.get("manifest_path") or ""
+    if not manifest_path:
+        changelog_failures.append(
+            (name, f"{name}: metadata carries no manifest_path -- cannot locate its changelog")
+        )
+        continue
+
+    changelog_path = os.path.join(os.path.dirname(manifest_path), "CHANGELOG.md")
+
+    if not os.path.isfile(changelog_path):
+        changelog_failures.append((
+            name,
+            f"{name}: changelog not found at {changelog_path} "
+            f"(expected a section for version {tag_version!r})",
+        ))
+        continue
+
+    found = False
+    try:
+        with open(changelog_path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                if heading_re.match(line):
+                    found = True
+                    break
+    except OSError as exc:
+        changelog_failures.append(
+            (name, f"{name}: could not read changelog at {changelog_path}: {exc}")
+        )
+        continue
+
+    if not found:
+        changelog_failures.append((
+            name,
+            f"{name}: changelog at {changelog_path} has no section for version {tag_version!r}",
+        ))
+
+if version_failures or changelog_failures:
+    # Merge both clauses into the same failures list, sorted by package
+    # name (clause 1's message before clause 2's for the same package),
+    # so a run reporting both clauses stays deterministic.
+    combined = [(name, 0, msg) for name, msg in version_failures] + \
+               [(name, 1, msg) for name, msg in changelog_failures]
+    combined.sort(key=lambda t: (t[0], t[1]))
+
+    if version_failures and changelog_failures:
+        status = "MISMATCH_AND_CHANGELOG"
+    elif version_failures:
+        status = "MISMATCH"
+    else:
+        status = "CHANGELOG_MISMATCH"
+
+    print(status)
+    print(
+        f"FAIL: {len(version_failures)} manifest-version mismatch(es) and "
+        f"{len(changelog_failures)} changelog-section issue(s) among "
+        f"{len(publishable)} publishable package(s):"
+    )
+    for _, _, msg in combined:
+        print(f"  - {msg}")
     sys.exit(0)
 
 print("OK")
-print(f"{len(publishable)} publishable package(s) checked, all match tag version {tag_version!r}.")
+print(f"{len(publishable)} publishable package(s) checked, all match tag version "
+      f"{tag_version!r} with a changelog section for it.")
 sys.exit(0)
 PY
 )
@@ -234,7 +320,17 @@ PY
         echo "     check for a broken workspace or an accidental publish = false on every"
         echo "     crate."
         echo "  3. MISSING_TAG: pass --tag vX.Y.Z (or X.Y.Z)."
-        echo "  4. If this guard is wrong about a crate or the tag, fix the guard rather"
+        echo "  4. CHANGELOG_MISMATCH (changelog not found): a publishable package has no"
+        echo "     changelog file next to its own manifest -- add one following the"
+        echo "     Keep-a-Changelog shape already used by its siblings."
+        echo "  5. CHANGELOG_MISMATCH (no section for this version): a changelog file"
+        echo "     exists but carries no '## [X.Y.Z]' heading for this tag version -- this"
+        echo "     section is normally written by the release tooling, so a human seeing"
+        echo "     this locally should run the release flow rather than hand-editing"
+        echo "     eleven files."
+        echo "  6. MISMATCH_AND_CHANGELOG: both of the above are true for at least one"
+        echo "     package in this run -- see the entries above for which."
+        echo "  7. If this guard is wrong about a crate or the tag, fix the guard rather"
         echo "     than working around it."
         return 1
     fi
