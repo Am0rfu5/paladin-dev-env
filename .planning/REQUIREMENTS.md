@@ -90,7 +90,7 @@ during execution.*
 
 ### Publish credential (PUB)
 
-- [ ] **PUB-01**: The **publishable crate set is enumerated from `Cargo.toml` and reconciled with
+- [x] **PUB-01**: The **publishable crate set is enumerated from `Cargo.toml` and reconciled with
       the publish order in `release.yml` before any trust link is created.**
       crates.io Trusted Publishing is configured per crate, which promotes the crate list from an
       implementation detail to the security boundary — an unlisted crate is an unprotected crate.
@@ -112,7 +112,7 @@ during execution.*
       the `github-pages` environment, so the mechanism is established in this repository rather
       than introduced by this phase.
 
-- [ ] **PUB-03**: **The new path is proven to publish before the old credential is destroyed, and
+- [x] **PUB-03**: **The new path is proven to publish before the old credential is destroyed, and
       the proof is not a dry run.**
       `cargo publish --dry-run` requires no credential whatsoever, so a green dry run is evidence
       about packaging and nothing at all about the OIDC exchange. Acceptable evidence shows a token
@@ -120,7 +120,7 @@ during execution.*
       recorded exchange. The ordering is itself the requirement: revoking first and testing second
       leaves the project unable to ship a release until the new path is debugged under pressure.
 
-- [ ] **PUB-04**: **The long-lived credential is revoked at crates.io and deleted from repository
+- [x] **PUB-04**: **The long-lived credential is revoked at crates.io and deleted from repository
       secrets, and both actions are recorded with a date and an actor.**
       A migration that leaves `CARGO_REGISTRY_TOKEN` in place has added a publish path rather than
       replaced one, which is a net increase in attack surface. **Revocation at crates.io is the
@@ -304,10 +304,10 @@ than during execution.*
 | SAST-02 | Phase 18 | Complete |
 | SAST-03 | Phase 18 | Complete |
 | SAST-04 | Phase 18 | Complete |
-| PUB-01 | Phase 19 | Pending |
+| PUB-01 | Phase 19 | Complete |
 | PUB-02 | Phase 19 | Complete |
-| PUB-03 | Phase 19 | Pending |
-| PUB-04 | Phase 19 | Pending |
+| PUB-03 | Phase 19 | Complete |
+| PUB-04 | Phase 19 | Complete |
 | PUB-05 | Phase 19 | Complete |
 | PUBOPS-01 | Phase 20 | Pending |
 | PUBOPS-02 | Phase 20 | Pending |

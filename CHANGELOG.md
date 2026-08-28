@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Publishing to crates.io no longer uses a long-lived repository secret.** The `publish-crates`
+  job in `.github/workflows/release.yml` now mints a short-lived (~30 minute) token per run from
+  its own GitHub OIDC identity via crates.io Trusted Publishing, under a `crates-io` GitHub
+  Environment restricted to `v*.*.*` tags. The old publish-scoped crates.io token ("Paladin") was
+  revoked and the `CARGO_REGISTRY_TOKEN` repository secret was deleted, both on 2026-08-27; the
+  branch that let a release finish green while silently publishing nothing (an absent secret
+  skipping the publish job) was removed rather than reworded — that behavior no longer exists.
+  `paladin-herald`, previously absent from the publish order, is now the eleventh crate in it, and
+  all eleven crates carry a crates.io Trust Publisher Configuration pointing at this workflow and
+  environment. See the credential history in
+  [`docs/src/appendix/release-automation.md`](docs/src/appendix/release-automation.md#credential-history)
+  for the full record.
+
 ## [0.8.1-rc.2] - 2026-08-27
 
 ## [0.8.1-rc.1] - 2026-08-26

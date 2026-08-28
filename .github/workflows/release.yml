@@ -29,6 +29,8 @@ jobs:
   verify-tag-source:
     name: Verify Tag From Main
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,6 +39,8 @@ jobs:
 
       - name: Resolve release commit
         id: resolve
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -44,7 +48,7 @@ jobs:
             # so an annotated tag does not collide with a pre-existing lightweight
             # ref (`would clobber existing tag`).
             git fetch --tags --force --quiet origin
-            SHA=$(git rev-list -n 1 "${{ inputs.tag }}")
+            SHA=$(git rev-list -n 1 -- "$RELEASE_TAG")
           else
             # On a tag push the checked-out commit is already the release commit.
             SHA="${{ github.sha }}"
@@ -67,11 +71,18 @@ jobs:
           fi
 
   # Full test suite — gates crates.io publishing (a release must not publish if
-  # tests fail).
+  # tests fail). Docker images (build-docker) and release binaries
+  # (build-binaries) below are NOT gated on this job -- they depend only on
+  # create-release, so a release with a failing test suite can still push a
+  # tagged Docker image to ghcr.io and attach binaries to the GitHub release,
+  # just not publish to crates.io. This asymmetry is a documented choice
+  # (WR-05), not a latent surprise.
   test:
     name: Test Suite
     runs-on: ubuntu-latest
     needs: verify-tag-source
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -103,9 +114,11 @@ jobs:
 
       - name: Get version
         id: get_version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           else
             echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
@@ -120,10 +133,15 @@ jobs:
           else
             CHANGELOG=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
           fi
+          # Use a random, unique delimiter rather than the literal "EOF" --
+          # a commit subject line that is exactly "EOF" would otherwise
+          # terminate the heredoc early and let subsequent content inject
+          # arbitrary key=value lines into $GITHUB_OUTPUT.
+          delim="EOF_$(openssl rand -hex 8)"
           {
-            echo "changelog<<EOF"
+            echo "changelog<<${delim}"
             echo "$CHANGELOG"
-            echo "EOF"
+            echo "${delim}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
@@ -153,7 +171,8 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
 
-  # Build and push multi-arch Docker images
+  # Build and push multi-arch Docker images. Intentionally not gated on the
+  # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
   build-docker:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
@@ -216,7 +235,8 @@ jobs:
             echo "::warning::Image size (${SIZE_MB} MB) exceeds 500 MB target"
           fi
 
-  # Build binaries for multiple platforms
+  # Build binaries for multiple platforms. Intentionally not gated on the
+  # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
   build-binaries:
     name: Build Binaries
     runs-on: ${{ matrix.os }}
@@ -264,14 +284,19 @@ jobs:
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        # Pinned to a commit SHA rather than the mutable `@master` branch ref
+        # (WR-02) -- this job holds contents: write. Still the `master` ref's
+        # action code (not `@stable`/`@beta`/`@nightly`), which is required
+        # for the `toolchain:` input mechanism the comment above depends on;
+        # only the ref is pinned, not the toolchain-selection design.
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master, as of 2026-08-27
         with:
           toolchain: ${{ steps.rust_pin.outputs.channel }}
           targets: ${{ matrix.target }}
 
       - name: Install cross (for Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: cargo install cross
+        run: cargo install cross --locked --version 0.2.5
 
       - name: Build binary
         run: |
@@ -331,6 +356,11 @@ jobs:
     needs: create-release
     permissions:
       contents: write
+    env:
+      # Indirect through env: rather than interpolating the tainted output
+      # directly into run:/with: blocks (CR-01) -- the version ultimately
+      # traces back to the workflow_dispatch `tag` input.
+      RELEASE_VERSION: ${{ needs.create-release.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -348,7 +378,7 @@ jobs:
         run: |
           cargo cyclonedx --all --format json
           # The root package SBOM is the primary deliverable.
-          cp paladin-ai.cdx.json "paladin-${{ needs.create-release.outputs.version }}.cdx.json"
+          cp paladin-ai.cdx.json "paladin-${RELEASE_VERSION}.cdx.json"
 
       - name: Upload SBOM to release
         uses: actions/upload-release-asset@v1
@@ -356,8 +386,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: paladin-${{ needs.create-release.outputs.version }}.cdx.json
-          asset_name: paladin-${{ needs.create-release.outputs.version }}.cdx.json
+          asset_path: paladin-${{ env.RELEASE_VERSION }}.cdx.json
+          asset_name: paladin-${{ env.RELEASE_VERSION }}.cdx.json
           asset_content_type: application/json
 
   # Publish workspace crates to crates.io in dependency order (Milestone 10

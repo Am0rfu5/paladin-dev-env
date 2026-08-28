@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
-current_phase: 19
-current_phase_name: crates-io-trusted-publishing-replace-the-long-lived-registry
-status: executing
-stopped_at: null
-last_updated: "2026-08-26T20:45:00.000Z"
-last_activity: 2026-08-26
-last_activity_desc: Plan 19-02 complete — publish-crates mints its credential via OIDC
+current_phase: 20
+current_phase_name: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
+status: planning
+stopped_at: "Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)"
+last_updated: "2026-08-28T12:32:36.586Z"
+last_activity: 2026-08-28
+last_activity_desc: Phase 19 complete, transitioned to Phase 20
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 12
-  completed_plans: 9
+  completed_plans: 12
 ---
 
 # Project State
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 19 (crates-io-trusted-publishing-replace-the-long-lived-registry) — EXECUTING
-Plan: 3 of 5 (19-01, 19-02 complete)
-Status: Executing Phase 19 — waves 1-2 done, wave 3 (19-03) next
-Last activity: 2026-08-27 — Plan 19-02 complete: publish-crates mints its credential via OIDC, silent-skip deleted
+Phase: 20 — Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-28 — Phase 19 complete, transitioned to Phase 20
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -57,7 +57,7 @@ valid outcome, not a failure.
 
 **Velocity:**
 
-- Total plans completed: 169
+- Total plans completed: 174
 - Average duration: —
 - Total execution time: —
 
@@ -81,6 +81,7 @@ valid outcome, not a failure.
 | 17 | 22 | - | - |
 | 16 | 14 | - | - |
 | 18 | 7 | - | - |
+| 19 | 5 | - | - |
 
 *Updated after each plan completion*
 
