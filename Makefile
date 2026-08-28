@@ -548,6 +548,14 @@ publish-dry-run: release-check ## Run dependency-first `cargo publish --dry-run`
 	@$(CARGO) publish --dry-run -p paladin || true
 	@echo "$(YELLOW)Dry-run publish command sequence completed. See docs/RELEASE_CHECKLIST.md for interpretation and publish-order gating.$(NC)"
 
+.PHONY: finalize-crate-changelogs
+finalize-crate-changelogs: ## Stamp a dated section into every publishable package's changelog (VERSION=x.y.z required)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(RED)❌ VERSION is required. Usage: make finalize-crate-changelogs VERSION=0.4.0$(NC)"; \
+		exit 1; \
+	fi
+	@./scripts/finalize-crate-changelogs.sh --version "$(VERSION)"
+
 .PHONY: release
 release: ## Cut a release: bump version (lockstep), finalize changelog, commit, tag, push. Usage: make release VERSION=0.4.0
 	@if [ -z "$(VERSION)" ]; then \
@@ -587,9 +595,19 @@ release: ## Cut a release: bump version (lockstep), finalize changelog, commit, 
 	@$(MAKE) release-check
 	@echo "$(CYAN)Bumping all crates to $(VERSION) (lockstep)...$(NC)"
 	@$(CARGO) release version "$(VERSION)" --execute --no-confirm --workspace
-	@echo "$(CYAN)Finalizing CHANGELOG.md...$(NC)"
-	@DATE=$$(date +%Y-%m-%d); \
-		perl -0pi -e "s/## \\[Unreleased\\]/## [Unreleased]\n\n## [$(VERSION)] - $$DATE/" CHANGELOG.md
+	@echo "$(CYAN)Finalizing changelogs for all publishable packages (root + crates)...$(NC)"
+	@./scripts/finalize-crate-changelogs.sh --version "$(VERSION)"
+	@echo "$(CYAN)Verifying release consistency for v$(VERSION) before tagging...$(NC)"
+	@# Runs the manifest/changelog agreement clauses directly against the guard
+	@# script rather than via a recursive $(MAKE) call: GNU Make always executes
+	@# a recipe line that references $(MAKE), even under `make -n`, which would
+	@# break dry-run testing of this target (`make -n release VERSION=...`) by
+	@# actually invoking the gate against a fake version. This is the last step
+	@# before tag/push, so a tag is never pushed for a tree the gate would
+	@# reject. The release.yml `check-release-consistency` CI job is
+	@# authoritative for the CI-conclusion clause (D-10), which only a live
+	@# GitHub Actions run can evaluate -- a local pass here is not the full gate.
+	@./scripts/check-release-consistency.sh --tag "v$(VERSION)"
 	@echo "$(CYAN)Committing, tagging, and pushing...$(NC)"
 	@git add -u
 	@git commit -m "chore(release): version $(VERSION)"
