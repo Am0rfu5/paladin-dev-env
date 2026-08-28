@@ -8,6 +8,10 @@ This checklist defines the required release path from code freeze through publis
 > operator guide. This checklist remains the authoritative description of the end-to-end process and
 > the manual verification steps.
 
+> **Recovery:** If a release stops partway through, or a gate blocks `publish-crates` from
+> running, see [Release Recovery](release-recovery.md) for how to establish what actually
+> reached crates.io, how to complete forward, and the yank policy for a bad publish.
+
 ## 1. Code Freeze
 
 - Confirm release branch and freeze window.
@@ -16,7 +20,9 @@ This checklist defines the required release path from code freeze through publis
 
 ## 2. Changelog Finalization
 
-- Ensure root changelog and per-crate changelogs are updated.
+- Ensure root changelog and per-crate changelogs are updated. The per-crate changelogs are now
+  stamped by the release tooling (`make release`'s changelog finalization step, extended
+  alongside the root changelog) rather than edited by hand across all ten crates.
 - Ensure notable breaking changes are explicitly called out.
 - Verify release notes map to merged changes.
 

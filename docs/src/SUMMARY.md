@@ -95,6 +95,7 @@
 - [Sanctum Migration](appendix/sanctum-migration.md)
 - [Release Automation](appendix/release-automation.md)
 - [Release Checklist](appendix/release-checklist.md)
+- [Release Recovery](appendix/release-recovery.md)
 - [Doc Coverage Report](appendix/doc-coverage-report.md)
 - [Port Trait Template](appendix/port-trait-template.md)
 - [Design and Architecture (Archived)](appendix/design-and-architecture.md)
