@@ -314,13 +314,26 @@ Plans:
 **Plans:** 7 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 20-01-PLAN.md — Tracer: pre-publish consistency gate wired script → make target → `release.yml` job → `publish-crates` needs edge (manifest-version clause)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 20-02-PLAN.md — Gate expansion: changelog-section clause across all eleven packages, plus CI-conclusion resolution for the tagged SHA
 - [ ] 20-03-PLAN.md — `create-release` idempotency: `gh api` create-or-reuse preserving the `upload_url`/`version` contract, and the release-commit SHA exposed to the gate
 - [ ] 20-04-PLAN.md — Release tooling: mechanical per-crate changelog finalization, and the gate wired into `make release` before the tag is pushed
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 20-05-PLAN.md — Publish loop: registry-state already-published detection, bounded index-visibility poll, per-crate outcome table and the no-crate-moved failure
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 20-06-PLAN.md — Recovery runbook: `docs/src/appendix/release-recovery.md` with the yank policy and yank register, cross-linked and registered in the book
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 20-07-PLAN.md — Recovery rehearsal against an induced partial failure, evidence file, and an honest tested/untested status line
 
 ### Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables

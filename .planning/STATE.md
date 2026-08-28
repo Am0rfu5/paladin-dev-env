@@ -4,15 +4,15 @@ milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 20
 current_phase_name: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
-status: planning
+status: executing
 stopped_at: Phase 20 context gathered
-last_updated: "2026-08-28T13:36:41.336Z"
+last_updated: "2026-08-28T14:26:59.294Z"
 last_activity: 2026-08-28
 last_activity_desc: Phase 19 complete, transitioned to Phase 20
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 12
+  total_plans: 19
   completed_plans: 12
 ---
 
@@ -45,7 +45,7 @@ not yet discussed or planned.
 
 Phase: 20 — Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-08-28 — Phase 19 complete, transitioned to Phase 20
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
