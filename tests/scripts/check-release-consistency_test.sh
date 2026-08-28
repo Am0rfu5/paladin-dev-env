@@ -93,6 +93,26 @@ write_changelog_fixture() {
     printf '%s' "${content}" > "${pkg_dir}/CHANGELOG.md"
 }
 
+# write_ci_runs_fixture FILE RUN... -> writes a minimal
+# `{"workflow_runs": [...]}` document in the shape the
+# `actions/workflows/{file}/runs` gh api endpoint returns -- the fixture
+# seam --ci-runs-json reads instead of calling the API, so this exercises
+# the same parsing code path a live gh api response takes. Each RUN is
+# "created_at|id|conclusion". Zero RUN arguments writes an empty array
+# (the "no completed run" case).
+write_ci_runs_fixture() {
+    local file="$1"
+    shift
+    local entries=() run created_at id conclusion
+    for run in "$@"; do
+        IFS='|' read -r created_at id conclusion <<<"${run}"
+        entries+=("{\"created_at\": \"${created_at}\", \"id\": ${id}, \"conclusion\": \"${conclusion}\"}")
+    done
+    local joined
+    joined="$(IFS=,; echo "${entries[*]:-}")"
+    printf '{"workflow_runs": [%s]}\n' "${joined}" > "${file}"
+}
+
 # run_guard ARGS... -> sets $LAST_OUTPUT and $LAST_STATUS.
 run_guard() {
     LAST_OUTPUT="$("${GUARD}" "$@" 2>&1)"
@@ -305,6 +325,94 @@ if [ "${LAST_STATUS}" -ne 0 ] && ! grep -qF -- "manifest version" <<<"${LAST_OUT
     echo "PASS (independence): a changelog-only failure reports no manifest-version mismatch"
 else
     echo "FAIL: a changelog-only failure unexpectedly reported a manifest-version mismatch"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# =============================================================================
+# Clause 3: CI-conclusion agreement for the tagged SHA (D-10, PUBOPS-02,
+# plan 20-02 Task 2). Fixture-driven throughout via --ci-runs-json, so no
+# assertion in this section touches the network.
+# =============================================================================
+
+CI_SHA="deadbeef0000"
+
+# --- 1. One completed run, conclusion success: silent. ---------------------
+write_ci_runs_fixture "${SCRATCH}/ci-1-success.json" "2026-01-01T00:00:00Z|1|success"
+assert_silent "one completed run, conclusion success, is silent" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-1-success.json"
+
+# --- 2. One completed run, conclusion failure: fires, names the SHA and
+#        tells the operator to re-run CI or re-tag. --------------------------
+write_ci_runs_fixture "${SCRATCH}/ci-2-failure.json" "2026-01-01T00:00:00Z|1|failure"
+assert_fire "one completed run, conclusion failure, fires naming the SHA" "${CI_SHA}" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-2-failure.json"
+assert_fire "one completed run, conclusion failure, tells the operator to re-run CI" "re-run CI on main" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-2-failure.json"
+
+# --- 3. Two completed runs for the same SHA, older success, newer failure:
+#        fires -- the most recent run decides. ------------------------------
+write_ci_runs_fixture "${SCRATCH}/ci-3-mostrecent.json" \
+    "2026-01-01T00:00:00Z|1|success" \
+    "2026-01-02T00:00:00Z|2|failure"
+assert_fire "older success + newer failure: the most recent run decides" "concluded 'failure'" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-3-mostrecent.json"
+
+# --- 4. Two completed runs with identical created_at, differing id: the
+#        higher id decides, order-independent of array position. -----------
+write_ci_runs_fixture "${SCRATCH}/ci-4-tiebreak.json" \
+    "2026-01-01T00:00:00Z|1|success" \
+    "2026-01-01T00:00:00Z|2|failure"
+assert_fire "identical created_at, higher id (failure) decides" "concluded 'failure'" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-4-tiebreak.json"
+
+write_ci_runs_fixture "${SCRATCH}/ci-4b-tiebreak-reversed.json" \
+    "2026-01-01T00:00:00Z|2|failure" \
+    "2026-01-01T00:00:00Z|1|success"
+assert_fire "tie-break is array-order-independent: reversed order still picks higher id" "concluded 'failure'" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-4b-tiebreak-reversed.json"
+
+# --- 5. Empty runs array: fires with a message saying no completed run was
+#        found for the SHA. --------------------------------------------------
+write_ci_runs_fixture "${SCRATCH}/ci-5-empty.json"
+assert_fire "empty runs array fires with a 'no completed run' message" "no completed ci.yml run found" \
+    --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" --sha "${CI_SHA}" \
+    --ci-runs-json "${SCRATCH}/ci-5-empty.json"
+
+# --- 6. --sha absent with GITHUB_ACTIONS=true: MISSING_SHA, non-zero -- the
+#        CI-conclusion clause can never be silently absent on the CI path.
+#        GITHUB_ACTIONS is forced via an inline prefix (not export/unset) so
+#        this assertion is correct whether or not the harness itself is
+#        currently running inside real GitHub Actions. ----------------------
+ASSERTIONS=$((ASSERTIONS + 1))
+LAST_OUTPUT="$(GITHUB_ACTIONS=true "${GUARD}" --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" 2>&1)"
+LAST_STATUS=$?
+if [ "${LAST_STATUS}" -ne 0 ] && grep -qF -- "MISSING_SHA" <<<"${LAST_OUTPUT}"; then
+    echo "PASS (fire): GITHUB_ACTIONS=true with no --sha fires MISSING_SHA"
+else
+    echo "FAIL: GITHUB_ACTIONS=true with no --sha did not fire MISSING_SHA (status=${LAST_STATUS})"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- 7. --sha absent with GITHUB_ACTIONS unset (forced empty via inline
+#        prefix): the offline clauses still run and the report states the
+#        CI-conclusion clause was not checked; the exit code reflects the
+#        offline clauses alone (here: pass, since ALL_MATCH_FIXTURE's
+#        clauses 1+2 are green). --------------------------------------------
+ASSERTIONS=$((ASSERTIONS + 1))
+LAST_OUTPUT="$(GITHUB_ACTIONS='' "${GUARD}" --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}" 2>&1)"
+LAST_STATUS=$?
+if [ "${LAST_STATUS}" -eq 0 ] && grep -qF -- "was not checked" <<<"${LAST_OUTPUT}"; then
+    echo "PASS (silent+note): no --sha, not in GitHub Actions -- offline clauses pass, CI clause stated not-checked"
+else
+    echo "FAIL: no --sha / GITHUB_ACTIONS unset did not pass with a not-checked note (status=${LAST_STATUS})"
     echo "${LAST_OUTPUT}" | sed 's/^/  | /'
     FAILED=$((FAILED + 1))
 fi
