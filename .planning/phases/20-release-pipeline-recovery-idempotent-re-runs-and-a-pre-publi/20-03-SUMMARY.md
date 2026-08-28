@@ -134,3 +134,11 @@ None - no external service configuration required.
 ---
 *Phase: 20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi*
 *Completed: 2026-08-28*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/create-or-reuse-release.sh
+- FOUND: tests/scripts/create-or-reuse-release_test.sh
+- FOUND: 630af60b (RED test commit)
+- FOUND: 4b7e5bc9 (GREEN feat commit)
+- FOUND: c68ed651 (Task 2 workflow-rewiring commit)
