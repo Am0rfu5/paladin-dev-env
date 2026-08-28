@@ -150,3 +150,14 @@ None - no external service configuration required.
 ---
 *Phase: 20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi*
 *Completed: 2026-08-28*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/check-release-consistency.sh
+- FOUND: tests/scripts/check-release-consistency_test.sh
+- FOUND: .planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-02-SUMMARY.md
+- FOUND: f1f27b46 (Task 1 RED commit)
+- FOUND: 3b7c7735 (Task 1 GREEN commit)
+- FOUND: 1e15c81e (Task 2 RED commit)
+- FOUND: c11cc5cb (Task 2 GREEN commit)
+- FOUND: 0131fb55 (plan metadata commit)
