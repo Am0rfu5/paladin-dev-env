@@ -330,7 +330,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 20-06-PLAN.md — Recovery runbook: `docs/src/appendix/release-recovery.md` with the yank policy and yank register, cross-linked and registered in the book
+- [x] 20-06-PLAN.md — Recovery runbook: `docs/src/appendix/release-recovery.md` with the yank policy and yank register, cross-linked and registered in the book
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
