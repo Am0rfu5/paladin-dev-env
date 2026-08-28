@@ -316,7 +316,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 20-01-PLAN.md — Tracer: pre-publish consistency gate wired script → make target → `release.yml` job → `publish-crates` needs edge (manifest-version clause)
+- [x] 20-01-PLAN.md — Tracer: pre-publish consistency gate wired script → make target → `release.yml` job → `publish-crates` needs edge (manifest-version clause)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

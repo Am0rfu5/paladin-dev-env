@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 20
-current_phase_name: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
+current_phase_name: release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
 status: executing
 stopped_at: Phase 20 context gathered
-last_updated: "2026-08-28T14:26:59.294Z"
+last_updated: "2026-08-28T14:27:59.709Z"
 last_activity: 2026-08-28
-last_activity_desc: Phase 19 complete, transitioned to Phase 20
+last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 4
   completed_phases: 2
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 19 — crates-io-trusted-publishing-replace-the-long-lived-registry
+**Current focus:** Phase 20 — release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
 not yet discussed or planned.
 
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 20 — Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-28 — Phase 19 complete, transitioned to Phase 20
+Phase: 20 (release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 20
+Last activity: 2026-08-28 — Phase 20 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
