@@ -5,15 +5,15 @@ milestone_name: Security Tooling
 current_phase: 20
 current_phase_name: release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
 status: executing
-stopped_at: Phase 20 context gathered
-last_updated: "2026-08-28T14:27:59.709Z"
+stopped_at: "Phase 20 wave 5 — plan 20-07 Task 1 checkpoint:decision (one-way rehearsal authorization) awaiting operator"
+last_updated: "2026-08-28T16:52:42.139Z"
 last_activity: 2026-08-28
 last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 12
+  completed_plans: 18
 ---
 
 # Project State
@@ -757,14 +757,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 20 context gathered
+**Stopped at:** Phase 20 wave 5 — plan 20-07 Task 1 checkpoint:decision (one-way rehearsal authorization) awaiting operator
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-28T13:36:41.285Z
-Resume file: .planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-CONTEXT.md
+Last session: 2026-08-28T16:52:42.089Z
+Resume file: .planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-07-PLAN.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
