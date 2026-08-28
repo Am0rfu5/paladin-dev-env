@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 # check-release-consistency_test.sh
 #
-# Regression harness for scripts/check-release-consistency.sh (PUBOPS-01,
-# plan 20-01). Task 1's red-green scope: the six assertions its own
-# <behavior> block specifies. Task 2 hardens this file to the full
-# sibling-harness shape (mktemp scratch, write_metadata_fixture helper,
-# assert_fire/assert_silent needle-pinning, an unmutated-tree assertion) --
-# this file already borrows that shape's skeleton so the Task 2 extension is
-# additive rather than a rewrite.
+# Committed regression harness for scripts/check-release-consistency.sh
+# (PUBOPS-01, plan 20-01). Mirrors tests/scripts/check-workflow-triggers_test.sh's
+# fixture-lifecycle pattern: every fixture is built under a single
+# `mktemp -d` scratch directory removed on exit via a trap, the real tree is
+# only ever read, and a closing assertion double-checks nothing real was
+# mutated -- extended here to cover the four paths this gate's own tests
+# could plausibly touch by accident (Cargo.toml, crates/, CHANGELOG.md,
+# .github/workflows/), since a future clause (SHA/CI-conclusion) reads
+# .github/workflows/ too.
+#
+# Fixtures accumulate into $FAILED rather than exiting on the first
+# mismatch, matching the "report everything, don't short-circuit" house
+# style the guard itself follows.
 #
 # Usage:  ./tests/scripts/check-release-consistency_test.sh
 #         Or via `make test-shell-guards`.
@@ -33,19 +39,35 @@ trap cleanup EXIT
 FAILED=0
 ASSERTIONS=0
 
-# write_metadata_fixture FILE PACKAGES_JSON -> writes a minimal
-# `cargo metadata --format-version 1`-shaped document containing only the
-# `packages` key this script's guard reads.
-write_metadata_fixture() {
-    local file="$1" packages_json="$2"
-    printf '{"packages": [%s]}\n' "${packages_json}" > "${file}"
-}
+# --- Real-tree mutation baseline, captured before any fixture runs. --------
+MUTATION_WATCH_PATHS=(Cargo.toml crates CHANGELOG.md .github/workflows)
+BEFORE_STATUS="$(cd "${WORKSPACE_ROOT}" && git status --porcelain -- "${MUTATION_WATCH_PATHS[@]}")"
 
-# pkg NAME VERSION [PUBLISH_JSON] -> echoes one packages[] element. Default
-# PUBLISH_JSON is `null` (publishable); pass `[]` for a `publish = false` crate.
-pkg() {
-    local name="$1" version="$2" publish="${3:-null}"
-    printf '{"name": "%s", "version": "%s", "publish": %s}' "${name}" "${version}" "${publish}"
+# write_metadata_fixture FILE PAIR... -> writes a minimal
+# `cargo metadata --format-version 1`-shaped document containing only the
+# `packages` key this guard reads. Each PAIR is `name=version` (publishable,
+# `publish: null`) or `name=version:false` (a `publish = false` crate,
+# reported by `cargo metadata` as `publish: []` -- the one exempt shape D-08
+# excludes, matching `paladin-doc-examples` in the real tree).
+write_metadata_fixture() {
+    local file="$1"
+    shift
+    local entries=() pair name rest version publish_json
+    for pair in "$@"; do
+        name="${pair%%=*}"
+        rest="${pair#*=}"
+        if [[ "${rest}" == *:false ]]; then
+            version="${rest%:false}"
+            publish_json="[]"
+        else
+            version="${rest}"
+            publish_json="null"
+        fi
+        entries+=("{\"name\": \"${name}\", \"version\": \"${version}\", \"publish\": ${publish_json}}")
+    done
+    local joined
+    joined="$(IFS=,; echo "${entries[*]:-}")"
+    printf '{"packages": [%s]}\n' "${joined}" > "${file}"
 }
 
 # run_guard ARGS... -> sets $LAST_OUTPUT and $LAST_STATUS.
@@ -54,8 +76,9 @@ run_guard() {
     LAST_STATUS=$?
 }
 
-# assert_fire DESC NEEDLE ARGS... -> expects non-zero exit AND $LAST_OUTPUT
-# to contain NEEDLE (pins which status token fired, not just that something did).
+# assert-fire helper: DESC NEEDLE ARGS... -> expects non-zero exit AND
+# $LAST_OUTPUT to contain NEEDLE (pins which status token/message fired, not
+# just that something did).
 assert_fire() {
     local desc="$1" needle="$2"
     shift 2
@@ -76,7 +99,8 @@ assert_fire() {
     echo "PASS (fire): ${desc}"
 }
 
-# assert_silent DESC ARGS... -> expects zero exit.
+# assert_silent DESC ARGS... -> expects zero exit AND $LAST_OUTPUT to
+# contain the OK status token.
 assert_silent() {
     local desc="$1"
     shift
@@ -98,35 +122,32 @@ assert_silent() {
 }
 
 ALL_MATCH_FIXTURE="${SCRATCH}/all-match.json"
-write_metadata_fixture "${ALL_MATCH_FIXTURE}" \
-    "$(pkg pkg-a 1.2.3), $(pkg pkg-b 1.2.3), $(pkg pkg-c 1.2.3)"
+write_metadata_fixture "${ALL_MATCH_FIXTURE}" pkg-a=1.2.3 pkg-b=1.2.3 pkg-c=1.2.3
 
 MIXED_FIXTURE="${SCRATCH}/mixed.json"
-write_metadata_fixture "${MIXED_FIXTURE}" \
-    "$(pkg pkg-a 1.2.3), $(pkg pkg-b 1.2.3-rc.1)"
+write_metadata_fixture "${MIXED_FIXTURE}" pkg-a=1.2.3 pkg-b=1.2.3-rc.1
 
 EMPTY_FIXTURE="${SCRATCH}/empty.json"
-write_metadata_fixture "${EMPTY_FIXTURE}" ""
+write_metadata_fixture "${EMPTY_FIXTURE}"
+
+EXEMPT_ONLY_FIXTURE="${SCRATCH}/exempt-only.json"
+write_metadata_fixture "${EXEMPT_ONLY_FIXTURE}" doc-examples-pkg=1.2.3:false
+
+SINGLE_FIXTURE="${SCRATCH}/single.json"
+write_metadata_fixture "${SINGLE_FIXTURE}" pkg-solo=1.2.3
 
 # --- 1. All packages at 1.2.3, --tag v1.2.3: exit 0, output contains OK. ---
 assert_silent "all packages match tag v1.2.3" \
     --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}"
 
-# --- 2. Same fixture, --tag v9.9.9: exit non-zero, names every package. ----
-ASSERTIONS=$((ASSERTIONS + 1))
-run_guard --tag v9.9.9 --metadata-json "${ALL_MATCH_FIXTURE}"
-if [ "${LAST_STATUS}" -eq 0 ]; then
-    echo "FAIL: expected non-zero exit for: tag v9.9.9 mismatches every package (got 0)"
-    FAILED=$((FAILED + 1))
-elif ! grep -qF -- "pkg-a" <<<"${LAST_OUTPUT}" || \
-     ! grep -qF -- "pkg-b" <<<"${LAST_OUTPUT}" || \
-     ! grep -qF -- "pkg-c" <<<"${LAST_OUTPUT}"; then
-    echo "FAIL: expected output to name all three packages (pkg-a, pkg-b, pkg-c)"
-    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
-    FAILED=$((FAILED + 1))
-else
-    echo "PASS (fire): tag v9.9.9 mismatches every package, all three named"
-fi
+# --- 2. Same fixture, --tag v9.9.9: exit non-zero, names every package
+#        (one call per name below, so each pins its own needle). -----------
+assert_fire "tag v9.9.9 mismatch names pkg-a" "pkg-a" \
+    --tag v9.9.9 --metadata-json "${ALL_MATCH_FIXTURE}"
+assert_fire "tag v9.9.9 mismatch names pkg-b" "pkg-b" \
+    --tag v9.9.9 --metadata-json "${ALL_MATCH_FIXTURE}"
+assert_fire "tag v9.9.9 mismatch names pkg-c" "pkg-c" \
+    --tag v9.9.9 --metadata-json "${ALL_MATCH_FIXTURE}"
 
 # --- 3. Mixed fixture (b is a prerelease suffix mismatch), --tag v1.2.3:
 #        exit non-zero, names pkg-b. ----------------------------------------
@@ -137,11 +158,31 @@ assert_fire "prerelease suffix is a mismatch, not a match" "pkg-b" \
 assert_fire "empty packages array is a named ZERO_PACKAGES failure" "ZERO_PACKAGES" \
     --metadata-json "${EMPTY_FIXTURE}" --tag v1.2.3
 
+# --- 4a. A package IS present but carries publish = false: the publishable
+#         set is still empty -> ZERO_PACKAGES, not a vacuous OK. This proves
+#         the `publish` filter itself, not just the empty-array shortcut. --
+assert_fire "the only package present is publish=false -> ZERO_PACKAGES, not OK" "ZERO_PACKAGES" \
+    --metadata-json "${EXEMPT_ONLY_FIXTURE}" --tag v1.2.3
+
 # --- 5. No --tag at all: exit non-zero, MISSING_TAG. ------------------------
 assert_fire "no --tag at all is a named MISSING_TAG failure" "MISSING_TAG" \
     --metadata-json "${ALL_MATCH_FIXTURE}"
 
-# --- 6. Running the same failing invocation twice is byte-identical. -------
+# --- 6. Exactly one publishable package: still a real verdict, not a
+#        special case. ------------------------------------------------------
+assert_silent "single-element publishable set produces a real OK verdict" \
+    --tag v1.2.3 --metadata-json "${SINGLE_FIXTURE}"
+
+# --- 7. A tag supplied without the leading "v" behaves identically to one
+#        with it. ------------------------------------------------------------
+assert_silent "--tag 1.2.3 (no leading v) behaves identically to --tag v1.2.3" \
+    --tag 1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}"
+
+# --- 8. An unknown flag is a usage error (non-zero), not a silent no-op. ---
+assert_fire "an unknown flag is a usage error" "unknown flag" \
+    --bogus-flag foo --tag v1.2.3 --metadata-json "${ALL_MATCH_FIXTURE}"
+
+# --- 9. Running the same failing invocation twice is byte-identical. -------
 ASSERTIONS=$((ASSERTIONS + 1))
 out1="$("${GUARD}" --tag v9.9.9 --metadata-json "${ALL_MATCH_FIXTURE}" 2>&1)"
 status1=$?
@@ -151,6 +192,20 @@ if [ "${out1}" = "${out2}" ] && [ "${status1}" -eq "${status2}" ]; then
     echo "PASS (idempotent): two runs of the same failing invocation are byte-identical"
 else
     echo "FAIL: two runs of the same failing invocation were not byte-identical"
+    FAILED=$((FAILED + 1))
+fi
+
+# --- The real tree must never be mutated by this test: Cargo.toml, crates/,
+#     CHANGELOG.md and .github/workflows/ (this guard only reads Cargo
+#     manifests today, but a later plan's clauses read the other three). ---
+ASSERTIONS=$((ASSERTIONS + 1))
+AFTER_STATUS="$(cd "${WORKSPACE_ROOT}" && git status --porcelain -- "${MUTATION_WATCH_PATHS[@]}")"
+if [ "${BEFORE_STATUS}" = "${AFTER_STATUS}" ]; then
+    echo "PASS (no mutation): git status --porcelain -- Cargo.toml crates CHANGELOG.md .github/workflows is unchanged"
+else
+    echo "FAIL: Cargo.toml, crates/, CHANGELOG.md or .github/workflows/ was mutated by this test run:"
+    echo "before: ${BEFORE_STATUS}" | sed 's/^/  | /'
+    echo "after:  ${AFTER_STATUS}" | sed 's/^/  | /'
     FAILED=$((FAILED + 1))
 fi
 
