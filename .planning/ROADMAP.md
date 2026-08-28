@@ -326,7 +326,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 20-05-PLAN.md — Publish loop: registry-state already-published detection, bounded index-visibility poll, per-crate outcome table and the no-crate-moved failure
+- [x] 20-05-PLAN.md — Publish loop: registry-state already-published detection, bounded index-visibility poll, per-crate outcome table and the no-crate-moved failure
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
