@@ -485,9 +485,21 @@ jobs:
   # token. When the workflow is dispatched with `dry_run=true`, this runs
   # `cargo publish --dry-run` for each crate instead and mints no token at
   # all. Known accepted risk (T-19-13): a single mint must outlive the whole
-  # eleven-crate sequential loop, including its index-wait sleeps — a
-  # late-loop authentication failure is that risk materialising, not a
-  # workflow bug; re-running the job mints a fresh token.
+  # eleven-crate sequential loop -- that has NOT changed in this revision.
+  # What HAS changed (PUBOPS-03/PUBOPS-04, plan 20-05): the loop's waits
+  # between crates are now bounded registry polls rather than fixed pauses,
+  # and the loop now skips any crate the registry says is already at the
+  # tagged version, so a recovery re-run over a partially-published tag is
+  # materially shorter than a first run -- it only mints a token for, and
+  # publishes, the crates still missing. `publish-crates` also now needs
+  # `check-release-consistency` (PUBOPS-01's gate), so no publish can start
+  # before the tag, every manifest version, every changelog and the tagged
+  # commit's recorded CI conclusion have all been checked to agree. All
+  # publish logic (the eleven-crate order, the registry pre-check, the
+  # index-visibility poll, the per-crate outcome table, and the
+  # no-crate-moved failure) lives in `scripts/publish-crates.sh`, not here --
+  # this job is a thin invocation, locally reproducible and unit-tested
+  # (`tests/scripts/publish-crates_test.sh`) without touching crates.io.
   publish-crates:
     name: Publish to crates.io
     runs-on: ubuntu-latest
@@ -505,9 +517,13 @@ jobs:
 
       - name: Determine publish mode
         id: mode
+        env:
+          # Indirect through env: rather than interpolating the dispatch
+          # input directly into the run: block (CR-01) -- a workflow_dispatch
+          # input is exactly the tainted-value class CR-01 covers.
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
         run: |
-          DRY_RUN="${{ github.event.inputs.dry_run }}"
-          if [ "$DRY_RUN" = "true" ]; then
+          if [ "$DRY_RUN_INPUT" = "true" ]; then
             echo "dry_run=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Dry-run mode — will run 'cargo publish --dry-run' and NOT publish."
           else
@@ -519,64 +535,22 @@ jobs:
         if: steps.mode.outputs.dry_run != 'true'
         uses: rust-lang/crates-io-auth-action@v1
 
+      # Delegates the whole loop -- registry pre-check (D-04), bounded
+      # index-visibility poll (D-05), per-crate outcome table and the
+      # no-crate-moved failure (D-12/PUBOPS-04) -- to
+      # scripts/publish-crates.sh. The release version reaches the script
+      # through env: (CR-01), never interpolated into this run: body; the
+      # eleven-crate dependency order and its paladin-herald placement
+      # comment now live once, in the script, not here.
       - name: Publish crates in dependency order
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-          DRY_RUN: ${{ steps.mode.outputs.dry_run }}
+          RELEASE_VERSION: ${{ needs.create-release.outputs.version }}
+          PUBLISH_DRY_RUN: ${{ steps.mode.outputs.dry_run }}
         run: |
           set -euo pipefail
-          # Canonical dependency-first publish order (package names):
-          #   core -> ports -> leaf tier -> facade.
-          #
-          # paladin-herald sits AFTER paladin-ports, not directly after
-          # paladin-ai-core, despite depending only on paladin-ai-core as a
-          # normal [dependencies] edge. crates/paladin-herald/Cargo.toml also
-          # carries a version-pinned [dev-dependencies] edge on paladin-ports;
-          # cargo records a version-carrying dev-dependency in the published
-          # manifest and crates.io validates it against the index, so
-          # paladin-ports must already be on the registry before
-          # paladin-herald is published. Placing it after paladin-ai-core
-          # (its normal dependency), after paladin-ports (its dev-dependency)
-          # and before paladin-ai (its only dependent) satisfies all three
-          # constraints at once. Eleven crates total (D-01/D-02) -- this
-          # array is reconciled against `cargo metadata` and
-          # `.crate-names.txt` by Phase 19 plan 19-01; see
-          # 19-PUBLISH-EVIDENCE.md's "Dependency-Order Constraints" section
-          # for the superseded (wrong) insertion point 19-PATTERNS.md and
-          # 19-RESEARCH.md both proposed.
-          CRATES=(
-            paladin-ai-core
-            paladin-ports
-            paladin-herald
-            paladin-battalion
-            paladin-llm
-            paladin-memory
-            paladin-web
-            paladin-notifications
-            paladin-content
-            paladin-storage
-            paladin-ai
-          )
-          publish_one() {
-            local crate="$1"
-            echo "::group::Publishing ${crate}"
-            if [ "$DRY_RUN" = "true" ]; then
-              cargo publish --dry-run -p "$crate"
-            else
-              # Tolerate an already-published version so the job is re-runnable.
-              if cargo publish -p "$crate" 2>&1 | tee /tmp/publish.log; then
-                echo "${crate} published."
-              elif grep -qiE "already (exists|uploaded)|is already uploaded|already published" /tmp/publish.log; then
-                echo "::warning::${crate} version already published — continuing."
-              else
-                echo "::error::Failed to publish ${crate}."
-                exit 1
-              fi
-              # Allow the crates.io index to update before publishing dependents.
-              sleep 20
-            fi
-            echo "::endgroup::"
-          }
-          for c in "${CRATES[@]}"; do
-            publish_one "$c"
-          done
+          ARGS=(--version "$RELEASE_VERSION")
+          if [ "$PUBLISH_DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          ./scripts/publish-crates.sh "${ARGS[@]}"
