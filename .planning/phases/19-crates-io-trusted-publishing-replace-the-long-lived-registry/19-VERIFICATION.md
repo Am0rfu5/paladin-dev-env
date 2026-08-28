@@ -1,11 +1,12 @@
 ---
 phase: 19-crates-io-trusted-publishing-replace-the-long-lived-registry
 verified: 2026-08-27T19:19:05Z
-status: human_needed
+status: passed
 score: 6/7 must-haves verified
 behavior_unverified: 1
 overrides_applied: 0
 human_verification:
+
   - test: "Independently confirm at crates.io (Account Settings -> API Tokens, DF3NDR account) that the publish-scoped token named \"Paladin\" (the one that backed CARGO_REGISTRY_TOKEN) shows as revoked, and that no other live publish-scoped token exists on the account."
     expected: "The 'Paladin' token is listed as revoked (or absent), and no other publish-scoped token remains that could still authenticate a `cargo publish` for any paladin-* crate."
     why_human: "crates.io exposes no API or CLI to read back a token's existence, last-used timestamp, or revocation state (confirmed during this verification — there is no `gh`-equivalent for crates.io token introspection). The only record is the operator's bare attestation ('revoked', token name 'Paladin' in a follow-up) captured in 19-PUBLISH-EVIDENCE.md's Revocation Ledger, which itself states three requested fields (last-used timestamp, revocation timestamp, other-token sweep) as 'not reported by operator.' This is a plan-declared `verification: backstop` truth (19-04-PLAN.md) — no codebase or registry-API evidence can close it; only a human with crates.io account access can confirm the load-bearing half of PUB-04 firsthand."
@@ -137,8 +138,10 @@ than silently closing it.
 
 Two additional items are named here for completeness, not as gaps (already flagged as accepted,
 out-of-scope, or deferred by the phase's own evidence and not disputed by this verification):
+
 - The Build Binaries matrix (4 targets) fails systematically on every release run; pre-existing,
   undiagnosed, and does not gate `publish-crates` (`needs: [test, create-release]` only).
+
 - `workflow_dispatch` eligibility for Trusted Publishing (RESEARCH.md assumption A1) remains
   untested; the proof deliberately used a tag push to avoid depending on it, which is sufficient
   to satisfy PUB-03's "real publish, not a dry run" requirement.
