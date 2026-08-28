@@ -31,6 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      # The release commit SHA this job's own `resolve` step already
+      # computes, exposed so the consistency gate can check CI's conclusion
+      # for the exact release commit rather than re-deriving it.
+      sha: ${{ steps.resolve.outputs.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,7 +109,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      upload_url: ${{ steps.create_or_reuse_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout code
@@ -125,51 +130,72 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        run: |
-          # Generate changelog from git commits since last tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s" HEAD)
-          else
-            CHANGELOG=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
-          fi
-          # Use a random, unique delimiter rather than the literal "EOF" --
-          # a commit subject line that is exactly "EOF" would otherwise
-          # terminate the heredoc early and let subsequent content inject
-          # arbitrary key=value lines into $GITHUB_OUTPUT.
-          delim="EOF_$(openssl rand -hex 8)"
-          {
-            echo "changelog<<${delim}"
-            echo "$CHANGELOG"
-            echo "${delim}"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: Release ${{ steps.get_version.outputs.version }}
-          body: |
-            ## What's Changed
+          # Indirect through env: rather than interpolating the tainted
+          # output directly into the run: block (CR-01) -- the version
+          # ultimately traces back to the workflow_dispatch `tag` input.
+          # REGISTRY and IMAGE_NAME are already real shell environment
+          # variables here (from the workflow-level env: block), so no
+          # further indirection is needed for them.
+          RELEASE_VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          # Generate changelog from git commits since last tag, written to
+          # a file under $RUNNER_TEMP rather than appended to
+          # $GITHUB_OUTPUT via a heredoc -- a commit subject line that is
+          # exactly the heredoc's own delimiter could otherwise terminate
+          # it early and inject arbitrary key=value lines into
+          # $GITHUB_OUTPUT. Writing to a file removes that hazard class
+          # entirely rather than defending against it, and this is the
+          # file the create-or-reuse script's --body-file consumes.
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CHANGELOG_FILE="${RUNNER_TEMP}/release-changelog.md"
+          {
+            echo "## What's Changed"
+            echo ""
+            if [ -z "$PREV_TAG" ]; then
+              git log --pretty=format:"- %s" HEAD
+            else
+              git log --pretty=format:"- %s" "$PREV_TAG"..HEAD
+            fi
+            echo ""
+            echo ""
+            echo "## Docker Images"
+            echo ""
+            echo "Multi-architecture Docker images are available:"
+            echo '```bash'
+            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:${RELEASE_VERSION}"
+            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:latest"
+            echo '```'
+            echo ""
+            echo "Supported platforms:"
+            echo "- linux/amd64"
+            echo "- linux/arm64"
+          } > "$CHANGELOG_FILE"
+          echo "changelog_file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
 
-            ${{ steps.changelog.outputs.changelog }}
-
-            ## Docker Images
-
-            Multi-architecture Docker images are available:
-            ```bash
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_version.outputs.version }}
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ```
-
-            Supported platforms:
-            - linux/amd64
-            - linux/arm64
-          draft: false
-          prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+      # Create-or-reuse (D-01/D-02/PUBOPS-03): looks the release up by tag
+      # first -- HTTP 200 reuses it, HTTP 404 creates it, anything else is a
+      # hard failure -- so re-running this job on a tag that already has a
+      # release (either GitHub Actions re-run shape) proceeds instead of
+      # failing with a 422. No archived or third-party release-creation
+      # Action is used; this shells out to the `gh` CLI already
+      # authenticated on the runner via GITHUB_TOKEN (D-01 prohibits
+      # introducing a new marketplace Action here). Every tag- and
+      # SHA-derived value arrives through env: (CR-01) -- never interpolated
+      # directly into this run: body -- and the release body is passed as a
+      # file path, never as inline commit text.
+      - name: Create or reuse release
+        id: create_or_reuse_release
+        env:
+          RELEASE_TAG: ${{ steps.get_version.outputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_BODY_FILE: ${{ steps.changelog.outputs.changelog_file }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/create-or-reuse-release.sh \
+            --tag "$RELEASE_TAG" \
+            --repo "$RELEASE_REPOSITORY" \
+            --body-file "$RELEASE_BODY_FILE"
 
   # Build and push multi-arch Docker images. Intentionally not gated on the
   # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
@@ -398,7 +424,12 @@ jobs:
           # output directly into the run: block (CR-01) -- the version
           # ultimately traces back to the workflow_dispatch `tag` input.
           RELEASE_TAG: ${{ steps.get_version.outputs.version }}
-        run: ./scripts/check-release-consistency.sh --tag "$RELEASE_TAG"
+          # The exact release commit SHA verify-tag-source already
+          # resolved, so a later clause can check CI's conclusion for the
+          # precise release commit rather than re-deriving it.
+          RELEASE_SHA: ${{ needs.verify-tag-source.outputs.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/check-release-consistency.sh --tag "$RELEASE_TAG" --sha "$RELEASE_SHA"
 
   # Generate a CycloneDX Software Bill of Materials (SBOM) from the locked
   # dependency graph and attach it to the GitHub release (Milestone 10 Epic 2).
