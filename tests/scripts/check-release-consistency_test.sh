@@ -48,11 +48,17 @@ BEFORE_STATUS="$(cd "${WORKSPACE_ROOT}" && git status --porcelain -- "${MUTATION
 # `packages` key this guard reads. Each PAIR is `name=version` (publishable,
 # `publish: null`) or `name=version:false` (a `publish = false` crate,
 # reported by `cargo metadata` as `publish: []` -- the one exempt shape D-08
-# excludes, matching `paladin-doc-examples` in the real tree).
+# excludes, matching `paladin-doc-examples` in the real tree). Each package
+# also gets a real scratch directory and a `manifest_path` pointing into it
+# (`${SCRATCH}/pkg-manifests/<name>/Cargo.toml`), because clause 2 resolves
+# a package's changelog as `CHANGELOG.md` in `dirname(manifest_path)` --
+# `write_changelog_fixture` below writes into that same directory, so the
+# two helpers agree on where a package's changelog lives regardless of call
+# order.
 write_metadata_fixture() {
     local file="$1"
     shift
-    local entries=() pair name rest version publish_json
+    local entries=() pair name rest version publish_json pkg_dir manifest_path
     for pair in "$@"; do
         name="${pair%%=*}"
         rest="${pair#*=}"
@@ -63,11 +69,28 @@ write_metadata_fixture() {
             version="${rest}"
             publish_json="null"
         fi
-        entries+=("{\"name\": \"${name}\", \"version\": \"${version}\", \"publish\": ${publish_json}}")
+        pkg_dir="${SCRATCH}/pkg-manifests/${name}"
+        mkdir -p "${pkg_dir}"
+        manifest_path="${pkg_dir}/Cargo.toml"
+        : > "${manifest_path}"
+        entries+=("{\"name\": \"${name}\", \"version\": \"${version}\", \"publish\": ${publish_json}, \"manifest_path\": \"${manifest_path}\"}")
     done
     local joined
     joined="$(IFS=,; echo "${entries[*]:-}")"
     printf '{"packages": [%s]}\n' "${joined}" > "${file}"
+}
+
+# write_changelog_fixture NAME CONTENT -> writes CONTENT to
+# `${SCRATCH}/pkg-manifests/<NAME>/CHANGELOG.md`, the same per-package
+# directory `write_metadata_fixture` derives that package's `manifest_path`
+# from. Deliberately does not require `write_metadata_fixture` to have run
+# first for the same name -- a case that wants "no CHANGELOG.md at all"
+# simply never calls this helper for that package.
+write_changelog_fixture() {
+    local name="$1" content="$2"
+    local pkg_dir="${SCRATCH}/pkg-manifests/${name}"
+    mkdir -p "${pkg_dir}"
+    printf '%s' "${content}" > "${pkg_dir}/CHANGELOG.md"
 }
 
 # run_guard ARGS... -> sets $LAST_OUTPUT and $LAST_STATUS.
@@ -123,6 +146,13 @@ assert_silent() {
 
 ALL_MATCH_FIXTURE="${SCRATCH}/all-match.json"
 write_metadata_fixture "${ALL_MATCH_FIXTURE}" pkg-a=1.2.3 pkg-b=1.2.3 pkg-c=1.2.3
+# Clause 2 now applies to every publishable package, including these
+# pre-clause-2 fixtures reused by assert_silent cases below -- give each a
+# changelog section matching 1.2.3 so those cases stay silent on clause 2
+# too, and only clause 1 (mismatch) fires where the test intends it to.
+write_changelog_fixture pkg-a $'## [1.2.3] - 2026-01-01\n'
+write_changelog_fixture pkg-b $'## [1.2.3] - 2026-01-01\n'
+write_changelog_fixture pkg-c $'## [1.2.3] - 2026-01-01\n'
 
 MIXED_FIXTURE="${SCRATCH}/mixed.json"
 write_metadata_fixture "${MIXED_FIXTURE}" pkg-a=1.2.3 pkg-b=1.2.3-rc.1
@@ -135,6 +165,7 @@ write_metadata_fixture "${EXEMPT_ONLY_FIXTURE}" doc-examples-pkg=1.2.3:false
 
 SINGLE_FIXTURE="${SCRATCH}/single.json"
 write_metadata_fixture "${SINGLE_FIXTURE}" pkg-solo=1.2.3
+write_changelog_fixture pkg-solo $'## [1.2.3] - 2026-01-01\n'
 
 # --- 1. All packages at 1.2.3, --tag v1.2.3: exit 0, output contains OK. ---
 assert_silent "all packages match tag v1.2.3" \
@@ -192,6 +223,89 @@ if [ "${out1}" = "${out2}" ] && [ "${status1}" -eq "${status2}" ]; then
     echo "PASS (idempotent): two runs of the same failing invocation are byte-identical"
 else
     echo "FAIL: two runs of the same failing invocation were not byte-identical"
+    FAILED=$((FAILED + 1))
+fi
+
+# =============================================================================
+# Clause 2: changelog-section agreement (D-08 clause 2, plan 20-02 Task 1).
+# =============================================================================
+
+# --- A. Heading matches the tag exactly ("## [1.2.3] - 2026-01-01" for
+#        --tag v1.2.3"): silent. Also exercises clause 1 passing at the same
+#        time (package is at version 1.2.3), so this pins clauses 1+2 both
+#        green together. --------------------------------------------------
+write_metadata_fixture "${SCRATCH}/cl2-a-meta.json" pkg-cl2-a=1.2.3
+write_changelog_fixture pkg-cl2-a $'# Changelog\n\n## [Unreleased]\n\n## [1.2.3] - 2026-01-01\n'
+assert_silent "changelog section present and matches the tag exactly" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-a-meta.json"
+
+# --- B. Changelog exists but carries only "## [Unreleased]": fires, and the
+#        message names both the file path and the missing version. --------
+write_metadata_fixture "${SCRATCH}/cl2-b-meta.json" pkg-cl2-b=1.2.3
+write_changelog_fixture pkg-cl2-b $'# Changelog\n\n## [Unreleased]\n'
+assert_fire "changelog with only Unreleased fires, naming the file path" \
+    "pkg-manifests/pkg-cl2-b/CHANGELOG.md" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-b-meta.json"
+assert_fire "changelog with only Unreleased fires, naming the missing version" \
+    "no section for version" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-b-meta.json"
+
+# --- C. No CHANGELOG.md file at all: fires, with a message distinguishable
+#        from case B's ("not found" vs "no section for version"). ---------
+write_metadata_fixture "${SCRATCH}/cl2-c-meta.json" pkg-cl2-c=1.2.3
+assert_fire "changelog missing entirely fires with a distinct 'not found' message" \
+    "not found" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-c-meta.json"
+
+# --- D. Heading "## [1.2.3-rc.1]" against --tag v1.2.3: fires -- a
+#        prerelease variant does not satisfy a stable tag's exact bracketed
+#        version. --------------------------------------------------------
+write_metadata_fixture "${SCRATCH}/cl2-d-meta.json" pkg-cl2-d=1.2.3
+write_changelog_fixture pkg-cl2-d $'## [1.2.3-rc.1] - 2026-01-01\n'
+assert_fire "heading with a prerelease suffix does not satisfy a stable tag" \
+    "pkg-cl2-d" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-d-meta.json"
+
+# --- E. Heading "## [1.2.30]" against --tag v1.2.3: fires -- no prefix
+#        matching on the bracketed version. -------------------------------
+write_metadata_fixture "${SCRATCH}/cl2-e-meta.json" pkg-cl2-e=1.2.3
+write_changelog_fixture pkg-cl2-e $'## [1.2.30] - 2026-01-01\n'
+assert_fire "a longer version sharing a prefix does not satisfy the tag" \
+    "pkg-cl2-e" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-e-meta.json"
+
+# --- F. Two packages each missing a section: both are reported in one run,
+#        in package-name order. --------------------------------------------
+write_metadata_fixture "${SCRATCH}/cl2-f-meta.json" pkg-cl2-f1=1.2.3 pkg-cl2-f2=1.2.3
+write_changelog_fixture pkg-cl2-f1 $'## [Unreleased]\n'
+write_changelog_fixture pkg-cl2-f2 $'## [Unreleased]\n'
+assert_fire "two packages missing sections in one run: f1 reported" "pkg-cl2-f1" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-f-meta.json"
+assert_fire "two packages missing sections in one run: f2 reported" "pkg-cl2-f2" \
+    --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-f-meta.json"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+run_guard --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-f-meta.json"
+pos_f1=$(grep -n "pkg-cl2-f1" <<<"${LAST_OUTPUT}" | head -n1 | cut -d: -f1)
+pos_f2=$(grep -n "pkg-cl2-f2" <<<"${LAST_OUTPUT}" | head -n1 | cut -d: -f1)
+if [ -n "${pos_f1}" ] && [ -n "${pos_f2}" ] && [ "${pos_f1}" -lt "${pos_f2}" ]; then
+    echo "PASS (ordering): two packages missing sections are reported in package-name order"
+else
+    echo "FAIL: two packages missing sections were not reported in package-name order"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- G. Clause 1 (manifest mismatch) and clause 2 (changelog) are
+#        independent: a package failing only clause 2 must not also report
+#        a manifest-version mismatch. -------------------------------------
+ASSERTIONS=$((ASSERTIONS + 1))
+run_guard --tag v1.2.3 --metadata-json "${SCRATCH}/cl2-b-meta.json"
+if [ "${LAST_STATUS}" -ne 0 ] && ! grep -qF -- "manifest version" <<<"${LAST_OUTPUT}"; then
+    echo "PASS (independence): a changelog-only failure reports no manifest-version mismatch"
+else
+    echo "FAIL: a changelog-only failure unexpectedly reported a manifest-version mismatch"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
     FAILED=$((FAILED + 1))
 fi
 
