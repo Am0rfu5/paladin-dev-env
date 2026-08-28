@@ -320,9 +320,9 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 20-02-PLAN.md — Gate expansion: changelog-section clause across all eleven packages, plus CI-conclusion resolution for the tagged SHA
-- [ ] 20-03-PLAN.md — `create-release` idempotency: `gh api` create-or-reuse preserving the `upload_url`/`version` contract, and the release-commit SHA exposed to the gate
-- [ ] 20-04-PLAN.md — Release tooling: mechanical per-crate changelog finalization, and the gate wired into `make release` before the tag is pushed
+- [x] 20-02-PLAN.md — Gate expansion: changelog-section clause across all eleven packages, plus CI-conclusion resolution for the tagged SHA
+- [x] 20-03-PLAN.md — `create-release` idempotency: `gh api` create-or-reuse preserving the `upload_url`/`version` contract, and the release-commit SHA exposed to the gate
+- [x] 20-04-PLAN.md — Release tooling: mechanical per-crate changelog finalization, and the gate wired into `make release` before the tag is pushed
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
