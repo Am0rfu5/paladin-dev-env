@@ -548,6 +548,14 @@ publish-dry-run: release-check ## Run dependency-first `cargo publish --dry-run`
 	@$(CARGO) publish --dry-run -p paladin || true
 	@echo "$(YELLOW)Dry-run publish command sequence completed. See docs/RELEASE_CHECKLIST.md for interpretation and publish-order gating.$(NC)"
 
+.PHONY: finalize-crate-changelogs
+finalize-crate-changelogs: ## Stamp a dated section into every publishable package's changelog (VERSION=x.y.z required)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(RED)❌ VERSION is required. Usage: make finalize-crate-changelogs VERSION=0.4.0$(NC)"; \
+		exit 1; \
+	fi
+	@./scripts/finalize-crate-changelogs.sh --version "$(VERSION)"
+
 .PHONY: release
 release: ## Cut a release: bump version (lockstep), finalize changelog, commit, tag, push. Usage: make release VERSION=0.4.0
 	@if [ -z "$(VERSION)" ]; then \
