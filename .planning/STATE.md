@@ -5,8 +5,8 @@ milestone_name: Security Tooling
 current_phase: 20
 current_phase_name: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
 status: planning
-stopped_at: "Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)"
-last_updated: "2026-08-28T12:32:36.586Z"
+stopped_at: Phase 20 context gathered
+last_updated: "2026-08-28T13:36:41.336Z"
 last_activity: 2026-08-28
 last_activity_desc: Phase 19 complete, transitioned to Phase 20
 progress:
@@ -757,14 +757,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)
+**Stopped at:** Phase 20 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-26T02:10:47.754Z
-Resume file: .planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-PUBLISH-EVIDENCE.md
+Last session: 2026-08-28T13:36:41.285Z
+Resume file: .planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
