@@ -115,7 +115,15 @@ write_ci_runs_fixture() {
 
 # run_guard ARGS... -> sets $LAST_OUTPUT and $LAST_STATUS.
 run_guard() {
-    LAST_OUTPUT="$("${GUARD}" "$@" 2>&1)"
+    # Neutralize the ambient CI marker: when this harness itself runs inside
+    # GitHub Actions (ci.yml's deny job runs `make test-shell-guards`), the
+    # runner's GITHUB_ACTIONS=true would leak into every fixture invocation and
+    # trip the guard's fail-closed MISSING_SHA clause (D-10), failing all
+    # clause-1/2 cases that legitimately omit --sha. The MISSING_SHA behavior
+    # itself is still covered by dedicated cases below that force
+    # GITHUB_ACTIONS=true / GITHUB_ACTIONS='' via inline prefixes without
+    # using this helper. Found live on PR #43's deny job (20-07 finding 4).
+    LAST_OUTPUT="$(env -u GITHUB_ACTIONS "${GUARD}" "$@" 2>&1)"
     LAST_STATUS=$?
 }
 
