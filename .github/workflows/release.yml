@@ -397,6 +397,12 @@ jobs:
     needs: verify-tag-source
     permissions:
       contents: read
+      # The CI-conclusion clause queries the Actions workflow-runs API for the
+      # tagged SHA; without this the GITHUB_TOKEN gets HTTP 404 (GitHub masks
+      # missing scope as not-found) and the gate fails closed with
+      # CI_LOOKUP_FAILED. Found live on the v0.8.1-rc.4 rehearsal run
+      # (Phase 20, 20-07 finding 5).
+      actions: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
