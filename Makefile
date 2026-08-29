@@ -595,6 +595,13 @@ release: ## Cut a release: bump version (lockstep), finalize changelog, commit, 
 	@$(MAKE) release-check
 	@echo "$(CYAN)Bumping all crates to $(VERSION) (lockstep)...$(NC)"
 	@$(CARGO) release version "$(VERSION)" --execute --no-confirm --workspace
+	@# The committed OpenAPI baseline (crates/paladin-web/openapi.json) embeds the
+	@# workspace version, so every bump invalidates it and the pre-push drift guard
+	@# (openapi_matches_committed_baseline) rejects the release commit. Regenerate
+	@# it here so `git add -u` below picks it up with the bump. Found live in the
+	@# v0.8.1-rc.3 rehearsal (Phase 20, 20-07 finding 1).
+	@echo "$(CYAN)Regenerating OpenAPI baseline for $(VERSION)...$(NC)"
+	@UPDATE_OPENAPI=1 $(CARGO) test -p paladin-web openapi_matches_committed_baseline --quiet
 	@echo "$(CYAN)Finalizing changelogs for all publishable packages (root + crates)...$(NC)"
 	@./scripts/finalize-crate-changelogs.sh --version "$(VERSION)"
 	@echo "$(CYAN)Verifying release consistency for v$(VERSION) before tagging...$(NC)"
