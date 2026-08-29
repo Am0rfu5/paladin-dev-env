@@ -7,6 +7,8 @@ and this project follows lockstep workspace versioning.
 
 ## [Unreleased]
 
+## [0.8.1-rc.4] - 2026-08-29
+
 ### Added
 - Crate-level release artifacts for Epic 4 API stabilization.
 - Feature-flag release notes tracking for notification channels (`email`, `push`, `system`).

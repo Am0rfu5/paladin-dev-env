@@ -1,6 +1,6 @@
 [package]
 name = "paladin-content"
-version = "0.8.1-rc.3"
+version = "0.8.1-rc.4"
 edition = "2024"
 authors = ["Am0rfu5"]
 description = "Content processing adapters and use-case services for the Paladin framework"
@@ -22,9 +22,9 @@ tiktoken     = ["dep:tiktoken-rs"]
 llm          = ["dep:paladin-llm"]
 
 [dependencies]
-paladin-core  = { package = "paladin-ai-core", version = "0.8.1-rc.3", path = "../paladin-core" }
-paladin-ports = { version = "0.8.1-rc.3", path = "../paladin-ports" }
-paladin-llm   = { version = "0.8.1-rc.3", path = "../paladin-llm", optional = true }
+paladin-core  = { package = "paladin-ai-core", version = "0.8.1-rc.4", path = "../paladin-core" }
+paladin-ports = { version = "0.8.1-rc.4", path = "../paladin-ports" }
+paladin-llm   = { version = "0.8.1-rc.4", path = "../paladin-llm", optional = true }
 async-trait   = { workspace = true }
 chrono        = { workspace = true }
 futures       = { workspace = true }

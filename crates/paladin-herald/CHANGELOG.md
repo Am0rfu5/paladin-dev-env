@@ -7,6 +7,8 @@ and this project follows lockstep workspace versioning.
 
 ## [Unreleased]
 
+## [0.8.1-rc.4] - 2026-08-29
+
 ### Added
 - The crate itself, created by the 2026-06-04 facade-cleanup reconciliation (commit `66f6c4e`),
   extracting the `JsonHerald`, `MarkdownHerald` and `TableHerald` output-formatter adapters out of
