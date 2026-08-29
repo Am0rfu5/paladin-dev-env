@@ -4,6 +4,10 @@ This document records the evaluation of workspace release tooling for the Paladi
 selected tool, and the operator guide for cutting a release. It is part of **Milestone 10 — CI
 Hardening and Release Automation, Epic 3**.
 
+> **Recovery:** If a release stops partway through, or the pre-publish consistency gate blocks
+> `publish-crates`, see [Release Recovery](release-recovery.md) for the failure path — how to
+> establish what actually reached crates.io, how to complete forward, and the yank policy.
+
 ## Tooling Evaluation: `cargo-release` vs. `release-plz`
 
 | Dimension | `cargo-release` | `release-plz` |

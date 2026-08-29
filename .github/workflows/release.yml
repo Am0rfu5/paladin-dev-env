@@ -31,6 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      # The release commit SHA this job's own `resolve` step already
+      # computes, exposed so the consistency gate can check CI's conclusion
+      # for the exact release commit rather than re-deriving it.
+      sha: ${{ steps.resolve.outputs.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,7 +109,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      upload_url: ${{ steps.create_or_reuse_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout code
@@ -125,51 +130,72 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        run: |
-          # Generate changelog from git commits since last tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s" HEAD)
-          else
-            CHANGELOG=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
-          fi
-          # Use a random, unique delimiter rather than the literal "EOF" --
-          # a commit subject line that is exactly "EOF" would otherwise
-          # terminate the heredoc early and let subsequent content inject
-          # arbitrary key=value lines into $GITHUB_OUTPUT.
-          delim="EOF_$(openssl rand -hex 8)"
-          {
-            echo "changelog<<${delim}"
-            echo "$CHANGELOG"
-            echo "${delim}"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: Release ${{ steps.get_version.outputs.version }}
-          body: |
-            ## What's Changed
+          # Indirect through env: rather than interpolating the tainted
+          # output directly into the run: block (CR-01) -- the version
+          # ultimately traces back to the workflow_dispatch `tag` input.
+          # REGISTRY and IMAGE_NAME are already real shell environment
+          # variables here (from the workflow-level env: block), so no
+          # further indirection is needed for them.
+          RELEASE_VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          # Generate changelog from git commits since last tag, written to
+          # a file under $RUNNER_TEMP rather than appended to
+          # $GITHUB_OUTPUT via a heredoc -- a commit subject line that is
+          # exactly the heredoc's own delimiter could otherwise terminate
+          # it early and inject arbitrary key=value lines into
+          # $GITHUB_OUTPUT. Writing to a file removes that hazard class
+          # entirely rather than defending against it, and this is the
+          # file the create-or-reuse script's --body-file consumes.
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CHANGELOG_FILE="${RUNNER_TEMP}/release-changelog.md"
+          {
+            echo "## What's Changed"
+            echo ""
+            if [ -z "$PREV_TAG" ]; then
+              git log --pretty=format:"- %s" HEAD
+            else
+              git log --pretty=format:"- %s" "$PREV_TAG"..HEAD
+            fi
+            echo ""
+            echo ""
+            echo "## Docker Images"
+            echo ""
+            echo "Multi-architecture Docker images are available:"
+            echo '```bash'
+            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:${RELEASE_VERSION}"
+            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:latest"
+            echo '```'
+            echo ""
+            echo "Supported platforms:"
+            echo "- linux/amd64"
+            echo "- linux/arm64"
+          } > "$CHANGELOG_FILE"
+          echo "changelog_file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
 
-            ${{ steps.changelog.outputs.changelog }}
-
-            ## Docker Images
-
-            Multi-architecture Docker images are available:
-            ```bash
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.get_version.outputs.version }}
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ```
-
-            Supported platforms:
-            - linux/amd64
-            - linux/arm64
-          draft: false
-          prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+      # Create-or-reuse (D-01/D-02/PUBOPS-03): looks the release up by tag
+      # first -- HTTP 200 reuses it, HTTP 404 creates it, anything else is a
+      # hard failure -- so re-running this job on a tag that already has a
+      # release (either GitHub Actions re-run shape) proceeds instead of
+      # failing with a 422. No archived or third-party release-creation
+      # Action is used; this shells out to the `gh` CLI already
+      # authenticated on the runner via GITHUB_TOKEN (D-01 prohibits
+      # introducing a new marketplace Action here). Every tag- and
+      # SHA-derived value arrives through env: (CR-01) -- never interpolated
+      # directly into this run: body -- and the release body is passed as a
+      # file path, never as inline commit text.
+      - name: Create or reuse release
+        id: create_or_reuse_release
+        env:
+          RELEASE_TAG: ${{ steps.get_version.outputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_BODY_FILE: ${{ steps.changelog.outputs.changelog_file }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/create-or-reuse-release.sh \
+            --tag "$RELEASE_TAG" \
+            --repo "$RELEASE_REPOSITORY" \
+            --body-file "$RELEASE_BODY_FILE"
 
   # Build and push multi-arch Docker images. Intentionally not gated on the
   # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
@@ -348,6 +374,63 @@ jobs:
           asset_name: ${{ matrix.artifact_name }}.tar.gz.sha256
           asset_content_type: text/plain
 
+  # Pre-publish consistency gate (PUBOPS-01): fails closed if the release
+  # tag's version disagrees with any publishable crate's manifest version.
+  # Runs the exact script `make check-release-consistency` runs locally --
+  # no gate logic is duplicated in this YAML (D-07). Added to
+  # `publish-crates`'s `needs` below so no `cargo publish` can start before
+  # this job has passed. Deliberately NOT added to `create-release`,
+  # `build-docker`, `build-binaries` or `sbom` -- WR-05's documented
+  # asymmetry (a release with a failing gate can still produce a GitHub
+  # release, Docker image, binaries and SBOM; it just cannot publish to
+  # crates.io) is preserved deliberately, not by oversight.
+  #
+  # This job satisfies D-03 by construction: it only reads (cargo metadata
+  # over the checked-out tree) and writes nothing, keeping no state between
+  # runs. Both "Re-run failed jobs" and "Re-run all jobs" therefore
+  # re-evaluate it from scratch and reach the same verdict on the same tag.
+  # A future change that introduces caching or a state file here would be a
+  # regression against that property.
+  check-release-consistency:
+    name: Pre-Publish Consistency Gate
+    runs-on: ubuntu-latest
+    needs: verify-tag-source
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Get version
+        id: get_version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run pre-publish consistency gate
+        env:
+          # Indirect through env: rather than interpolating the tainted
+          # output directly into the run: block (CR-01) -- the version
+          # ultimately traces back to the workflow_dispatch `tag` input.
+          RELEASE_TAG: ${{ steps.get_version.outputs.version }}
+          # The exact release commit SHA verify-tag-source already
+          # resolved, so a later clause can check CI's conclusion for the
+          # precise release commit rather than re-deriving it.
+          RELEASE_SHA: ${{ needs.verify-tag-source.outputs.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/check-release-consistency.sh --tag "$RELEASE_TAG" --sha "$RELEASE_SHA"
+
   # Generate a CycloneDX Software Bill of Materials (SBOM) from the locked
   # dependency graph and attach it to the GitHub release (Milestone 10 Epic 2).
   sbom:
@@ -402,13 +485,25 @@ jobs:
   # token. When the workflow is dispatched with `dry_run=true`, this runs
   # `cargo publish --dry-run` for each crate instead and mints no token at
   # all. Known accepted risk (T-19-13): a single mint must outlive the whole
-  # eleven-crate sequential loop, including its index-wait sleeps — a
-  # late-loop authentication failure is that risk materialising, not a
-  # workflow bug; re-running the job mints a fresh token.
+  # eleven-crate sequential loop -- that has NOT changed in this revision.
+  # What HAS changed (PUBOPS-03/PUBOPS-04, plan 20-05): the loop's waits
+  # between crates are now bounded registry polls rather than fixed pauses,
+  # and the loop now skips any crate the registry says is already at the
+  # tagged version, so a recovery re-run over a partially-published tag is
+  # materially shorter than a first run -- it only mints a token for, and
+  # publishes, the crates still missing. `publish-crates` also now needs
+  # `check-release-consistency` (PUBOPS-01's gate), so no publish can start
+  # before the tag, every manifest version, every changelog and the tagged
+  # commit's recorded CI conclusion have all been checked to agree. All
+  # publish logic (the eleven-crate order, the registry pre-check, the
+  # index-visibility poll, the per-crate outcome table, and the
+  # no-crate-moved failure) lives in `scripts/publish-crates.sh`, not here --
+  # this job is a thin invocation, locally reproducible and unit-tested
+  # (`tests/scripts/publish-crates_test.sh`) without touching crates.io.
   publish-crates:
     name: Publish to crates.io
     runs-on: ubuntu-latest
-    needs: [test, create-release]
+    needs: [test, create-release, check-release-consistency]
     environment: crates-io
     permissions:
       contents: read
@@ -422,9 +517,13 @@ jobs:
 
       - name: Determine publish mode
         id: mode
+        env:
+          # Indirect through env: rather than interpolating the dispatch
+          # input directly into the run: block (CR-01) -- a workflow_dispatch
+          # input is exactly the tainted-value class CR-01 covers.
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
         run: |
-          DRY_RUN="${{ github.event.inputs.dry_run }}"
-          if [ "$DRY_RUN" = "true" ]; then
+          if [ "$DRY_RUN_INPUT" = "true" ]; then
             echo "dry_run=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Dry-run mode — will run 'cargo publish --dry-run' and NOT publish."
           else
@@ -436,64 +535,22 @@ jobs:
         if: steps.mode.outputs.dry_run != 'true'
         uses: rust-lang/crates-io-auth-action@v1
 
+      # Delegates the whole loop -- registry pre-check (D-04), bounded
+      # index-visibility poll (D-05), per-crate outcome table and the
+      # no-crate-moved failure (D-12/PUBOPS-04) -- to
+      # scripts/publish-crates.sh. The release version reaches the script
+      # through env: (CR-01), never interpolated into this run: body; the
+      # eleven-crate dependency order and its paladin-herald placement
+      # comment now live once, in the script, not here.
       - name: Publish crates in dependency order
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-          DRY_RUN: ${{ steps.mode.outputs.dry_run }}
+          RELEASE_VERSION: ${{ needs.create-release.outputs.version }}
+          PUBLISH_DRY_RUN: ${{ steps.mode.outputs.dry_run }}
         run: |
           set -euo pipefail
-          # Canonical dependency-first publish order (package names):
-          #   core -> ports -> leaf tier -> facade.
-          #
-          # paladin-herald sits AFTER paladin-ports, not directly after
-          # paladin-ai-core, despite depending only on paladin-ai-core as a
-          # normal [dependencies] edge. crates/paladin-herald/Cargo.toml also
-          # carries a version-pinned [dev-dependencies] edge on paladin-ports;
-          # cargo records a version-carrying dev-dependency in the published
-          # manifest and crates.io validates it against the index, so
-          # paladin-ports must already be on the registry before
-          # paladin-herald is published. Placing it after paladin-ai-core
-          # (its normal dependency), after paladin-ports (its dev-dependency)
-          # and before paladin-ai (its only dependent) satisfies all three
-          # constraints at once. Eleven crates total (D-01/D-02) -- this
-          # array is reconciled against `cargo metadata` and
-          # `.crate-names.txt` by Phase 19 plan 19-01; see
-          # 19-PUBLISH-EVIDENCE.md's "Dependency-Order Constraints" section
-          # for the superseded (wrong) insertion point 19-PATTERNS.md and
-          # 19-RESEARCH.md both proposed.
-          CRATES=(
-            paladin-ai-core
-            paladin-ports
-            paladin-herald
-            paladin-battalion
-            paladin-llm
-            paladin-memory
-            paladin-web
-            paladin-notifications
-            paladin-content
-            paladin-storage
-            paladin-ai
-          )
-          publish_one() {
-            local crate="$1"
-            echo "::group::Publishing ${crate}"
-            if [ "$DRY_RUN" = "true" ]; then
-              cargo publish --dry-run -p "$crate"
-            else
-              # Tolerate an already-published version so the job is re-runnable.
-              if cargo publish -p "$crate" 2>&1 | tee /tmp/publish.log; then
-                echo "${crate} published."
-              elif grep -qiE "already (exists|uploaded)|is already uploaded|already published" /tmp/publish.log; then
-                echo "::warning::${crate} version already published — continuing."
-              else
-                echo "::error::Failed to publish ${crate}."
-                exit 1
-              fi
-              # Allow the crates.io index to update before publishing dependents.
-              sleep 20
-            fi
-            echo "::endgroup::"
-          }
-          for c in "${CRATES[@]}"; do
-            publish_one "$c"
-          done
+          ARGS=(--version "$RELEASE_VERSION")
+          if [ "$PUBLISH_DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          ./scripts/publish-crates.sh "${ARGS[@]}"

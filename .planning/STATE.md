@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 20
-current_phase_name: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
-status: planning
-stopped_at: "Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)"
-last_updated: "2026-08-28T12:32:36.586Z"
+current_phase_name: release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
+status: executing
+stopped_at: "Phase 20 wave 5 — plan 20-07 Task 2 checkpoint:human-action (rehearsal execution) awaiting operator; Task 1 resolved rehearse-rc3, 404-precheck passed"
+last_updated: "2026-08-28T17:26:31.947Z"
 last_activity: 2026-08-28
-last_activity_desc: Phase 19 complete, transitioned to Phase 20
+last_activity_desc: Phase 20 execution started
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 19
+  completed_plans: 18
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 19 — crates-io-trusted-publishing-replace-the-long-lived-registry
+**Current focus:** Phase 20 — release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
 not yet discussed or planned.
 
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 20 — Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-08-28 — Phase 19 complete, transitioned to Phase 20
+Phase: 20 (release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 20
+Last activity: 2026-08-28 — Phase 20 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -757,14 +757,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 19 plan 19-01 at Task 3 checkpoint:human-action — bootstrap prerelease 0.8.1-rc.1 requires human (merge to main, make release)
+**Stopped at:** Phase 20 wave 5 — plan 20-07 Task 2 checkpoint:human-action (rehearsal execution) awaiting operator; Task 1 resolved rehearse-rc3, 404-precheck passed
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-26T02:10:47.754Z
-Resume file: .planning/phases/19-crates-io-trusted-publishing-replace-the-long-lived-registry/19-PUBLISH-EVIDENCE.md
+Last session: 2026-08-28T17:26:31.909Z
+Resume file: .planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-07-PLAN.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 

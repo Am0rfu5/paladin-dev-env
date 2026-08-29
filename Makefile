@@ -184,14 +184,42 @@ check-workflow-triggers: ## Verify every workflow's trigger surface matches the 
 check-codeql-dismissals: ## Verify CODEQL-DISMISSALS.md is schema-complete, non-drifted, non-stale and self-consistent
 	@./scripts/check-codeql-dismissals.sh
 
+.PHONY: check-release-consistency
+# Deliberately NOT part of check-gates: every sibling guard above is a
+# no-argument offline check runnable against the current tree as-is: this
+# one requires a release tag (RELEASE_TAG) to check against, so it cannot be
+# folded into the no-argument composite without a default/guessed tag,
+# which is exactly the silent-wrong-tag failure mode this gate exists to
+# prevent (see the guard's own MISSING_TAG check).
+check-release-consistency: ## Verify a release tag's version matches every publishable manifest (RELEASE_TAG=vX.Y.Z required)
+	@if [ -z "$(RELEASE_TAG)" ]; then \
+		echo "$(RED)❌ RELEASE_TAG is required. Usage: make check-release-consistency RELEASE_TAG=v0.8.1-rc.2$(NC)"; \
+		exit 1; \
+	fi
+	@./scripts/check-release-consistency.sh --tag "$(RELEASE_TAG)"
+
 .PHONY: check-gates
 check-gates: check-changelogs check-crate-names check-advisory-register check-workflow-suppressions check-workflow-triggers check-codeql-dismissals ## Run all offline release-gate guards
 
 .PHONY: test-shell-guards
+# Loops over every tests/scripts/*_test.sh rather than a hardcoded list, so
+# a new guard's regression test (this phase adds one; later plans add more)
+# cannot be silently left out of the run by being forgotten here. A glob
+# that matches zero files is itself a named failure, never a silent pass --
+# the same discovery-safety convention the guard scripts themselves follow.
 test-shell-guards: ## Run regression tests for the offline gate guard scripts (not part of check-gates)
-	@./tests/scripts/check-workflow-suppressions_test.sh
-	@./tests/scripts/check-workflow-triggers_test.sh
-	@./tests/scripts/check-codeql-dismissals_test.sh
+	@bash -c ' \
+		shopt -s nullglob; \
+		files=(tests/scripts/*_test.sh); \
+		if [ "$${#files[@]}" -eq 0 ]; then \
+			echo -e "$(RED)❌ no tests/scripts/*_test.sh files found -- a broken glob or an empty test directory is a named failure, never a silently-empty pass.$(NC)"; \
+			exit 1; \
+		fi; \
+		for f in "$${files[@]}"; do \
+			echo -e "$(CYAN)Running $$f...$(NC)"; \
+			"$$f" || exit 1; \
+		done \
+	'
 
 .PHONY: test-ci
 test-ci: ## Run tests in CI mode
@@ -520,6 +548,14 @@ publish-dry-run: release-check ## Run dependency-first `cargo publish --dry-run`
 	@$(CARGO) publish --dry-run -p paladin || true
 	@echo "$(YELLOW)Dry-run publish command sequence completed. See docs/RELEASE_CHECKLIST.md for interpretation and publish-order gating.$(NC)"
 
+.PHONY: finalize-crate-changelogs
+finalize-crate-changelogs: ## Stamp a dated section into every publishable package's changelog (VERSION=x.y.z required)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(RED)❌ VERSION is required. Usage: make finalize-crate-changelogs VERSION=0.4.0$(NC)"; \
+		exit 1; \
+	fi
+	@./scripts/finalize-crate-changelogs.sh --version "$(VERSION)"
+
 .PHONY: release
 release: ## Cut a release: bump version (lockstep), finalize changelog, commit, tag, push. Usage: make release VERSION=0.4.0
 	@if [ -z "$(VERSION)" ]; then \
@@ -559,9 +595,26 @@ release: ## Cut a release: bump version (lockstep), finalize changelog, commit, 
 	@$(MAKE) release-check
 	@echo "$(CYAN)Bumping all crates to $(VERSION) (lockstep)...$(NC)"
 	@$(CARGO) release version "$(VERSION)" --execute --no-confirm --workspace
-	@echo "$(CYAN)Finalizing CHANGELOG.md...$(NC)"
-	@DATE=$$(date +%Y-%m-%d); \
-		perl -0pi -e "s/## \\[Unreleased\\]/## [Unreleased]\n\n## [$(VERSION)] - $$DATE/" CHANGELOG.md
+	@# The committed OpenAPI baseline (crates/paladin-web/openapi.json) embeds the
+	@# workspace version, so every bump invalidates it and the pre-push drift guard
+	@# (openapi_matches_committed_baseline) rejects the release commit. Regenerate
+	@# it here so `git add -u` below picks it up with the bump. Found live in the
+	@# v0.8.1-rc.3 rehearsal (Phase 20, 20-07 finding 1).
+	@echo "$(CYAN)Regenerating OpenAPI baseline for $(VERSION)...$(NC)"
+	@UPDATE_OPENAPI=1 $(CARGO) test -p paladin-web openapi_matches_committed_baseline --quiet
+	@echo "$(CYAN)Finalizing changelogs for all publishable packages (root + crates)...$(NC)"
+	@./scripts/finalize-crate-changelogs.sh --version "$(VERSION)"
+	@echo "$(CYAN)Verifying release consistency for v$(VERSION) before tagging...$(NC)"
+	@# Runs the manifest/changelog agreement clauses directly against the guard
+	@# script rather than via a recursive $(MAKE) call: GNU Make always executes
+	@# a recipe line that references $(MAKE), even under `make -n`, which would
+	@# break dry-run testing of this target (`make -n release VERSION=...`) by
+	@# actually invoking the gate against a fake version. This is the last step
+	@# before tag/push, so a tag is never pushed for a tree the gate would
+	@# reject. The release.yml `check-release-consistency` CI job is
+	@# authoritative for the CI-conclusion clause (D-10), which only a live
+	@# GitHub Actions run can evaluate -- a local pass here is not the full gate.
+	@./scripts/check-release-consistency.sh --tag "v$(VERSION)"
 	@echo "$(CYAN)Committing, tagging, and pushing...$(NC)"
 	@git add -u
 	@git commit -m "chore(release): version $(VERSION)"
