@@ -180,7 +180,7 @@ Phase artifacts: `milestones/v0.8.0-phases/`
 
 - [x] **Phase 18: Rust SAST — Evaluate and Adopt CodeQL** - Prove a Rust-capable SAST actually analyses this tree before adopting it, then wire it as a non-blocking scan and only afterwards as a required check (completed 2026-08-25)
 - [x] **Phase 19: crates.io Trusted Publishing — Replace the Long-Lived Registry Token** - Exchange the standing `CARGO_REGISTRY_TOKEN` secret for OIDC-issued ephemeral publish tokens, prove the new path works before revoking the old credential, and record the per-crate trust configuration the eleven-crate workspace needs (completed 2026-08-28)
-- [ ] **Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate** - Make a re-run on the same tag the supported way to finish a half-published release, refuse to publish until tag, manifest versions, changelogs and the tagged commit's CI conclusion agree, and write the stuck-halfway runbook including a yank policy
+- [x] **Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate** - Make a re-run on the same tag the supported way to finish a half-published release, refuse to publish until tag, manifest versions, changelogs and the tagged commit's CI conclusion agree, and write the stuck-halfway runbook including a yank policy (completed 2026-08-30)
 - [ ] **Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables** - Build the release body from the curated `CHANGELOG.md` section instead of a commit log, and make the attached distributables real: binaries that actually compile under the features their targets require, an image bound to the release by digest, and verifiable checksums
 
 ## Phase Details
@@ -311,7 +311,7 @@ Plans:
 
   7. **The recovery path is exercised, not merely written.** A partial failure is induced — a rehearsal on a throwaway version, or an equivalent recorded exercise — and the documented re-run finishes it. `cargo publish --dry-run` cannot demonstrate any of this: it never reaches the registry's publish endpoint, so it can neither create the half-published state nor prove recovery from it. If the exercise is not run, the runbook is labelled untested rather than presented as a procedure — the same honesty rule Phases 18 and 19 apply to their own evidence.
 
-**Plans:** 7 plans
+**Plans:** 7/7 plans complete
 
 Plans:
 **Wave 1**
@@ -389,7 +389,7 @@ Plans:
 | 17. Additional LLM Provider Adapters | v0.8.0 | 22/22 | ✅ Complete | 2026-08-23 |
 | 18. Rust SAST — Evaluate and Adopt CodeQL | v0.9.0 | 7/7 | Complete    | 2026-08-25 |
 | 19. crates.io Trusted Publishing | v0.9.0 | 5/5 | Complete    | 2026-08-28 |
-| 20. Release Pipeline Recovery | v0.9.0 | 0/TBD | Not started | — |
+| 20. Release Pipeline Recovery | v0.9.0 | 7/7 | Complete    | 2026-08-30 |
 | 21. Release Artifacts | v0.9.0 | 0/TBD | Not started | — |
 
 **v0.8.0 shipped 2026-08-24:** 14 phases, 149 plans, 65/65 requirements, 1,014 commits

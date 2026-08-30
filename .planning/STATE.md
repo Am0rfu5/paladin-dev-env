@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
-current_phase: 20
-current_phase_name: release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
-status: executing
+current_phase: 21
+current_phase_name: Release Artifacts — Curated Release Notes and Attached Distributables
+status: planning
 stopped_at: Completed 20-07-PLAN.md — phase 20 complete (7/7 plans), PUBOPS-03 and PUBOPS-05 both proven with recorded evidence
-last_updated: "2026-08-30T19:17:06.596Z"
-last_activity: 2026-08-28
-last_activity_desc: Phase 20 execution started
+last_updated: "2026-08-30T19:35:10.886Z"
+last_activity: 2026-08-30
+last_activity_desc: Phase 20 complete, transitioned to Phase 21
 progress:
   total_phases: 4
   completed_phases: 3
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 20 (release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi) — EXECUTING
-Plan: 7 of 7 (all plans complete)
-Status: All 7 plans complete — PUBOPS-03 and PUBOPS-05 proven with recorded rehearsal evidence; phase ready for verification/close
-Last activity: 2026-08-30 — Completed 20-07-PLAN.md (recovery rehearsal evidence + tested runbook status line)
+Phase: 21 — Release Artifacts — Curated Release Notes and Attached Distributables
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-30 — Phase 20 complete, transitioned to Phase 21
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -57,7 +57,7 @@ valid outcome, not a failure.
 
 **Velocity:**
 
-- Total plans completed: 174
+- Total plans completed: 181
 - Average duration: —
 - Total execution time: —
 
@@ -82,6 +82,7 @@ valid outcome, not a failure.
 | 16 | 14 | - | - |
 | 18 | 7 | - | - |
 | 19 | 5 | - | - |
+| 20 | 7 | - | - |
 
 *Updated after each plan completion*
 

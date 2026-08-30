@@ -154,7 +154,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
 
 ### Publish operations (PUBOPS)
 
-- [ ] **PUBOPS-01**: **No crate is published until the tag, every manifest version and every
+- [x] **PUBOPS-01**: **No crate is published until the tag, every manifest version and every
       changelog agree, and the gate reports every mismatch rather than the first.**
       The workspace currently offers three independent sources of the release version and no check
       that they match. Each of the eleven manifests carries a literal `version = "0.8.0"` — none
@@ -164,7 +164,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       changelogs describe no such release, and the pipeline would not notice. The gate runs before
       the first `cargo publish`, not after.
 
-- [ ] **PUBOPS-02**: **The claim "the tagged commit passed CI" is verified against a recorded run,
+- [x] **PUBOPS-02**: **The claim "the tagged commit passed CI" is verified against a recorded run,
       never inferred from the branch the commit sits on.**
       `ci.yml` triggers on `push: branches: [ '**' ]`, which does not match `refs/tags/*` — pushing
       a tag runs none of its eighteen jobs. `verify-tag-source` establishes that the commit is an
@@ -189,7 +189,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       `cargo publish --workspace`, whose ordering and index-waiting semantics the release loop
       predates.
 
-- [ ] **PUBOPS-04**: **A release run that publishes nothing does not report success, and one that
+- [x] **PUBOPS-04**: **A release run that publishes nothing does not report success, and one that
       publishes only some crates records which.**
       With every crate already at the tagged version, the publish loop emits ten
       `::warning::<crate> version already published — continuing.` lines and the job ends green —
@@ -309,10 +309,10 @@ than during execution.*
 | PUB-03 | Phase 19 | Complete |
 | PUB-04 | Phase 19 | Complete |
 | PUB-05 | Phase 19 | Complete |
-| PUBOPS-01 | Phase 20 | Pending |
-| PUBOPS-02 | Phase 20 | Pending |
+| PUBOPS-01 | Phase 20 | Complete |
+| PUBOPS-02 | Phase 20 | Complete |
 | PUBOPS-03 | Phase 20 | Complete |
-| PUBOPS-04 | Phase 20 | Pending |
+| PUBOPS-04 | Phase 20 | Complete |
 | PUBOPS-05 | Phase 20 | Complete |
 | ARTIFACT-01 | Phase 21 | Pending |
 | ARTIFACT-02 | Phase 21 | Pending |
