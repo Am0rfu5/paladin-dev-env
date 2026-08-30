@@ -147,7 +147,11 @@ _crc_fetch_ci_runs() {
     local err_file
     err_file="$(mktemp "${TMPDIR:-/tmp}/check-release-consistency-ci-err.XXXXXX")"
 
-    if gh api "repos/${GITHUB_REPOSITORY:-}/actions/workflows/ci.yml/runs" \
+    # --method GET is load-bearing: `-f` fields default `gh api` to POST, and
+    # the runs endpoint answers POST with HTTP 404 -- indistinguishable from
+    # the filename-path 404 the fallback below exists for. Found live on the
+    # v0.8.1-rc.4 rehearsal (Phase 20, 20-07 finding 6).
+    if gh api --method GET "repos/${GITHUB_REPOSITORY:-}/actions/workflows/ci.yml/runs" \
         -f head_sha="${sha}" -f status=completed --paginate \
         > "${out_file}" 2> "${err_file}"; then
         rm -f "${err_file}"
@@ -204,7 +208,7 @@ print(wf_id)
             return 1
         fi
 
-        if gh api "repos/${GITHUB_REPOSITORY:-}/actions/workflows/${workflow_id}/runs" \
+        if gh api --method GET "repos/${GITHUB_REPOSITORY:-}/actions/workflows/${workflow_id}/runs" \
             -f head_sha="${sha}" -f status=completed --paginate \
             > "${out_file}" 2> "${err_file}"; then
             rm -f "${err_file}"
