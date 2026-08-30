@@ -174,7 +174,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       tagged SHA and refuse to publish without a success, or run the equivalent checks inside the
       release workflow. Assuming is not one of them.
 
-- [ ] **PUBOPS-03**: **Re-running a release on the same tag is idempotent end-to-end, and
+- [x] **PUBOPS-03**: **Re-running a release on the same tag is idempotent end-to-end, and
       already-published is determined from registry state rather than from matched error prose.**
       Idempotency must hold for every job between the tag and `cargo publish`, not only inside the
       publish loop. It does not today: `create-release` uses `actions/create-release@v1` — archived
@@ -199,7 +199,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       which governs the missing-credential `dry_run=skip` branch: this requirement governs the case
       where authentication succeeded and nothing was published.
 
-- [ ] **PUBOPS-05**: **The stuck-halfway case has an operator runbook that states a yank policy, and
+- [x] **PUBOPS-05**: **The stuck-halfway case has an operator runbook that states a yank policy, and
       the recovery path is exercised rather than only described.**
       The word `yank` currently appears nowhere in `docs/src/`, `.github/workflows/` or `scripts/`.
       The runbook sits beside the existing `docs/src/appendix/release-automation.md` and
@@ -311,9 +311,9 @@ than during execution.*
 | PUB-05 | Phase 19 | Complete |
 | PUBOPS-01 | Phase 20 | Pending |
 | PUBOPS-02 | Phase 20 | Pending |
-| PUBOPS-03 | Phase 20 | Pending |
+| PUBOPS-03 | Phase 20 | Complete |
 | PUBOPS-04 | Phase 20 | Pending |
-| PUBOPS-05 | Phase 20 | Pending |
+| PUBOPS-05 | Phase 20 | Complete |
 | ARTIFACT-01 | Phase 21 | Pending |
 | ARTIFACT-02 | Phase 21 | Pending |
 | ARTIFACT-03 | Phase 21 | Pending |

@@ -334,7 +334,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 20-07-PLAN.md — Recovery rehearsal against an induced partial failure, evidence file, and an honest tested/untested status line
+- [x] 20-07-PLAN.md — Recovery rehearsal against an induced partial failure, evidence file, and an honest tested/untested status line
 
 ### Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables
 
