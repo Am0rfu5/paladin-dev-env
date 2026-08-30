@@ -7,10 +7,33 @@
 > log, not instead of it — the vocabulary here matches the outcome table and gate messages an
 > operator will actually be holding.
 
-**Status: untested.** This document describes what the pipeline is built to do. It has not yet
-been proven against an induced partial-publish failure. Plan 20-07's rehearsal — a real
-mid-loop failure on a throwaway prerelease, followed by the recovery procedure below — replaces
-this line once it runs. Do not read an untested procedure as a proven one.
+**Status: tested (2026-08-30).** This procedure has been exercised against a real induced
+partial-publish failure — twice — and completed via the recovery steps documented below with no
+deviation from them. The full rehearsal record, including three per-crate registry snapshots,
+both runs' per-crate outcome tables, and independent OIDC-provenance verification, is in
+`.planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-RECOVERY-EVIDENCE.md`.
+Run URLs:
+[33210072054](https://github.com/DF3NDR/paladin-dev-env/actions/runs/33210072054) (`v0.8.1-rc.3`,
+pre-Phase-20 pipeline) and
+[33322587044](https://github.com/DF3NDR/paladin-dev-env/actions/runs/33322587044) (`v0.8.1-rc.4`,
+Phase 20's own gate and recovery scripts, live).
+
+The rehearsal proved three procedure points beyond what the sections below already documented:
+
+1. **Release commits travel via PR, not a direct push to `main`.** The repository's branch
+   ruleset requires a pull request plus all required checks; `make release`'s direct
+   `git push origin HEAD` is rejected. Cut the release commit on a branch, open a PR, and only
+   push the tag once that PR has landed as a **merge commit** on `main` — a squash or rebase
+   merge would orphan the tag from the history it claims to describe.
+2. **An unpublished tag may be moved; a published version never may.** If a gate failure blocks
+   every attempt before the first `cargo publish` runs, nothing has reached the registry yet, and
+   re-tagging after a fix is safe — the rehearsal did this twice, recorded in
+   `20-RECOVERY-EVIDENCE.md`'s Findings 5 and 6. The moment any crate reaches `200` on the
+   registry, that version is permanently fixed (§4 below) and the tag must not move.
+3. **A tag pushed before its commit's CI run completes is refused, not silently accepted.** The
+   gate reports `CI_MISMATCH` for a real-but-not-yet-successful CI run distinctly from
+   `CI_LOOKUP_FAILED` (no CI run found at all — see §6). Recovery needs no re-tag: wait for CI to
+   record success on the tagged commit, then re-run the same workflow run.
 
 ## 1. Establishing what actually reached crates.io
 
