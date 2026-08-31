@@ -365,12 +365,28 @@ Plans:
 **Plans:** 6 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 21-01-PLAN.md — Curated release body: extract the `CHANGELOG.md` section, fail on a missing one, drop the unreachable pull instruction (ARTIFACT-01, -03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 21-02-PLAN.md — Feature-correct binaries, existence assert before archive, portable checksums, `gh`-CLI uploads, dead plumbing removed (ARTIFACT-02, -05, -06)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 21-03-PLAN.md — Docker digest binding, honest image-size reporting, and the terminal `finalize-release-body` job (ARTIFACT-03, -04)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 21-04-PLAN.md — Aggregated `SHA256SUMS`, one-command verification instructions, SBOM scope stated (ARTIFACT-03, -05)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 21-05-PLAN.md — Release documentation: body source, artifact inventory, verification, signing/provenance deferral (ARTIFACT-01, -02, -05, -06)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 21-06-PLAN.md — End-to-end rehearsal on a throwaway rc tag, or the artifact path recorded unverified (ARTIFACT-01…-06)
 
 ## Progress

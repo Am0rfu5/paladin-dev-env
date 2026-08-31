@@ -4,15 +4,15 @@ milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 21
 current_phase_name: Release Artifacts — Curated Release Notes and Attached Distributables
-status: planning
+status: executing
 stopped_at: Phase 21 context gathered
-last_updated: "2026-08-31T12:00:33.722Z"
+last_updated: "2026-08-31T12:47:57.774Z"
 last_activity: 2026-08-30
 last_activity_desc: Phase 20 complete, transitioned to Phase 21
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 19
+  total_plans: 25
   completed_plans: 19
 ---
 
@@ -45,7 +45,7 @@ not yet discussed or planned.
 
 Phase: 21 — Release Artifacts — Curated Release Notes and Attached Distributables
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-08-30 — Phase 20 complete, transitioned to Phase 21
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
