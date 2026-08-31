@@ -5,15 +5,15 @@ milestone_name: Security Tooling
 current_phase: 21
 current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 status: executing
-stopped_at: Phase 21 context gathered
-last_updated: "2026-08-31T12:49:27.599Z"
+stopped_at: "Phase 21 wave 6: plan 21-06 blocked at Task 1 human checkpoint (rehearsal decision option-a/option-b); 5/6 plans complete"
+last_updated: "2026-08-31T15:28:55.106Z"
 last_activity: 2026-08-31
 last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 25
-  completed_plans: 19
+  completed_plans: 24
 ---
 
 # Project State
@@ -761,14 +761,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 21 context gathered
+**Stopped at:** Phase 21 wave 6: plan 21-06 blocked at Task 1 human checkpoint (rehearsal decision option-a/option-b); 5/6 plans complete
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-31T12:00:33.668Z
-Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-CONTEXT.md
+Last session: 2026-08-31T15:28:55.074Z
+Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-06-PLAN.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
