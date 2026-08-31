@@ -303,35 +303,51 @@ jobs:
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: cargo install cross --locked --version 0.2.5
 
+      # Every leg builds all three declared [[bin]] targets under an explicit
+      # feature set (D-05) -- a bare `cargo build --release` silently skips
+      # any binary whose `required-features` are unmet, so the release has
+      # never actually attached `paladin-cli` or `paladin-server`. The
+      # aarch64 branch composes `vendored-openssl` on top of the same
+      # `cli,web-server` pair the other three legs use, since `cross`
+      # containers lack a target-arch system OpenSSL.
       - name: Build binary
         run: |
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            # `cross` containers lack a target-arch system OpenSSL, so build a
-            # vendored OpenSSL from source for this target only.
-            cross build --release --target ${{ matrix.target }} --features vendored-openssl
+            cross build --release --target ${{ matrix.target }} --features cli,web-server,vendored-openssl
           else
-            cargo build --release --target ${{ matrix.target }}
+            cargo build --release --target ${{ matrix.target }} --features cli,web-server
           fi
 
-      - name: Strip binary
-        if: matrix.os != 'windows-latest'
+      # aarch64-cross-compiled binaries need the matching aarch64 strip from
+      # binutils-aarch64-linux-gnu -- the host x86_64 `strip` cannot read
+      # them ("Unable to recognise the format"). This install step stays its
+      # own preceding conditional; the strip itself now runs inside the
+      # packaging step below via --strip-cmd.
+      - name: Install aarch64 strip toolchain
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            # This binary is cross-compiled to aarch64 (via `cross`), so the host
-            # x86_64 `strip` cannot read it ("Unable to recognise the format").
-            # Use the matching aarch64 cross strip from binutils-aarch64-linux-gnu.
-            sudo apt-get update
-            sudo apt-get install -y binutils-aarch64-linux-gnu
-            aarch64-linux-gnu-strip target/${{ matrix.target }}/release/paladin
-          else
-            strip target/${{ matrix.target }}/release/paladin
-          fi
+          sudo apt-get update
+          sudo apt-get install -y binutils-aarch64-linux-gnu
 
-      - name: Create archive
+      # Assert -> strip -> archive -> portable checksum, all in one script
+      # (ARTIFACT-02, ARTIFACT-05): a leg that produced no executable fails
+      # here, loudly, before anything is archived -- the old two-step
+      # Strip/Create-archive pair assumed a single hardcoded `paladin`
+      # binary was always present and had no such check. Values reach the
+      # script through env: indirection (CR-01), never interpolated
+      # directly into this run: body.
+      - name: Package release binaries
+        id: package
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+          ARCHIVE_NAME: ${{ matrix.artifact_name }}
+          STRIP_CMD: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-strip' || 'strip' }}
         run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ${{ matrix.artifact_name }}.tar.gz paladin
-          sha256sum ${{ matrix.artifact_name }}.tar.gz > ${{ matrix.artifact_name }}.tar.gz.sha256
+          ./scripts/package-release-binaries.sh \
+            --target "$BUILD_TARGET" \
+            --release-dir "target/$BUILD_TARGET/release" \
+            --archive-name "$ARCHIVE_NAME" \
+            --strip-cmd "$STRIP_CMD"
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -339,7 +355,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz
+          asset_path: ${{ steps.package.outputs.archive_path }}
           asset_name: ${{ matrix.artifact_name }}.tar.gz
           asset_content_type: application/gzip
 
@@ -349,7 +365,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz.sha256
+          asset_path: ${{ steps.package.outputs.checksum_path }}
           asset_name: ${{ matrix.artifact_name }}.tar.gz.sha256
           asset_content_type: text/plain
 
