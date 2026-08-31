@@ -244,6 +244,198 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# run_finalize DIR OUTPUT_NAME ARGS... -> runs the real script (a fresh
+# process, so its own `set -euo pipefail` never touches this test script)
+# against DIR's gh stub, writing to ${DIR}/${OUTPUT_NAME}. Returns the
+# script's exit status; stdout+stderr land in ${DIR}/${OUTPUT_NAME}.log.
+run_finalize() {
+    local dir="$1" output_name="$2"
+    shift 2
+    FINALIZE_RELEASE_BODY_LIB_ONLY=0 GH_BIN="${dir}/gh-stub.sh" bash "${GUARD}" \
+        "$@" --output "${dir}/${output_name}" >"${dir}/${output_name}.log" 2>&1
+}
+
+# --- Case 7: a curated section containing `&`, `%`, `$(...)`, backticks and
+#     a line that is exactly `EOF` survives the truncate-and-rebuild
+#     byte-for-byte -- built from a quoted heredoc so the fixture itself is
+#     never expanded by this test script's own shell. Proven both by direct
+#     substring checks (including an exact whole-line match on the bare
+#     `EOF` line) and by a second run over the first run's own output
+#     staying byte-identical -- if the metacharacters had perturbed the
+#     marker cut or been mangled in transit, the two runs would diverge. ----
+CURATED_META="$(cat <<'META_FIXTURE'
+## [1.2.4] - 2026-01-02
+
+### Changed
+
+- 100% of requests use the `&`-joined query string; price is $50.
+- Running `echo hi` then a subshell like $(rm -rf /tmp/nope) must never execute.
+EOF
+- The line above is exactly the four characters "EOF" on its own line.
+META_FIXTURE
+)"
+DIR7="${SCRATCH}/case7"
+mkdir -p "${DIR7}"
+write_gh_stub "${DIR7}"
+printf '%s' "${CURATED_META}" > "${DIR7}/current_body"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR7}" "run1.md" --tag v1.2.4 --image-digest abc123 \
+    --image-ref "ghcr.io/df3ndr/paladin-dev-env:1.2.4" --image-size-mb 100; then
+    echo "PASS: case7 (metacharacter fixture) first run exits 0"
+else
+    echo "FAIL: case7 first run did not exit 0"
+    sed 's/^/  | /' "${DIR7}/run1.md.log"
+    FAILED=$((FAILED + 1))
+fi
+assert_contains "case7: literal & survives" "${DIR7}/run1.md" '`&`-joined'
+assert_contains "case7: literal % survives" "${DIR7}/run1.md" '100%'
+assert_contains "case7: literal \$(...) survives unexecuted" "${DIR7}/run1.md" '$(rm -rf /tmp/nope)'
+assert_contains "case7: backticked command survives" "${DIR7}/run1.md" '`echo hi`'
+ASSERTIONS=$((ASSERTIONS + 1))
+if grep -qxF 'EOF' "${DIR7}/run1.md"; then
+    echo "PASS: case7 a line that is exactly EOF survives as its own whole line"
+else
+    echo "FAIL: expected a whole line matching exactly 'EOF' in ${DIR7}/run1.md"
+    FAILED=$((FAILED + 1))
+fi
+if run_finalize "${DIR7}" "run2.md" --tag v1.2.4 --image-digest abc123 \
+    --image-ref "ghcr.io/df3ndr/paladin-dev-env:1.2.4" --image-size-mb 100; then
+    :
+else
+    echo "FAIL: case7 second run did not exit 0"
+    FAILED=$((FAILED + 1))
+fi
+assert_cmp "case7: second run over its own previous output is byte-identical to the first" \
+    "${DIR7}/run1.md" "${DIR7}/run2.md"
+
+# --- Case 8: a curated section containing multi-byte UTF-8 characters
+#     survives byte-for-byte, proven the same way as Case 7. ----------------
+CURATED_UTF8="$(cat <<'UTF8_FIXTURE'
+## [1.2.5] - 2026-01-03
+
+### Changed
+
+- Endpoint moved Singapore -> US -- then back again, per the DashScope région
+  note. Emoji check: caffè, naïve, 日本語, and an em dash — right here.
+UTF8_FIXTURE
+)"
+DIR8="${SCRATCH}/case8"
+mkdir -p "${DIR8}"
+write_gh_stub "${DIR8}"
+printf '%s' "${CURATED_UTF8}" > "${DIR8}/current_body"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR8}" "run1.md" --tag v1.2.5; then
+    echo "PASS: case8 (UTF-8 fixture) first run exits 0"
+else
+    echo "FAIL: case8 first run did not exit 0"
+    sed 's/^/  | /' "${DIR8}/run1.md.log"
+    FAILED=$((FAILED + 1))
+fi
+assert_contains "case8: accented/multi-byte text survives" "${DIR8}/run1.md" 'caffè, naïve, 日本語'
+assert_contains "case8: em dash survives" "${DIR8}/run1.md" 'em dash — right here'
+run_finalize "${DIR8}" "run2.md" --tag v1.2.5
+assert_cmp "case8: second run over its own previous output is byte-identical to the first" \
+    "${DIR8}/run1.md" "${DIR8}/run2.md"
+
+# --- Case 9: an empty curated body (the heading-only-changelog case) still
+#     produces a valid body -- marker plus artifact sections, no crash, no
+#     phantom content. ---------------------------------------------------------
+DIR9="${SCRATCH}/case9"
+mkdir -p "${DIR9}"
+write_gh_stub "${DIR9}"
+printf '' > "${DIR9}/current_body"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR9}" "run1.md" --tag v1.2.6 --image-digest abc123 \
+    --image-ref "ghcr.io/df3ndr/paladin-dev-env:1.2.6" --image-size-mb 42; then
+    echo "PASS: case9 (empty curated body) run exits 0, no crash"
+else
+    echo "FAIL: case9 run did not exit 0"
+    sed 's/^/  | /' "${DIR9}/run1.md.log"
+    FAILED=$((FAILED + 1))
+fi
+assert_contains "case9: marker still present" "${DIR9}/run1.md" "<!-- paladin:release-artifacts -->"
+assert_contains "case9: container-image section still present" "${DIR9}/run1.md" "### Container image"
+assert_not_contains "case9: no phantom 'null' text" "${DIR9}/run1.md" "null"
+
+# --- Case 10: a body that already contains the marker twice (a hand-edited
+#     release) truncates at the first occurrence, so no stale artifact
+#     block survives below the rebuilt one. -----------------------------------
+DIR10="${SCRATCH}/case10"
+mkdir -p "${DIR10}"
+write_gh_stub "${DIR10}"
+printf '%s' "${CURATED1}" > "${DIR10}/current_body"
+run_finalize "${DIR10}" "run1.md" --tag v1.2.3 --image-digest abc123 \
+    --image-ref "ghcr.io/df3ndr/paladin-dev-env:1.2.3" --image-size-mb 450
+# Hand-insert a second marker plus a stale artifact block below the first
+# run's own output -- simulating a maintainer editing the published release
+# in the GitHub UI between runs.
+{
+    cat "${DIR10}/run1.md"
+    printf '\n<!-- paladin:release-artifacts -->\n\nSTALE HAND-EDITED CONTENT THAT MUST NOT SURVIVE\n'
+} > "${DIR10}/current_body"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR10}" "run2.md" --tag v1.2.3 --image-digest abc123 \
+    --image-ref "ghcr.io/df3ndr/paladin-dev-env:1.2.3" --image-size-mb 450; then
+    echo "PASS: case10 (double-marker fixture) run exits 0"
+else
+    echo "FAIL: case10 run did not exit 0"
+    sed 's/^/  | /' "${DIR10}/run2.md.log"
+    FAILED=$((FAILED + 1))
+fi
+ASSERTIONS=$((ASSERTIONS + 1))
+MARKER_COUNT="$(grep -cF '<!-- paladin:release-artifacts -->' "${DIR10}/run2.md")"
+if [ "${MARKER_COUNT}" = "1" ]; then
+    echo "PASS: case10 exactly one marker occurrence survives truncate-and-rebuild"
+else
+    echo "FAIL: case10 expected exactly 1 marker occurrence, got ${MARKER_COUNT}"
+    FAILED=$((FAILED + 1))
+fi
+assert_not_contains "case10: stale hand-edited content is discarded, not preserved" \
+    "${DIR10}/run2.md" "STALE HAND-EDITED CONTENT"
+
+# --- Case 11: a digest present with no image reference emits no
+#     container-image section -- a half-populated section is never
+#     advertised (exercised through the full script, not just the pure
+#     composer, to prove the CLI-flag path carries the same rule). -----------
+compose_to case11 body11.md "${CURATED1}" "abc123" "" "300"
+assert_not_contains "case11: digest with no image-ref -> no container-image section" \
+    "${LAST_COMPOSE_FILE}" "### Container image"
+assert_contains "case11: image size section still present" "${LAST_COMPOSE_FILE}" "### Image size"
+
+# --- Case 12: three consecutive composes over the same inputs are
+#     byte-identical to each other -- compose_release_body is a pure
+#     function, so this must hold trivially; asserted explicitly as a
+#     regression guard. ---------------------------------------------------
+compose_to case12 run_a.md "${CURATED1}" "abc123" "ghcr.io/df3ndr/paladin-dev-env:1.2.3" "450"
+RUN_A="${LAST_COMPOSE_FILE}"
+compose_to case12 run_b.md "${CURATED1}" "abc123" "ghcr.io/df3ndr/paladin-dev-env:1.2.3" "450"
+RUN_B="${LAST_COMPOSE_FILE}"
+compose_to case12 run_c.md "${CURATED1}" "abc123" "ghcr.io/df3ndr/paladin-dev-env:1.2.3" "450"
+RUN_C="${LAST_COMPOSE_FILE}"
+assert_cmp "case12: compose #1 and #2 over identical inputs are byte-identical" "${RUN_A}" "${RUN_B}"
+assert_cmp "case12: compose #2 and #3 over identical inputs are byte-identical" "${RUN_B}" "${RUN_C}"
+
+# --- Case 13: a composed body's section order is stable when the CLI flags
+#     that supply its inputs are given in a different order. -----------------
+DIR13="${SCRATCH}/case13"
+mkdir -p "${DIR13}"
+write_gh_stub "${DIR13}"
+printf '%s' "${CURATED1}" > "${DIR13}/current_body"
+run_finalize "${DIR13}" "order_a.md" --tag v1.2.3 --image-digest abc123 \
+    --image-ref "ghcr.io/df3ndr/paladin-dev-env:1.2.3" --image-size-mb 450
+# Reset current_body (run_finalize's own stub overwrites it with the
+# previous call's published output) so the second invocation starts from
+# the identical pre-marker state as the first.
+printf '%s' "${CURATED1}" > "${DIR13}/current_body"
+run_finalize "${DIR13}" "order_b.md" --image-size-mb 450 --image-ref \
+    "ghcr.io/df3ndr/paladin-dev-env:1.2.3" --tag v1.2.3 --image-digest abc123
+assert_cmp "case13: section order is stable regardless of CLI flag order" \
+    "${DIR13}/order_a.md" "${DIR13}/order_b.md"
+
 # --- Missing --tag: usage error. ---------------------------------------------
 ASSERTIONS=$((ASSERTIONS + 1))
 DIR_MISSING_TAG="${SCRATCH}/case-missing-tag"
