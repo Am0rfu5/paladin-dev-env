@@ -228,7 +228,7 @@ than during execution.*
 
 ### Release artifacts (ARTIFACT)
 
-- [ ] **ARTIFACT-01**: **The GitHub release body is extracted from the curated `CHANGELOG.md`
+- [x] **ARTIFACT-01**: **The GitHub release body is extracted from the curated `CHANGELOG.md`
       section for that version, and a missing section fails the run rather than falling back.**
       `release.yml`'s `create-release` job builds its body from
       `git log --pretty=format:"- %s" "$PREV_TAG"..HEAD`, discarding a curated Keep-a-Changelog
@@ -314,7 +314,7 @@ than during execution.*
 | PUBOPS-03 | Phase 20 | Complete |
 | PUBOPS-04 | Phase 20 | Complete |
 | PUBOPS-05 | Phase 20 | Complete |
-| ARTIFACT-01 | Phase 21 | Pending |
+| ARTIFACT-01 | Phase 21 | Complete |
 | ARTIFACT-02 | Phase 21 | Complete |
 | ARTIFACT-03 | Phase 21 | Complete |
 | ARTIFACT-04 | Phase 21 | Complete |
