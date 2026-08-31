@@ -237,12 +237,17 @@ jobs:
 
       - name: Verify image size
         id: size
+        env:
+          # CR-01: route the tag-derived JSON blob through env: rather than
+          # inlining `${{ steps.meta.outputs.json }}` into the run: body, matching
+          # every other tainted value (tag, version, SHA, digest) in this file.
+          META_JSON: ${{ steps.meta.outputs.json }}
         run: |
           # Use the exact tag metadata-action produced. It already lowercases the
           # repository name (ghcr requires lowercase, but env.IMAGE_NAME keeps the
           # original `DF3NDR/...` casing) and strips the leading `v` from the
           # semver tag, so reconstructing the reference by hand is error-prone.
-          IMAGE=$(echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[0]')
+          IMAGE=$(echo "$META_JSON" | jq -r '.tags[0]')
           echo "Inspecting image: $IMAGE"
           docker pull "$IMAGE"
           SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
