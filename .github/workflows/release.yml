@@ -109,7 +109,6 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create_or_reuse_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout code
@@ -303,55 +302,67 @@ jobs:
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: cargo install cross --locked --version 0.2.5
 
+      # Every leg builds all three declared [[bin]] targets under an explicit
+      # feature set (D-05) -- a bare `cargo build --release` silently skips
+      # any binary whose `required-features` are unmet, so the release has
+      # never actually attached `paladin-cli` or `paladin-server`. The
+      # aarch64 branch composes `vendored-openssl` on top of the same
+      # `cli,web-server` pair the other three legs use, since `cross`
+      # containers lack a target-arch system OpenSSL.
       - name: Build binary
         run: |
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            # `cross` containers lack a target-arch system OpenSSL, so build a
-            # vendored OpenSSL from source for this target only.
-            cross build --release --target ${{ matrix.target }} --features vendored-openssl
+            cross build --release --target ${{ matrix.target }} --features cli,web-server,vendored-openssl
           else
-            cargo build --release --target ${{ matrix.target }}
+            cargo build --release --target ${{ matrix.target }} --features cli,web-server
           fi
 
-      - name: Strip binary
-        if: matrix.os != 'windows-latest'
+      # aarch64-cross-compiled binaries need the matching aarch64 strip from
+      # binutils-aarch64-linux-gnu -- the host x86_64 `strip` cannot read
+      # them ("Unable to recognise the format"). This install step stays its
+      # own preceding conditional; the strip itself now runs inside the
+      # packaging step below via --strip-cmd.
+      - name: Install aarch64 strip toolchain
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            # This binary is cross-compiled to aarch64 (via `cross`), so the host
-            # x86_64 `strip` cannot read it ("Unable to recognise the format").
-            # Use the matching aarch64 cross strip from binutils-aarch64-linux-gnu.
-            sudo apt-get update
-            sudo apt-get install -y binutils-aarch64-linux-gnu
-            aarch64-linux-gnu-strip target/${{ matrix.target }}/release/paladin
-          else
-            strip target/${{ matrix.target }}/release/paladin
-          fi
+          sudo apt-get update
+          sudo apt-get install -y binutils-aarch64-linux-gnu
 
-      - name: Create archive
+      # Assert -> strip -> archive -> portable checksum, all in one script
+      # (ARTIFACT-02, ARTIFACT-05): a leg that produced no executable fails
+      # here, loudly, before anything is archived -- the old two-step
+      # Strip/Create-archive pair assumed a single hardcoded `paladin`
+      # binary was always present and had no such check. Values reach the
+      # script through env: indirection (CR-01), never interpolated
+      # directly into this run: body.
+      - name: Package release binaries
+        id: package
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+          ARCHIVE_NAME: ${{ matrix.artifact_name }}
+          STRIP_CMD: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-strip' || 'strip' }}
         run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ${{ matrix.artifact_name }}.tar.gz paladin
-          sha256sum ${{ matrix.artifact_name }}.tar.gz > ${{ matrix.artifact_name }}.tar.gz.sha256
+          ./scripts/package-release-binaries.sh \
+            --target "$BUILD_TARGET" \
+            --release-dir "target/$BUILD_TARGET/release" \
+            --archive-name "$ARCHIVE_NAME" \
+            --strip-cmd "$STRIP_CMD"
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      # Uploads through the `gh` CLI with the clobber flag (D-07, Phase 20
+      # D-03) so a re-run replaces the same asset name instead of failing on
+      # a duplicate. The release is resolved by tag, not by an upload-URL
+      # job output -- create-release no longer exposes one (D-07). Both
+      # files collapse into a single invocation rather than the old
+      # two-step Upload-Release-Asset/Upload-SHA256 pair.
+      - name: Upload release assets
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz
-          asset_name: ${{ matrix.artifact_name }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload SHA256
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz.sha256
-          asset_name: ${{ matrix.artifact_name }}.tar.gz.sha256
-          asset_content_type: text/plain
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.create-release.outputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          ARCHIVE_PATH: ${{ steps.package.outputs.archive_path }}
+          CHECKSUM_PATH: ${{ steps.package.outputs.checksum_path }}
+        run: |
+          gh release upload "$RELEASE_TAG" "$ARCHIVE_PATH" "$CHECKSUM_PATH" --clobber --repo "$RELEASE_REPOSITORY"
 
   # Pre-publish consistency gate (PUBOPS-01): fails closed if the release
   # tag's version disagrees with any publishable crate's manifest version.
@@ -448,15 +459,17 @@ jobs:
           # The root package SBOM is the primary deliverable.
           cp paladin-ai.cdx.json "paladin-${RELEASE_VERSION}.cdx.json"
 
+      # Uploads through the `gh` CLI with the clobber flag (D-07, Phase 20
+      # D-03) so a re-run replaces the same asset name instead of failing on
+      # a duplicate. The release is resolved by tag, not by an upload-URL
+      # job output -- create-release no longer exposes one (D-07).
       - name: Upload SBOM to release
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: paladin-${{ env.RELEASE_VERSION }}.cdx.json
-          asset_name: paladin-${{ env.RELEASE_VERSION }}.cdx.json
-          asset_content_type: application/json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          SBOM_PATH: paladin-${{ env.RELEASE_VERSION }}.cdx.json
+        run: |
+          gh release upload "$RELEASE_VERSION" "$SBOM_PATH" --clobber --repo "$RELEASE_REPOSITORY"
 
   # Publish workspace crates to crates.io in dependency order (Milestone 10
   # Epic 3), authenticating via crates.io Trusted Publishing (Phase 19). The
