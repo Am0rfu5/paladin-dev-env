@@ -5,15 +5,15 @@ milestone_name: Security Tooling
 current_phase: 21
 current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 status: executing
-stopped_at: "Phase 21 wave 6: plan 21-06 blocked at Task 1 human checkpoint (rehearsal decision option-a/option-b); 5/6 plans complete"
-last_updated: "2026-08-31T15:28:55.106Z"
+stopped_at: "Phase 21 executed 6/6; verification human_needed (2 UAT items: out-of-band digest pull, paladin-cli execution); awaiting /gsd-verify-work 21"
+last_updated: "2026-08-31T22:18:28.624Z"
 last_activity: 2026-08-31
 last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 25
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State
@@ -761,14 +761,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 21 wave 6: plan 21-06 blocked at Task 1 human checkpoint (rehearsal decision option-a/option-b); 5/6 plans complete
+**Stopped at:** Phase 21 executed 6/6; verification human_needed (2 UAT items: out-of-band digest pull, paladin-cli execution); awaiting /gsd-verify-work 21
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-31T15:28:55.074Z
-Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-06-PLAN.md
+Last session: 2026-08-31T22:18:28.594Z
+Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-UAT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
