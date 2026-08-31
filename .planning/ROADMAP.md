@@ -371,7 +371,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 21-02-PLAN.md — Feature-correct binaries, existence assert before archive, portable checksums, `gh`-CLI uploads, dead plumbing removed (ARTIFACT-02, -05, -06)
+- [x] 21-02-PLAN.md — Feature-correct binaries, existence assert before archive, portable checksums, `gh`-CLI uploads, dead plumbing removed (ARTIFACT-02, -05, -06)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
