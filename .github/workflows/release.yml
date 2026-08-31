@@ -480,11 +480,13 @@ jobs:
         run: |
           gh release upload "$RELEASE_VERSION" "$SBOM_PATH" --clobber --repo "$RELEASE_REPOSITORY"
 
-  # Terminal job in the artifact-composition graph (D-04, ARTIFACT-03/-04):
-  # `create-release` publishes the curated CHANGELOG.md section alone; this
-  # job binds the container image to that release by immutable digest and
-  # reports the measured image size, reading only real outputs the run
-  # actually produced -- never a hand-reconstructed guess. `if: always()`
+  # Terminal job in the artifact-composition graph (D-04, ARTIFACT-03/-04/
+  # -05): `create-release` publishes the curated CHANGELOG.md section alone;
+  # this job binds the container image to that release by immutable digest,
+  # reports the measured image size, aggregates a single checksum file over
+  # every archive `build-binaries` actually uploaded, and states the
+  # attached SBOM's real scope -- reading only real outputs the run
+  # actually produced, never a hand-reconstructed guess. `if: always()`
   # is what lets this job still run when `build-docker`, `build-binaries` or
   # `sbom` failed or was skipped (their sections are then simply omitted --
   # see scripts/finalize-release-body.sh) -- it is guarded instead on
@@ -502,7 +504,18 @@ jobs:
   # there). The ternary (`result == 'success' && … || '{}'`)
   # is what makes a failed or skipped `build-docker` leg contribute nothing,
   # so the finalize script omits the container-image and image-size
-  # sections rather than advertising a leg that never ran.
+  # sections rather than advertising a leg that never ran. The SBOM asset
+  # name is built the same way -- only supplied when `needs.sbom` actually
+  # succeeded, matching `sbom`'s own attached filename exactly, so a failed
+  # SBOM leg contributes no section either. Checksum aggregation needs no
+  # equivalent gate: it downloads whatever `*.tar.gz` archives are actually
+  # visible on the release at this point, so a failed `build-binaries` leg
+  # simply means fewer (or zero) archives -- and zero is itself a handled,
+  # non-failing outcome (see aggregate_checksums's own doc comment). No new
+  # permission and no new marketplace Action: the checksum switch and the
+  # SBOM asset name both reach the same script invocation `build-docker`'s
+  # inputs already used, and the download/upload calls the switch makes are
+  # the same `gh` CLI already authenticated on this job's `contents: write`.
   finalize-release-body:
     name: Finalize Release Body
     runs-on: ubuntu-latest
@@ -519,6 +532,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.create-release.outputs.version }}
           DOCKER_OUTPUTS_JSON: ${{ needs.build-docker.result == 'success' && toJSON(needs.build-docker.outputs) || '{}' }}
+          # The SBOM job's own upload step names its asset
+          # `paladin-${RELEASE_VERSION}.cdx.json` -- built identically here
+          # so the two never drift apart, and left empty when the SBOM leg
+          # did not succeed so no section names a document that was never
+          # attached.
+          SBOM_ASSET_NAME: ${{ needs.sbom.result == 'success' && format('paladin-{0}.cdx.json', needs.create-release.outputs.version) || '' }}
         run: |
           set -euo pipefail
           IMAGE_DIGEST=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.digest // empty')
@@ -536,7 +555,9 @@ jobs:
             --tag "$RELEASE_TAG" \
             --image-digest "$IMAGE_DIGEST" \
             --image-ref "$IMAGE_REF" \
-            --image-size-mb "$IMAGE_SIZE_MB"
+            --image-size-mb "$IMAGE_SIZE_MB" \
+            --aggregate-checksums \
+            --sbom-asset "$SBOM_ASSET_NAME"
 
   # Publish workspace crates to crates.io in dependency order (Milestone 10
   # Epic 3), authenticating via crates.io Trusted Publishing (Phase 19). The
