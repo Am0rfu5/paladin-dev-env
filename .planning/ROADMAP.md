@@ -375,7 +375,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 21-03-PLAN.md — Docker digest binding, honest image-size reporting, and the terminal `finalize-release-body` job (ARTIFACT-03, -04)
+- [x] 21-03-PLAN.md — Docker digest binding, honest image-size reporting, and the terminal `finalize-release-body` job (ARTIFACT-03, -04)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
