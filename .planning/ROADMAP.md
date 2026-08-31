@@ -362,11 +362,16 @@ Plans:
 
   7. **A release is proven end-to-end on a throwaway tag before this is called done.** The evidence is a real run that produced downloadable assets whose checksums verify, an image that pulls by the digest the release names, and a body that matches the `CHANGELOG.md` section for that version. A workflow that is merely re-read and reasoned about does not satisfy this — the binaries defect above survived every previous reading of this file precisely because no release since it was introduced was checked for the artifacts it claimed to attach. If the rehearsal is not run, the phase records the artifact path as unverified rather than presenting it as working — the same honesty rule Phases 18-20 apply to their own evidence.
 
-**Plans**: TBD — run `/gsd-discuss-phase 21` then `/gsd-plan-phase 21`
+**Plans:** 6 plans
 
 Plans:
 
-- [ ] TBD (run `/gsd-plan-phase 21` to break down)
+- [ ] 21-01-PLAN.md — Curated release body: extract the `CHANGELOG.md` section, fail on a missing one, drop the unreachable pull instruction (ARTIFACT-01, -03)
+- [ ] 21-02-PLAN.md — Feature-correct binaries, existence assert before archive, portable checksums, `gh`-CLI uploads, dead plumbing removed (ARTIFACT-02, -05, -06)
+- [ ] 21-03-PLAN.md — Docker digest binding, honest image-size reporting, and the terminal `finalize-release-body` job (ARTIFACT-03, -04)
+- [ ] 21-04-PLAN.md — Aggregated `SHA256SUMS`, one-command verification instructions, SBOM scope stated (ARTIFACT-03, -05)
+- [ ] 21-05-PLAN.md — Release documentation: body source, artifact inventory, verification, signing/provenance deferral (ARTIFACT-01, -02, -05, -06)
+- [ ] 21-06-PLAN.md — End-to-end rehearsal on a throwaway rc tag, or the artifact path recorded unverified (ARTIFACT-01…-06)
 
 ## Progress
 
@@ -390,7 +395,7 @@ Plans:
 | 18. Rust SAST — Evaluate and Adopt CodeQL | v0.9.0 | 7/7 | Complete    | 2026-08-25 |
 | 19. crates.io Trusted Publishing | v0.9.0 | 5/5 | Complete    | 2026-08-28 |
 | 20. Release Pipeline Recovery | v0.9.0 | 7/7 | Complete    | 2026-08-30 |
-| 21. Release Artifacts | v0.9.0 | 0/TBD | Not started | — |
+| 21. Release Artifacts | v0.9.0 | 0/6 | Planned | — |
 
 **v0.8.0 shipped 2026-08-24:** 14 phases, 149 plans, 65/65 requirements, 1,014 commits
 (`be2ff05..48ac11a5`). Audit status `tech_debt` — no blockers; see
