@@ -387,7 +387,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 21-06-PLAN.md — End-to-end rehearsal on a throwaway rc tag, or the artifact path recorded unverified (ARTIFACT-01…-06)
+- [x] 21-06-PLAN.md — End-to-end rehearsal on a throwaway rc tag, or the artifact path recorded unverified (ARTIFACT-01…-06)
 
 ## Progress
 
