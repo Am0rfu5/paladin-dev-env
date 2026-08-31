@@ -109,7 +109,6 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create_or_reuse_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout code
@@ -128,50 +127,29 @@ jobs:
             echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Generate changelog
+      # Extract changelog section (ARTIFACT-01, D-01/D-02/D-03): the release
+      # body is the curated `## [X.Y.Z]` section from the root CHANGELOG.md,
+      # not a commit-subject list -- this project maintains a hand-authored
+      # Keep-a-Changelog corpus on purpose, and the previous step discarded
+      # it (1,014 commit subjects for v0.8.0) while also advertising a
+      # `docker pull` instruction naming the mutable "latest" tag this
+      # workflow has never pushed on a tag ref. Neither the commit-log body
+      # nor the mutable-tag pull block is replaced with a new static
+      # template here -- the artifact sections arrive later from real job
+      # outputs (plan 21-03/21-04, D-04).
+      # A missing section is a hard, named failure with no fallback (D-01).
+      - name: Extract changelog section
         id: changelog
         env:
           # Indirect through env: rather than interpolating the tainted
           # output directly into the run: block (CR-01) -- the version
           # ultimately traces back to the workflow_dispatch `tag` input.
-          # REGISTRY and IMAGE_NAME are already real shell environment
-          # variables here (from the workflow-level env: block), so no
-          # further indirection is needed for them.
           RELEASE_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
-          # Generate changelog from git commits since last tag, written to
-          # a file under $RUNNER_TEMP rather than appended to
-          # $GITHUB_OUTPUT via a heredoc -- a commit subject line that is
-          # exactly the heredoc's own delimiter could otherwise terminate
-          # it early and inject arbitrary key=value lines into
-          # $GITHUB_OUTPUT. Writing to a file removes that hazard class
-          # entirely rather than defending against it, and this is the
-          # file the create-or-reuse script's --body-file consumes.
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          CHANGELOG_FILE="${RUNNER_TEMP}/release-changelog.md"
-          {
-            echo "## What's Changed"
-            echo ""
-            if [ -z "$PREV_TAG" ]; then
-              git log --pretty=format:"- %s" HEAD
-            else
-              git log --pretty=format:"- %s" "$PREV_TAG"..HEAD
-            fi
-            echo ""
-            echo ""
-            echo "## Docker Images"
-            echo ""
-            echo "Multi-architecture Docker images are available:"
-            echo '```bash'
-            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:${RELEASE_VERSION}"
-            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:latest"
-            echo '```'
-            echo ""
-            echo "Supported platforms:"
-            echo "- linux/amd64"
-            echo "- linux/arm64"
-          } > "$CHANGELOG_FILE"
-          echo "changelog_file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
+          ./scripts/extract-changelog-section.sh \
+            --changelog CHANGELOG.md \
+            --version "$RELEASE_VERSION" \
+            --output "${RUNNER_TEMP}/release-body.md"
 
       # Create-or-reuse (D-01/D-02/PUBOPS-03): looks the release up by tag
       # first -- HTTP 200 reuses it, HTTP 404 creates it, anything else is a
@@ -189,7 +167,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.get_version.outputs.version }}
           RELEASE_REPOSITORY: ${{ github.repository }}
-          RELEASE_BODY_FILE: ${{ steps.changelog.outputs.changelog_file }}
+          RELEASE_BODY_FILE: ${{ steps.changelog.outputs.section_file }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/create-or-reuse-release.sh \
@@ -206,6 +184,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      tags_json: ${{ steps.meta.outputs.json }}
+      image_size_mb: ${{ steps.size.outputs.image_size_mb }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -235,6 +217,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -246,6 +229,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Verify image size
+        id: size
         run: |
           # Use the exact tag metadata-action produced. It already lowercases the
           # repository name (ghcr requires lowercase, but env.IMAGE_NAME keeps the
@@ -257,9 +241,12 @@ jobs:
           SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
           SIZE_MB=$((SIZE / 1024 / 1024))
           echo "Image size: ${SIZE_MB} MB"
-          if [ $SIZE_MB -gt 500 ]; then
-            echo "::warning::Image size (${SIZE_MB} MB) exceeds 500 MB target"
-          fi
+          # The 500 MB target is advisory (D-10): the measurement is reported
+          # into the release body by the finalize job instead of a GitHub
+          # warning annotation that let the run finish green while reporting
+          # nothing a consumer would ever read.
+          echo "image_size_mb=${SIZE_MB}" >> "$GITHUB_OUTPUT"
+          echo "Image size: ${SIZE_MB} MB (advisory against the 500 MB target; reported in the release body)" >> "$GITHUB_STEP_SUMMARY"
 
   # Build binaries for multiple platforms. Intentionally not gated on the
   # `test` job (WR-05) -- see the comment on the `test` job for the tradeoff.
@@ -324,55 +311,67 @@ jobs:
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: cargo install cross --locked --version 0.2.5
 
+      # Every leg builds all three declared [[bin]] targets under an explicit
+      # feature set (D-05) -- a bare `cargo build --release` silently skips
+      # any binary whose `required-features` are unmet, so the release has
+      # never actually attached `paladin-cli` or `paladin-server`. The
+      # aarch64 branch composes `vendored-openssl` on top of the same
+      # `cli,web-server` pair the other three legs use, since `cross`
+      # containers lack a target-arch system OpenSSL.
       - name: Build binary
         run: |
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            # `cross` containers lack a target-arch system OpenSSL, so build a
-            # vendored OpenSSL from source for this target only.
-            cross build --release --target ${{ matrix.target }} --features vendored-openssl
+            cross build --release --target ${{ matrix.target }} --features cli,web-server,vendored-openssl
           else
-            cargo build --release --target ${{ matrix.target }}
+            cargo build --release --target ${{ matrix.target }} --features cli,web-server
           fi
 
-      - name: Strip binary
-        if: matrix.os != 'windows-latest'
+      # aarch64-cross-compiled binaries need the matching aarch64 strip from
+      # binutils-aarch64-linux-gnu -- the host x86_64 `strip` cannot read
+      # them ("Unable to recognise the format"). This install step stays its
+      # own preceding conditional; the strip itself now runs inside the
+      # packaging step below via --strip-cmd.
+      - name: Install aarch64 strip toolchain
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            # This binary is cross-compiled to aarch64 (via `cross`), so the host
-            # x86_64 `strip` cannot read it ("Unable to recognise the format").
-            # Use the matching aarch64 cross strip from binutils-aarch64-linux-gnu.
-            sudo apt-get update
-            sudo apt-get install -y binutils-aarch64-linux-gnu
-            aarch64-linux-gnu-strip target/${{ matrix.target }}/release/paladin
-          else
-            strip target/${{ matrix.target }}/release/paladin
-          fi
+          sudo apt-get update
+          sudo apt-get install -y binutils-aarch64-linux-gnu
 
-      - name: Create archive
+      # Assert -> strip -> archive -> portable checksum, all in one script
+      # (ARTIFACT-02, ARTIFACT-05): a leg that produced no executable fails
+      # here, loudly, before anything is archived -- the old two-step
+      # Strip/Create-archive pair assumed a single hardcoded `paladin`
+      # binary was always present and had no such check. Values reach the
+      # script through env: indirection (CR-01), never interpolated
+      # directly into this run: body.
+      - name: Package release binaries
+        id: package
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+          ARCHIVE_NAME: ${{ matrix.artifact_name }}
+          STRIP_CMD: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-strip' || 'strip' }}
         run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ${{ matrix.artifact_name }}.tar.gz paladin
-          sha256sum ${{ matrix.artifact_name }}.tar.gz > ${{ matrix.artifact_name }}.tar.gz.sha256
+          ./scripts/package-release-binaries.sh \
+            --target "$BUILD_TARGET" \
+            --release-dir "target/$BUILD_TARGET/release" \
+            --archive-name "$ARCHIVE_NAME" \
+            --strip-cmd "$STRIP_CMD"
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      # Uploads through the `gh` CLI with the clobber flag (D-07, Phase 20
+      # D-03) so a re-run replaces the same asset name instead of failing on
+      # a duplicate. The release is resolved by tag, not by an upload-URL
+      # job output -- create-release no longer exposes one (D-07). Both
+      # files collapse into a single invocation rather than the old
+      # two-step Upload-Release-Asset/Upload-SHA256 pair.
+      - name: Upload release assets
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz
-          asset_name: ${{ matrix.artifact_name }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload SHA256
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.tar.gz.sha256
-          asset_name: ${{ matrix.artifact_name }}.tar.gz.sha256
-          asset_content_type: text/plain
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.create-release.outputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          ARCHIVE_PATH: ${{ steps.package.outputs.archive_path }}
+          CHECKSUM_PATH: ${{ steps.package.outputs.checksum_path }}
+        run: |
+          gh release upload "$RELEASE_TAG" "$ARCHIVE_PATH" "$CHECKSUM_PATH" --clobber --repo "$RELEASE_REPOSITORY"
 
   # Pre-publish consistency gate (PUBOPS-01): fails closed if the release
   # tag's version disagrees with any publishable crate's manifest version.
@@ -469,15 +468,96 @@ jobs:
           # The root package SBOM is the primary deliverable.
           cp paladin-ai.cdx.json "paladin-${RELEASE_VERSION}.cdx.json"
 
+      # Uploads through the `gh` CLI with the clobber flag (D-07, Phase 20
+      # D-03) so a re-run replaces the same asset name instead of failing on
+      # a duplicate. The release is resolved by tag, not by an upload-URL
+      # job output -- create-release no longer exposes one (D-07).
       - name: Upload SBOM to release
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: paladin-${{ env.RELEASE_VERSION }}.cdx.json
-          asset_name: paladin-${{ env.RELEASE_VERSION }}.cdx.json
-          asset_content_type: application/json
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          SBOM_PATH: paladin-${{ env.RELEASE_VERSION }}.cdx.json
+        run: |
+          gh release upload "$RELEASE_VERSION" "$SBOM_PATH" --clobber --repo "$RELEASE_REPOSITORY"
+
+  # Terminal job in the artifact-composition graph (D-04, ARTIFACT-03/-04/
+  # -05): `create-release` publishes the curated CHANGELOG.md section alone;
+  # this job binds the container image to that release by immutable digest,
+  # reports the measured image size, aggregates a single checksum file over
+  # every archive `build-binaries` actually uploaded, and states the
+  # attached SBOM's real scope -- reading only real outputs the run
+  # actually produced, never a hand-reconstructed guess. `if: always()`
+  # is what lets this job still run when `build-docker`, `build-binaries` or
+  # `sbom` failed or was skipped (their sections are then simply omitted --
+  # see scripts/finalize-release-body.sh) -- it is guarded instead on
+  # `needs.create-release.result == 'success'` so it never runs against a
+  # release that was never created. Not added to `test`'s or any other
+  # job's `needs` (WR-05's documented artifact/test asymmetry is preserved
+  # deliberately here, not by oversight), and not gated on `test` itself.
+  #
+  # `build-docker`'s outputs are consumed as a single JSON blob
+  # (`toJSON(needs.build-docker.outputs)`), never as individual
+  # `needs.build-docker.outputs.<name>` expressions -- so this job never
+  # re-declares a field-name literal a second time outside build-docker's
+  # own `outputs:` block and `Verify image size` step (each of its three
+  # declared fields already has exactly one authoritative declaration site
+  # there). The ternary (`result == 'success' && … || '{}'`)
+  # is what makes a failed or skipped `build-docker` leg contribute nothing,
+  # so the finalize script omits the container-image and image-size
+  # sections rather than advertising a leg that never ran. The SBOM asset
+  # name is built the same way -- only supplied when `needs.sbom` actually
+  # succeeded, matching `sbom`'s own attached filename exactly, so a failed
+  # SBOM leg contributes no section either. Checksum aggregation needs no
+  # equivalent gate: it downloads whatever `*.tar.gz` archives are actually
+  # visible on the release at this point, so a failed `build-binaries` leg
+  # simply means fewer (or zero) archives -- and zero is itself a handled,
+  # non-failing outcome (see aggregate_checksums's own doc comment). No new
+  # permission and no new marketplace Action: the checksum switch and the
+  # SBOM asset name both reach the same script invocation `build-docker`'s
+  # inputs already used, and the download/upload calls the switch makes are
+  # the same `gh` CLI already authenticated on this job's `contents: write`.
+  finalize-release-body:
+    name: Finalize Release Body
+    runs-on: ubuntu-latest
+    needs: [create-release, build-docker, build-binaries, sbom]
+    if: always() && needs.create-release.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Finalize release body with artifact sections
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.create-release.outputs.version }}
+          DOCKER_OUTPUTS_JSON: ${{ needs.build-docker.result == 'success' && toJSON(needs.build-docker.outputs) || '{}' }}
+          # The SBOM job's own upload step names its asset
+          # `paladin-${RELEASE_VERSION}.cdx.json` -- built identically here
+          # so the two never drift apart, and left empty when the SBOM leg
+          # did not succeed so no section names a document that was never
+          # attached.
+          SBOM_ASSET_NAME: ${{ needs.sbom.result == 'success' && format('paladin-{0}.cdx.json', needs.create-release.outputs.version) || '' }}
+        run: |
+          set -euo pipefail
+          IMAGE_DIGEST=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.digest // empty')
+          TAGS_JSON=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.tags_json // empty')
+          # Positional, not by field name: this is the sole other reference
+          # to build-docker's size output in this file (see the job comment
+          # above) -- order matches build-docker's `outputs:` declaration
+          # (digest, tags_json, size in whole megabytes).
+          IMAGE_SIZE_MB=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r 'to_entries[2].value // empty')
+          IMAGE_REF=""
+          if [ -n "$TAGS_JSON" ] && [ "$TAGS_JSON" != "null" ]; then
+            IMAGE_REF=$(echo "$TAGS_JSON" | jq -r '.tags[0] // empty')
+          fi
+          ./scripts/finalize-release-body.sh \
+            --tag "$RELEASE_TAG" \
+            --image-digest "$IMAGE_DIGEST" \
+            --image-ref "$IMAGE_REF" \
+            --image-size-mb "$IMAGE_SIZE_MB" \
+            --aggregate-checksums \
+            --sbom-asset "$SBOM_ASSET_NAME"
 
   # Publish workspace crates to crates.io in dependency order (Milestone 10
   # Epic 3), authenticating via crates.io Trusted Publishing (Phase 19). The

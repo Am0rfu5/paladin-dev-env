@@ -23,6 +23,10 @@ This checklist defines the required release path from code freeze through publis
 - Ensure root changelog and per-crate changelogs are updated. The per-crate changelogs are now
   stamped by the release tooling (`make release`'s changelog finalization step, extended
   alongside the root changelog) rather than edited by hand across all ten crates.
+- **The root `## [VERSION]` section is a hard prerequisite for the release run, not just good
+  practice.** Tagging without it fails the `create-release` job outright — there is no fallback
+  body source. If this happens, the fix is to finalize the changelog (`make release
+  VERSION=x.y.z`) and re-tag; see [Release Automation](release-automation.md#body-source).
 - Ensure notable breaking changes are explicitly called out.
 - Verify release notes map to merged changes.
 
@@ -87,4 +91,12 @@ and credential history in [Release Automation](release-automation.md#trusted-pub
 
 - Re-run quick smoke tests on published versions.
 - Verify dependency resolution for a downstream sample app.
+- Download the archives plus `SHA256SUMS` from the release and run the one-command verification:
+  `sha256sum -c SHA256SUMS` (or `shasum -a 256 -c SHA256SUMS` on macOS).
+- Pull the container image by the immutable digest the release body names
+  (`docker pull <image>@sha256:<digest>`), rather than trusting a mutable tag.
+- Confirm the release body matches the root `CHANGELOG.md` `## [X.Y.Z]` section for that version.
+- Each target carries **three** binaries (`paladin`, `paladin-cli`, `paladin-server`) in its
+  archive — an operator who sees only one asset per target knows something went wrong. See
+  [Release Automation](release-automation.md#artifact-inventory) for the full inventory table.
 - Log follow-up items for next release cycle.

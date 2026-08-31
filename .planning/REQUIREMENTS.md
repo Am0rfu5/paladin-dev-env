@@ -154,7 +154,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
 
 ### Publish operations (PUBOPS)
 
-- [ ] **PUBOPS-01**: **No crate is published until the tag, every manifest version and every
+- [x] **PUBOPS-01**: **No crate is published until the tag, every manifest version and every
       changelog agree, and the gate reports every mismatch rather than the first.**
       The workspace currently offers three independent sources of the release version and no check
       that they match. Each of the eleven manifests carries a literal `version = "0.8.0"` — none
@@ -164,7 +164,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       changelogs describe no such release, and the pipeline would not notice. The gate runs before
       the first `cargo publish`, not after.
 
-- [ ] **PUBOPS-02**: **The claim "the tagged commit passed CI" is verified against a recorded run,
+- [x] **PUBOPS-02**: **The claim "the tagged commit passed CI" is verified against a recorded run,
       never inferred from the branch the commit sits on.**
       `ci.yml` triggers on `push: branches: [ '**' ]`, which does not match `refs/tags/*` — pushing
       a tag runs none of its eighteen jobs. `verify-tag-source` establishes that the commit is an
@@ -174,7 +174,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       tagged SHA and refuse to publish without a success, or run the equivalent checks inside the
       release workflow. Assuming is not one of them.
 
-- [ ] **PUBOPS-03**: **Re-running a release on the same tag is idempotent end-to-end, and
+- [x] **PUBOPS-03**: **Re-running a release on the same tag is idempotent end-to-end, and
       already-published is determined from registry state rather than from matched error prose.**
       Idempotency must hold for every job between the tag and `cargo publish`, not only inside the
       publish loop. It does not today: `create-release` uses `actions/create-release@v1` — archived
@@ -189,7 +189,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       `cargo publish --workspace`, whose ordering and index-waiting semantics the release loop
       predates.
 
-- [ ] **PUBOPS-04**: **A release run that publishes nothing does not report success, and one that
+- [x] **PUBOPS-04**: **A release run that publishes nothing does not report success, and one that
       publishes only some crates records which.**
       With every crate already at the tagged version, the publish loop emits ten
       `::warning::<crate> version already published — continuing.` lines and the job ends green —
@@ -199,7 +199,7 @@ an operator does when it stops with some crates on crates.io and some not. As wi
       which governs the missing-credential `dry_run=skip` branch: this requirement governs the case
       where authentication succeeded and nothing was published.
 
-- [ ] **PUBOPS-05**: **The stuck-halfway case has an operator runbook that states a yank policy, and
+- [x] **PUBOPS-05**: **The stuck-halfway case has an operator runbook that states a yank policy, and
       the recovery path is exercised rather than only described.**
       The word `yank` currently appears nowhere in `docs/src/`, `.github/workflows/` or `scripts/`.
       The runbook sits beside the existing `docs/src/appendix/release-automation.md` and
@@ -228,7 +228,7 @@ than during execution.*
 
 ### Release artifacts (ARTIFACT)
 
-- [ ] **ARTIFACT-01**: **The GitHub release body is extracted from the curated `CHANGELOG.md`
+- [x] **ARTIFACT-01**: **The GitHub release body is extracted from the curated `CHANGELOG.md`
       section for that version, and a missing section fails the run rather than falling back.**
       `release.yml`'s `create-release` job builds its body from
       `git log --pretty=format:"- %s" "$PREV_TAG"..HEAD`, discarding a curated Keep-a-Changelog
@@ -242,7 +242,7 @@ than during execution.*
       someone forgot to finalize the changelog. Whether the ten per-crate changelogs also contribute
       is recorded either way.
 
-- [ ] **ARTIFACT-02**: **Every binary the release attaches is built with the features its target
+- [x] **ARTIFACT-02**: **Every binary the release attaches is built with the features its target
       requires, and a leg that produces no executable fails.**
       This is a live defect, not a hardening measure. `[[bin]] paladin` declares
       `required-features = ["cli"]`; `cli` is absent from
@@ -256,14 +256,14 @@ than during execution.*
       (`web-server`) — and the release attaches none; which ship, under which features, is decided
       and written down.
 
-- [ ] **ARTIFACT-03**: **The release body references only artifacts the run actually produced.**
+- [x] **ARTIFACT-03**: **The release body references only artifacts the run actually produced.**
       The body hardcodes `docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest`, but the
       `latest` tag is generated by `type=raw,value=latest,enable={{is_default_branch}}` — false on a
       `refs/tags/v*` push. **This workflow has never pushed `latest` on a release**, so the pull
       command it prints has never worked. Image tags, asset names and the advertised platform list
       are all emitted from what the run produced, not from a static template.
 
-- [ ] **ARTIFACT-04**: **The published container image is bound to the release by immutable digest,
+- [x] **ARTIFACT-04**: **The published container image is bound to the release by immutable digest,
       and the image-size check stops reporting a problem as a passing run.**
       `build-docker` declares `needs: create-release`, pushes multi-arch images, and records nothing
       back to the release — no digest, no tag list, no link. The `sha256:` digest
@@ -273,7 +273,7 @@ than during execution.*
       states the measured size as advisory. An artifact job that reports success while producing
       nothing usable is the Phase 12 defect in a new place.
 
-- [ ] **ARTIFACT-05**: **Attached artifacts are verifiable, and the release says how.**
+- [x] **ARTIFACT-05**: **Attached artifacts are verifiable, and the release says how.**
       Per-asset `.sha256` files are produced today and explained nowhere in the release body or in
       `docs/src/appendix/`. The release carries checksums in a form a consumer can verify in one
       command, and identifies the CycloneDX SBOM that `sbom` attaches as covering the **root
@@ -282,7 +282,7 @@ than during execution.*
       artifacts are additionally signed or carry build provenance is **decided in this phase and
       recorded with its reasoning**; deferring is acceptable, leaving it unexamined is not.
 
-- [ ] **ARTIFACT-06**: **The artifact path runs on maintained actions and carries no branch for a
+- [x] **ARTIFACT-06**: **The artifact path runs on maintained actions and carries no branch for a
       target that is not built, and the whole path is exercised on a throwaway tag.**
       `actions/create-release@v1` and `actions/upload-release-asset@v1` have been archived upstream
       since 2021, and the `upload_url` plumbing exists only to serve them — `build-binaries` and
@@ -309,17 +309,17 @@ than during execution.*
 | PUB-03 | Phase 19 | Complete |
 | PUB-04 | Phase 19 | Complete |
 | PUB-05 | Phase 19 | Complete |
-| PUBOPS-01 | Phase 20 | Pending |
-| PUBOPS-02 | Phase 20 | Pending |
-| PUBOPS-03 | Phase 20 | Pending |
-| PUBOPS-04 | Phase 20 | Pending |
-| PUBOPS-05 | Phase 20 | Pending |
-| ARTIFACT-01 | Phase 21 | Pending |
-| ARTIFACT-02 | Phase 21 | Pending |
-| ARTIFACT-03 | Phase 21 | Pending |
-| ARTIFACT-04 | Phase 21 | Pending |
-| ARTIFACT-05 | Phase 21 | Pending |
-| ARTIFACT-06 | Phase 21 | Pending |
+| PUBOPS-01 | Phase 20 | Complete |
+| PUBOPS-02 | Phase 20 | Complete |
+| PUBOPS-03 | Phase 20 | Complete |
+| PUBOPS-04 | Phase 20 | Complete |
+| PUBOPS-05 | Phase 20 | Complete |
+| ARTIFACT-01 | Phase 21 | Complete |
+| ARTIFACT-02 | Phase 21 | Complete |
+| ARTIFACT-03 | Phase 21 | Complete |
+| ARTIFACT-04 | Phase 21 | Complete |
+| ARTIFACT-05 | Phase 21 | Complete |
+| ARTIFACT-06 | Phase 21 | Complete |
 
 **Coverage:**
 

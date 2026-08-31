@@ -180,7 +180,7 @@ Phase artifacts: `milestones/v0.8.0-phases/`
 
 - [x] **Phase 18: Rust SAST — Evaluate and Adopt CodeQL** - Prove a Rust-capable SAST actually analyses this tree before adopting it, then wire it as a non-blocking scan and only afterwards as a required check (completed 2026-08-25)
 - [x] **Phase 19: crates.io Trusted Publishing — Replace the Long-Lived Registry Token** - Exchange the standing `CARGO_REGISTRY_TOKEN` secret for OIDC-issued ephemeral publish tokens, prove the new path works before revoking the old credential, and record the per-crate trust configuration the eleven-crate workspace needs (completed 2026-08-28)
-- [ ] **Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate** - Make a re-run on the same tag the supported way to finish a half-published release, refuse to publish until tag, manifest versions, changelogs and the tagged commit's CI conclusion agree, and write the stuck-halfway runbook including a yank policy
+- [x] **Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate** - Make a re-run on the same tag the supported way to finish a half-published release, refuse to publish until tag, manifest versions, changelogs and the tagged commit's CI conclusion agree, and write the stuck-halfway runbook including a yank policy (completed 2026-08-30)
 - [ ] **Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables** - Build the release body from the curated `CHANGELOG.md` section instead of a commit log, and make the attached distributables real: binaries that actually compile under the features their targets require, an image bound to the release by digest, and verifiable checksums
 
 ## Phase Details
@@ -311,7 +311,7 @@ Plans:
 
   7. **The recovery path is exercised, not merely written.** A partial failure is induced — a rehearsal on a throwaway version, or an equivalent recorded exercise — and the documented re-run finishes it. `cargo publish --dry-run` cannot demonstrate any of this: it never reaches the registry's publish endpoint, so it can neither create the half-published state nor prove recovery from it. If the exercise is not run, the runbook is labelled untested rather than presented as a procedure — the same honesty rule Phases 18 and 19 apply to their own evidence.
 
-**Plans:** 7 plans
+**Plans:** 7/7 plans complete
 
 Plans:
 **Wave 1**
@@ -334,7 +334,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 20-07-PLAN.md — Recovery rehearsal against an induced partial failure, evidence file, and an honest tested/untested status line
+- [x] 20-07-PLAN.md — Recovery rehearsal against an induced partial failure, evidence file, and an honest tested/untested status line
 
 ### Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables
 
@@ -362,11 +362,32 @@ Plans:
 
   7. **A release is proven end-to-end on a throwaway tag before this is called done.** The evidence is a real run that produced downloadable assets whose checksums verify, an image that pulls by the digest the release names, and a body that matches the `CHANGELOG.md` section for that version. A workflow that is merely re-read and reasoned about does not satisfy this — the binaries defect above survived every previous reading of this file precisely because no release since it was introduced was checked for the artifacts it claimed to attach. If the rehearsal is not run, the phase records the artifact path as unverified rather than presenting it as working — the same honesty rule Phases 18-20 apply to their own evidence.
 
-**Plans**: TBD — run `/gsd-discuss-phase 21` then `/gsd-plan-phase 21`
+**Plans:** 6 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run `/gsd-plan-phase 21` to break down)
+- [x] 21-01-PLAN.md — Curated release body: extract the `CHANGELOG.md` section, fail on a missing one, drop the unreachable pull instruction (ARTIFACT-01, -03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 21-02-PLAN.md — Feature-correct binaries, existence assert before archive, portable checksums, `gh`-CLI uploads, dead plumbing removed (ARTIFACT-02, -05, -06)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 21-03-PLAN.md — Docker digest binding, honest image-size reporting, and the terminal `finalize-release-body` job (ARTIFACT-03, -04)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 21-04-PLAN.md — Aggregated `SHA256SUMS`, one-command verification instructions, SBOM scope stated (ARTIFACT-03, -05)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 21-05-PLAN.md — Release documentation: body source, artifact inventory, verification, signing/provenance deferral (ARTIFACT-01, -02, -05, -06)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 21-06-PLAN.md — End-to-end rehearsal on a throwaway rc tag, or the artifact path recorded unverified (ARTIFACT-01…-06)
 
 ## Progress
 
@@ -389,8 +410,8 @@ Plans:
 | 17. Additional LLM Provider Adapters | v0.8.0 | 22/22 | ✅ Complete | 2026-08-23 |
 | 18. Rust SAST — Evaluate and Adopt CodeQL | v0.9.0 | 7/7 | Complete    | 2026-08-25 |
 | 19. crates.io Trusted Publishing | v0.9.0 | 5/5 | Complete    | 2026-08-28 |
-| 20. Release Pipeline Recovery | v0.9.0 | 0/TBD | Not started | — |
-| 21. Release Artifacts | v0.9.0 | 0/TBD | Not started | — |
+| 20. Release Pipeline Recovery | v0.9.0 | 7/7 | Complete    | 2026-08-30 |
+| 21. Release Artifacts | v0.9.0 | 0/6 | Planned | — |
 
 **v0.8.0 shipped 2026-08-24:** 14 phases, 149 plans, 65/65 requirements, 1,014 commits
 (`be2ff05..48ac11a5`). Audit status `tech_debt` — no blockers; see

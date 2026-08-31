@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
-current_phase: 20
-current_phase_name: release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
+current_phase: 21
+current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 status: executing
-stopped_at: "Phase 20 wave 5 — plan 20-07 Task 2 checkpoint:human-action (rehearsal execution) awaiting operator; Task 1 resolved rehearse-rc3, 404-precheck passed"
-last_updated: "2026-08-28T17:26:31.947Z"
-last_activity: 2026-08-28
-last_activity_desc: Phase 20 execution started
+stopped_at: "Phase 21 wave 6: plan 21-06 blocked at Task 1 human checkpoint (rehearsal decision option-a/option-b); 5/6 plans complete"
+last_updated: "2026-08-31T15:28:55.106Z"
+last_activity: 2026-08-31
+last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 19
-  completed_plans: 18
+  completed_phases: 3
+  total_plans: 25
+  completed_plans: 24
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 20 — release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
+**Current focus:** Phase 21 — release-artifacts-curated-release-notes-and-attached-distrib
 not yet discussed or planned.
 
-**Progress:** [░░░░░░░░░░░░░░░░░░░░] 0/0 plans · 0/1 phases complete (v0.9.0)
+**Progress:** [██████████] 100%
 
 **Previous milestone:** v0.8.0 shipped 2026-08-24 — 14 phases, 149 plans, 65/65 requirements,
 1,014 commits (`be2ff05..48ac11a5`). Archived to `milestones/v0.8.0-ROADMAP.md`,
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 20 (release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 20
-Last activity: 2026-08-28 — Phase 20 execution started
+Phase: 21 (release-artifacts-curated-release-notes-and-attached-distrib) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 21
+Last activity: 2026-08-31 — Phase 21 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -57,7 +57,7 @@ valid outcome, not a failure.
 
 **Velocity:**
 
-- Total plans completed: 174
+- Total plans completed: 181
 - Average duration: —
 - Total execution time: —
 
@@ -82,6 +82,7 @@ valid outcome, not a failure.
 | 16 | 14 | - | - |
 | 18 | 7 | - | - |
 | 19 | 5 | - | - |
+| 20 | 7 | - | - |
 
 *Updated after each plan completion*
 
@@ -109,6 +110,7 @@ valid outcome, not a failure.
 | Phase 12 P02 | ~20min | 2 tasks | 3 files |
 | Phase 12 P03 | ~20min | 2 tasks | 3 files |
 | Phase 12 P04 | ~25min | 2 tasks | 3 files |
+| Phase 20 P07 | 35min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -317,6 +319,8 @@ Entering them here would fabricate authority the corpus does not contain.
 - [Phase ?]: SUPPLY-03's checkbox and traceability row deliberately left Pending; requirements-completed left empty in 12-03-SUMMARY.md — plan 12-04 owns SUPPLY-03's closure and PROMOTION.md's single writer in the final wave
 - [Phase ?]: PROMOTION.md's Part A step 5 procedural text was left untouched despite causing a grep-count-2 vs expected-1 mismatch in the plan's own verify script — the actual Next free ADR number state line is correct and singular; editing Part A prose would be a fourth unauthorized PROMOTION.md edit
 - [Phase ?]: Phase 13 / ORCH-01 hand-off written carrying Milestone 10's verdict class in both halves: 100% complete and one acceptance criterion false, and as of 2026-08-08 no longer false
+- [Phase ?]: Recorded both v0.8.1-rc.3 and v0.8.1-rc.4 rehearsals in full — rc.4 is the only live proof of Phase 20's own gate and recovery scripts, and it found and fixed two real gate bugs (Findings 5, 6)
+- [Phase ?]: Assumption A3 (OIDC token exchange survives a same-tag re-run) proven twice, independently re-verified against crates.io trustpub_data.run_id rather than transcribed from workflow self-reports
 
 ### Pending Todos
 
@@ -757,14 +761,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 20 wave 5 — plan 20-07 Task 2 checkpoint:human-action (rehearsal execution) awaiting operator; Task 1 resolved rehearse-rc3, 404-precheck passed
+**Stopped at:** Phase 21 wave 6: plan 21-06 blocked at Task 1 human checkpoint (rehearsal decision option-a/option-b); 5/6 plans complete
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-28T17:26:31.909Z
-Resume file: .planning/phases/20-release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi/20-07-PLAN.md
+Last session: 2026-08-31T15:28:55.074Z
+Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-06-PLAN.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
