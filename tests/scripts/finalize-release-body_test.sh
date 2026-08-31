@@ -711,6 +711,191 @@ fi
 assert_cmp "case18: composing twice over the same release state is byte-identical" \
     "${DIR18}/run1.md" "${DIR18}/run2.md"
 
+# --- Case 19: two byte-identical archives still produce two SHA256SUMS
+#     lines, sharing the same digest, both filenames present in sorted
+#     order -- equal digests never collapse to one entry. -------------------
+DIR19="${SCRATCH}/case19"
+mkdir -p "${DIR19}/download_source"
+write_gh_stub "${DIR19}"
+printf '%s' "${CURATED1}" > "${DIR19}/current_body"
+printf 'identical-bytes' > "${DIR19}/download_source/paladin-linux-amd64.tar.gz"
+cp "${DIR19}/download_source/paladin-linux-amd64.tar.gz" "${DIR19}/download_source/paladin-linux-arm64.tar.gz"
+ASSETS_DIR19="${DIR19}/assets"
+run_finalize "${DIR19}" "run1.md" --tag v3.0.0 --aggregate-checksums --assets-dir "${ASSETS_DIR19}"
+SUMS19="${ASSETS_DIR19}/SHA256SUMS"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+LINES19="$(wc -l < "${SUMS19}" 2>/dev/null | tr -d ' ')"
+if [ "${LINES19}" = "2" ]; then
+    echo "PASS: case19 two byte-identical archives still produce two SHA256SUMS lines"
+else
+    echo "FAIL: case19 expected 2 lines, got ${LINES19:-missing}"
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+DIGESTS19="$(awk '{print $1}' "${SUMS19}" 2>/dev/null | LC_ALL=C sort -u | wc -l | tr -d ' ')"
+if [ "${DIGESTS19}" = "1" ]; then
+    echo "PASS: case19 both lines share the same digest"
+else
+    echo "FAIL: case19 expected a single shared digest, got ${DIGESTS19} distinct digest(s)"
+    FAILED=$((FAILED + 1))
+fi
+
+assert_contains "case19: first filename present" "${SUMS19}" "paladin-linux-amd64.tar.gz"
+assert_contains "case19: second filename present" "${SUMS19}" "paladin-linux-arm64.tar.gz"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+NAMES19="$(awk '{print $2}' "${SUMS19}")"
+if [ "${NAMES19}" = "$(printf 'paladin-linux-amd64.tar.gz\npaladin-linux-arm64.tar.gz')" ]; then
+    echo "PASS: case19 equal-digest lines stay in sorted filename order"
+else
+    echo "FAIL: case19 unexpected line order:"
+    echo "${NAMES19}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 20: a single downloaded archive produces a one-line sums file --
+#     not a special-cased empty or header-only file. -------------------------
+DIR20="${SCRATCH}/case20"
+mkdir -p "${DIR20}/download_source"
+write_gh_stub "${DIR20}"
+printf '%s' "${CURATED1}" > "${DIR20}/current_body"
+printf 'solo' > "${DIR20}/download_source/paladin-linux-amd64.tar.gz"
+ASSETS_DIR20="${DIR20}/assets"
+run_finalize "${DIR20}" "run1.md" --tag v3.0.1 --aggregate-checksums --assets-dir "${ASSETS_DIR20}"
+SUMS20="${ASSETS_DIR20}/SHA256SUMS"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+LINES20="$(wc -l < "${SUMS20}" 2>/dev/null | tr -d ' ')"
+if [ "${LINES20}" = "1" ]; then
+    echo "PASS: case20 a single downloaded archive produces a one-line SHA256SUMS"
+else
+    echo "FAIL: case20 expected 1 line, got ${LINES20:-missing}"
+    FAILED=$((FAILED + 1))
+fi
+assert_not_contains "case20: no header text precedes the digest line" "${SUMS20}" "SHA256"
+
+# --- Case 21: filenames containing a hyphen and digits sort under
+#     LC_ALL=C, and the emitted order is unchanged when the underlying
+#     archives are created/downloaded in a different order. -----------------
+DIR21A="${SCRATCH}/case21a"
+mkdir -p "${DIR21A}/download_source"
+write_gh_stub "${DIR21A}"
+printf '%s' "${CURATED1}" > "${DIR21A}/current_body"
+printf 'a1' > "${DIR21A}/download_source/paladin-linux-amd64-10.tar.gz"
+printf 'a2' > "${DIR21A}/download_source/paladin-linux-amd64-2.tar.gz"
+printf 'a3' > "${DIR21A}/download_source/paladin-linux-amd64-1.tar.gz"
+ASSETS_DIR21A="${DIR21A}/assets"
+run_finalize "${DIR21A}" "run1.md" --tag v3.0.2 --aggregate-checksums --assets-dir "${ASSETS_DIR21A}"
+
+DIR21B="${SCRATCH}/case21b"
+mkdir -p "${DIR21B}/download_source"
+write_gh_stub "${DIR21B}"
+printf '%s' "${CURATED1}" > "${DIR21B}/current_body"
+# Same three files, created in the opposite order -- directory iteration
+# order must never leak into the emitted SHA256SUMS ordering.
+printf 'a3' > "${DIR21B}/download_source/paladin-linux-amd64-1.tar.gz"
+printf 'a2' > "${DIR21B}/download_source/paladin-linux-amd64-2.tar.gz"
+printf 'a1' > "${DIR21B}/download_source/paladin-linux-amd64-10.tar.gz"
+ASSETS_DIR21B="${DIR21B}/assets"
+run_finalize "${DIR21B}" "run1.md" --tag v3.0.2 --aggregate-checksums --assets-dir "${ASSETS_DIR21B}"
+
+assert_cmp "case21: SHA256SUMS ordering is unaffected by archive creation/download order" \
+    "${ASSETS_DIR21A}/SHA256SUMS" "${ASSETS_DIR21B}/SHA256SUMS"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+NAMES21="$(awk '{print $2}' "${ASSETS_DIR21A}/SHA256SUMS")"
+EXPECTED21="$(printf 'paladin-linux-amd64-1.tar.gz\npaladin-linux-amd64-10.tar.gz\npaladin-linux-amd64-2.tar.gz')"
+if [ "${NAMES21}" = "${EXPECTED21}" ]; then
+    echo "PASS: case21 hyphen+digit filenames sort under LC_ALL=C byte order"
+else
+    echo "FAIL: case21 unexpected LC_ALL=C sort order:"
+    echo "${NAMES21}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 22: running aggregation twice over the same asset set produces a
+#     byte-identical sums file and a second --clobber upload rather than a
+#     failure. -----------------------------------------------------------
+DIR22="${SCRATCH}/case22"
+mkdir -p "${DIR22}/download_source"
+write_gh_stub "${DIR22}"
+printf '%s' "${CURATED1}" > "${DIR22}/current_body"
+printf 'x' > "${DIR22}/download_source/paladin-linux-amd64.tar.gz"
+ASSETS_DIR22="${DIR22}/assets"
+
+run_finalize "${DIR22}" "run1.md" --tag v3.0.3 --aggregate-checksums --assets-dir "${ASSETS_DIR22}"
+cp "${ASSETS_DIR22}/SHA256SUMS" "${DIR22}/sums_after_run1"
+run_finalize "${DIR22}" "run2.md" --tag v3.0.3 --aggregate-checksums --assets-dir "${ASSETS_DIR22}"
+
+assert_cmp "case22: re-running aggregation over the same asset set is byte-identical" \
+    "${DIR22}/sums_after_run1" "${ASSETS_DIR22}/SHA256SUMS"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+UPLOAD_COUNT22="$(grep -cx 'UPLOAD SHA256SUMS' "${DIR22}/call_log" 2>/dev/null || true)"
+UPLOAD_COUNT22="${UPLOAD_COUNT22:-0}"
+if [ "${UPLOAD_COUNT22}" = "2" ]; then
+    echo "PASS: case22 re-running aggregation uploads via --clobber a second time rather than failing"
+else
+    echo "FAIL: case22 expected 2 SHA256SUMS uploads, got ${UPLOAD_COUNT22}"
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 23: a download that yields files not matching the archive
+#     pattern (a stray .sha256) contributes no line to the sums file. -------
+DIR23="${SCRATCH}/case23"
+mkdir -p "${DIR23}/download_source"
+write_gh_stub "${DIR23}"
+printf '%s' "${CURATED1}" > "${DIR23}/current_body"
+printf 'archive' > "${DIR23}/download_source/paladin-linux-amd64.tar.gz"
+printf 'checksum-only' > "${DIR23}/download_source/paladin-linux-amd64.tar.gz.sha256"
+ASSETS_DIR23="${DIR23}/assets"
+run_finalize "${DIR23}" "run1.md" --tag v3.0.4 --aggregate-checksums --assets-dir "${ASSETS_DIR23}"
+SUMS23="${ASSETS_DIR23}/SHA256SUMS"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+LINES23="$(wc -l < "${SUMS23}" 2>/dev/null | tr -d ' ')"
+if [ "${LINES23}" = "1" ]; then
+    echo "PASS: case23 a stray non-archive file contributes no line to SHA256SUMS"
+else
+    echo "FAIL: case23 expected 1 line (archive only), got ${LINES23:-missing}"
+    FAILED=$((FAILED + 1))
+fi
+assert_not_contains "case23: the stray .sha256 file itself is never listed" "${SUMS23}" ".sha256"
+
+# --- Case 24: an asset list containing the sums file itself twice lists it
+#     once, not twice. -------------------------------------------------------
+DIR24="${SCRATCH}/case24"
+mkdir -p "${DIR24}"
+write_gh_stub "${DIR24}"
+printf '%s' "${CURATED1}" > "${DIR24}/current_body"
+ASSETS_FILE24="${DIR24}/assets_file.txt"
+printf 'SHA256SUMS\nSHA256SUMS\npaladin-linux-amd64.tar.gz\n' > "${ASSETS_FILE24}"
+run_finalize "${DIR24}" "run1.md" --tag v3.0.5 --assets-file "${ASSETS_FILE24}"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+SHA_COUNT24="$(grep -cF -- '`SHA256SUMS`' "${DIR24}/run1.md" 2>/dev/null || true)"
+SHA_COUNT24="${SHA_COUNT24:-0}"
+if [ "${SHA_COUNT24}" = "1" ]; then
+    echo "PASS: case24 a duplicated asset name is listed exactly once"
+else
+    echo "FAIL: case24 expected SHA256SUMS to be listed exactly once, got ${SHA_COUNT24}"
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 25: assets exist but no sums file was attached in this
+#     invocation (no --aggregate-checksums) -> the downloads section still
+#     lists the existing assets, but carries no verification block. --------
+DIR25="${SCRATCH}/case25"
+mkdir -p "${DIR25}"
+write_gh_stub "${DIR25}"
+printf '%s' "${CURATED1}" > "${DIR25}/current_body"
+printf 'paladin-linux-amd64.tar.gz\n' > "${DIR25}/assets_registry"
+run_finalize "${DIR25}" "run1.md" --tag v3.0.6
+assert_contains "case25: downloads section still lists existing assets" "${DIR25}/run1.md" '`paladin-linux-amd64.tar.gz`'
+assert_not_contains "case25: no verification block when no sums file was attached" "${DIR25}/run1.md" "sha256sum -c"
+
 # --- The real tree must never be mutated by this test: scripts/ and
 #     .github/workflows/ (this guard only invokes the stubbed GH_BIN, never
 #     the real `gh`, and never writes into the repo tree). -------------------
