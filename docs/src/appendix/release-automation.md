@@ -150,10 +150,13 @@ cargo install --locked cargo-release
   Actions-UI re-run after a failed attempt does not require deleting the stale release object
   first; see `release-recovery.md`'s "Completing forward" section for the full re-run playbook.
 - **The four Build Binaries matrix jobs (`ubuntu-latest`/`macos-latest` × two targets each) have
-  failed on every release run observed so far**, cause undiagnosed. This does not gate crates.io
-  publishing — `publish-crates` depends only on `test` and `create-release` — so judge publish
-  health by the `publish-crates` job and the registry state, never by the workflow's overall run
-  conclusion alone.
+  historically failed on every release run observed prior to this phase**, root-caused (D-05) to
+  builds silently omitting `paladin-cli`/`paladin-server` when Cargo's `required-features` were
+  unmet. `scripts/package-release-binaries.sh`'s expected-binary assertion now hard-fails the leg
+  instead of silently shipping an incomplete archive. This does not gate crates.io publishing —
+  `publish-crates` depends only on `test` and `create-release` — so judge publish health by the
+  `publish-crates` job and the registry state, never by the workflow's overall run conclusion
+  alone.
 
 ### Dry Run (no live publish)
 
