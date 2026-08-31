@@ -53,7 +53,14 @@ jobs:
             # so an annotated tag does not collide with a pre-existing lightweight
             # ref (`would clobber existing tag`).
             git fetch --tags --force --quiet origin
-            SHA=$(git rev-list -n 1 -- "$RELEASE_TAG")
+            # No `--` here: `$RELEASE_TAG` must resolve as a revision, not a
+            # pathspec. `git rev-list -n 1 -- "$RELEASE_TAG"` places it after
+            # `--`, which git treats as a pathspec; with no `<commit>` given,
+            # rev-list prints its usage message and exits 129 on every
+            # workflow_dispatch run. `set -euo pipefail` already fails this
+            # step loudly (non-zero exit, no SHA assigned) when the tag does
+            # not exist as a revision.
+            SHA=$(git rev-list -n 1 "$RELEASE_TAG")
           else
             # On a tag push the checked-out commit is already the release commit.
             SHA="${{ github.sha }}"
