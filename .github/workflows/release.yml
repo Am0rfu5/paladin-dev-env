@@ -554,11 +554,12 @@ jobs:
           set -euo pipefail
           IMAGE_DIGEST=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.digest // empty')
           TAGS_JSON=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.tags_json // empty')
-          # Positional, not by field name: this is the sole other reference
-          # to build-docker's size output in this file (see the job comment
-          # above) -- order matches build-docker's `outputs:` declaration
-          # (digest, tags_json, size in whole megabytes).
-          IMAGE_SIZE_MB=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r 'to_entries[2].value // empty')
+          # By field name, not position: a positional `to_entries[N]` lookup
+          # relies on toJSON(needs.build-docker.outputs) preserving field
+          # order exactly matching build-docker's `outputs:` declaration --
+          # not guaranteed by the JSON spec, and silently wrong (or empty) if
+          # a future edit reorders or inserts a field there.
+          IMAGE_SIZE_MB=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.image_size_mb // empty')
           IMAGE_REF=""
           if [ -n "$TAGS_JSON" ] && [ "$TAGS_JSON" != "null" ]; then
             IMAGE_REF=$(echo "$TAGS_JSON" | jq -r '.tags[0] // empty')
