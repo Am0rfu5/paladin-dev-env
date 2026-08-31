@@ -58,21 +58,26 @@ ASSERTIONS=0
 MUTATION_WATCH_PATHS=(scripts .github/workflows)
 BEFORE_STATUS="$(cd "${WORKSPACE_ROOT}" && git status --porcelain -- "${MUTATION_WATCH_PATHS[@]}")"
 
-# compose_to SUBDIR NAME CURATED DIGEST IMAGE_REF SIZE_MB -> calls
-# compose_release_body with the given inputs inside a subshell (so the
-# sourced script's `set -euo pipefail` is scoped to that subshell only),
-# writing to ${SCRATCH}/${SUBDIR}/${NAME}. Sets $LAST_COMPOSE_FILE. A
+# compose_to SUBDIR NAME CURATED DIGEST IMAGE_REF SIZE_MB [ASSET_LIST]
+#            [SUMS_NAME] [SBOM_ASSET] -> calls compose_release_body with the
+# given inputs inside a subshell (so the sourced script's `set -euo
+# pipefail` is scoped to that subshell only), writing to
+# ${SCRATCH}/${SUBDIR}/${NAME}. Sets $LAST_COMPOSE_FILE. The three trailing
+# arguments default to the empty string (plan 21-03's callers never pass
+# them), matching plan 21-04's extended compose_release_body signature. A
 # non-zero exit from the subshell surfaces as this function's own exit
 # status, so a caller wanting to assert on it can check `$?` immediately
 # after calling compose_to.
 compose_to() {
     local subdir="$1" name="$2" curated="$3" digest="$4" image_ref="$5" size_mb="$6"
+    local asset_list="${7:-}" sums_name="${8:-}" sbom_asset="${9:-}"
     mkdir -p "${SCRATCH}/${subdir}"
     LAST_COMPOSE_FILE="${SCRATCH}/${subdir}/${name}"
     (
         # shellcheck source=scripts/finalize-release-body.sh
         FINALIZE_RELEASE_BODY_LIB_ONLY=1 source "${GUARD}"
-        compose_release_body "${curated}" "${digest}" "${image_ref}" "${size_mb}" "${LAST_COMPOSE_FILE}"
+        compose_release_body "${curated}" "${digest}" "${image_ref}" "${size_mb}" \
+            "${asset_list}" "${sums_name}" "${sbom_asset}" "${LAST_COMPOSE_FILE}"
     )
 }
 
@@ -154,6 +159,8 @@ BODY4="${LAST_COMPOSE_FILE}"
 assert_contains "case4: no inputs -> explicit no-artifacts statement" "${BODY4}" "No artifacts were recorded for this run."
 assert_not_contains "case4: no container-image section" "${BODY4}" "### Container image"
 assert_not_contains "case4: no image-size section" "${BODY4}" "### Image size"
+assert_not_contains "case4: no downloads-and-verification section" "${BODY4}" "### Downloads and verification"
+assert_not_contains "case4: no SBOM section when no sbom asset supplied" "${BODY4}" "### SBOM"
 
 # --- Case 5: size exactly 500 reads as within target; 501 reads as over
 #     target -- neither changes the composer's own exit status. --------------
@@ -165,6 +172,27 @@ assert_contains "case5b: 501 MB reads as over target" "${LAST_COMPOSE_FILE}" "ov
 # --- Case 6: read-modify-write round trip via the real script + a stubbed
 #     `gh` -- running the composer a second time over its own previous
 #     output produces a byte-identical result. --------------------------------
+# write_gh_stub DIR -> writes a scripted `gh` stand-in to DIR/gh-stub.sh
+# answering four verbs against DIR-scoped fixture files:
+#   - `release view TAG --json body -q .body`   -> DIR/current_body
+#   - `release view TAG --json assets -q ...`   -> DIR/assets_registry
+#     (one asset name per line; empty/absent when not seeded -- most
+#     existing fixtures never create this file, so the asset list a caller
+#     that doesn't seed it observes is empty, matching pre-21-04 behaviour)
+#   - `release edit TAG --notes-file PATH`      -> copies PATH back into
+#     DIR/current_body, so a second run reads exactly what the first run
+#     published (the read-modify-write round trip)
+#   - `release download TAG --pattern ... --dir DEST` -> copies every file
+#     from DIR/download_source (when present) into DEST, unfiltered -- the
+#     pattern-matching semantics under test belong to aggregate_checksums
+#     itself, not to this stub, so a stray non-archive fixture file proves
+#     the real filtering code, not an assumption baked into the stub
+#   - `release upload TAG PATH --clobber`       -> records the call, copies
+#     PATH into DIR/uploaded_<basename>, and appends <basename> to
+#     DIR/assets_registry exactly once (a re-upload of the same name is not
+#     duplicated) -- so aggregation's own SHA256SUMS upload becomes visible
+#     to a subsequent `release view --json assets` call in the same run,
+#     proving aggregation really does run before the asset list is read
 write_gh_stub() {
     local dir="$1"
     cat > "${dir}/gh-stub.sh" <<'STUB'
@@ -173,25 +201,61 @@ set -uo pipefail
 SCRATCH_DIR="$(cd "$(dirname "$0")" && pwd)"
 CALL_LOG="${SCRATCH_DIR}/call_log"
 
-if [ "${1:-}" = "release" ] && [ "${2:-}" = "view" ]; then
-    echo "VIEW" >> "${CALL_LOG}"
-    cat "${SCRATCH_DIR}/current_body" 2>/dev/null || true
-    exit 0
-elif [ "${1:-}" = "release" ] && [ "${2:-}" = "edit" ]; then
-    echo "EDIT" >> "${CALL_LOG}"
-    args=("$@")
-    i=0
-    NOTES_FILE=""
+# _stub_flag_value FLAG ARGS... -> prints the value following the first
+# occurrence of FLAG among ARGS, or nothing if FLAG is absent.
+_stub_flag_value() {
+    local flag="$1"
+    shift
+    local args=("$@")
+    local i=0
     while [ "$i" -lt "${#args[@]}" ]; do
-        a="${args[$i]}"
-        if [ "$a" = "--notes-file" ]; then
+        if [ "${args[$i]}" = "${flag}" ]; then
             i=$((i + 1))
-            NOTES_FILE="${args[$i]}"
+            printf '%s' "${args[$i]:-}"
+            return 0
         fi
         i=$((i + 1))
     done
+}
+
+if [ "${1:-}" = "release" ] && [ "${2:-}" = "view" ]; then
+    JSON_FIELD="$(_stub_flag_value --json "$@")"
+    if [ "${JSON_FIELD}" = "assets" ]; then
+        echo "VIEW_ASSETS" >> "${CALL_LOG}"
+        cat "${SCRATCH_DIR}/assets_registry" 2>/dev/null || true
+    else
+        echo "VIEW" >> "${CALL_LOG}"
+        cat "${SCRATCH_DIR}/current_body" 2>/dev/null || true
+    fi
+    exit 0
+elif [ "${1:-}" = "release" ] && [ "${2:-}" = "edit" ]; then
+    echo "EDIT" >> "${CALL_LOG}"
+    NOTES_FILE="$(_stub_flag_value --notes-file "$@")"
     if [ -n "${NOTES_FILE}" ]; then
         cp "${NOTES_FILE}" "${SCRATCH_DIR}/current_body"
+    fi
+    exit 0
+elif [ "${1:-}" = "release" ] && [ "${2:-}" = "download" ]; then
+    echo "DOWNLOAD" >> "${CALL_LOG}"
+    DEST_DIR="$(_stub_flag_value --dir "$@")"
+    mkdir -p "${DEST_DIR}"
+    if [ -d "${SCRATCH_DIR}/download_source" ]; then
+        find "${SCRATCH_DIR}/download_source" -maxdepth 1 -type f -exec cp {} "${DEST_DIR}/" \;
+    fi
+    exit 0
+elif [ "${1:-}" = "release" ] && [ "${2:-}" = "upload" ]; then
+    # $3 is the release tag; $4 is the first uploaded file path (aggregation
+    # always uploads exactly one file per call: `release upload TAG PATH
+    # --clobber`).
+    UPLOAD_PATH="${4:-}"
+    BASE_NAME="$(basename "${UPLOAD_PATH}" 2>/dev/null || true)"
+    echo "UPLOAD ${BASE_NAME}" >> "${CALL_LOG}"
+    echo "$*" >> "${SCRATCH_DIR}/upload_args_log"
+    if [ -n "${UPLOAD_PATH}" ] && [ -f "${UPLOAD_PATH}" ]; then
+        cp "${UPLOAD_PATH}" "${SCRATCH_DIR}/uploaded_${BASE_NAME}"
+        if ! grep -qxF "${BASE_NAME}" "${SCRATCH_DIR}/assets_registry" 2>/dev/null; then
+            echo "${BASE_NAME}" >> "${SCRATCH_DIR}/assets_registry"
+        fi
     fi
     exit 0
 else
@@ -461,6 +525,191 @@ else
     echo "${UNKNOWN_FLAG_OUTPUT}" | sed 's/^/  | /'
     FAILED=$((FAILED + 1))
 fi
+
+# --- Case 14: aggregation writes one SHA256SUMS covering three downloaded
+#     archives, sorted by filename under LC_ALL=C, uploads it with
+#     --clobber, and the resulting body lists the assets -- including the
+#     sums file itself, proving aggregation ran before the asset list was
+#     read -- plus a one-command verification block naming both the Linux
+#     and macOS forms, and a SBOM section stating its real scope. ------------
+DIR14="${SCRATCH}/case14"
+mkdir -p "${DIR14}/download_source"
+write_gh_stub "${DIR14}"
+printf '%s' "${CURATED1}" > "${DIR14}/current_body"
+printf 'binary-content-a' > "${DIR14}/download_source/paladin-linux-amd64.tar.gz"
+printf 'binary-content-b' > "${DIR14}/download_source/paladin-linux-arm64.tar.gz"
+printf 'binary-content-c' > "${DIR14}/download_source/paladin-macos-amd64.tar.gz"
+printf 'paladin-linux-amd64.tar.gz\npaladin-linux-arm64.tar.gz\npaladin-macos-amd64.tar.gz\n' \
+    > "${DIR14}/assets_registry"
+ASSETS_DIR14="${DIR14}/assets"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if FINALIZE_RELEASE_BODY_LIB_ONLY=0 GH_BIN="${DIR14}/gh-stub.sh" bash "${GUARD}" \
+    --tag v2.0.0 --aggregate-checksums --assets-dir "${ASSETS_DIR14}" \
+    --sbom-asset "paladin-v2.0.0.cdx.json" \
+    --output "${DIR14}/run1.md" >"${DIR14}/run1.log" 2>&1; then
+    echo "PASS: case14 aggregation run exits 0"
+else
+    echo "FAIL: case14 aggregation run did not exit 0"
+    sed 's/^/  | /' "${DIR14}/run1.log"
+    FAILED=$((FAILED + 1))
+fi
+
+SUMS14="${ASSETS_DIR14}/SHA256SUMS"
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ -f "${SUMS14}" ]; then
+    LINE_COUNT14="$(wc -l < "${SUMS14}" | tr -d ' ')"
+    if [ "${LINE_COUNT14}" = "3" ]; then
+        echo "PASS: case14 SHA256SUMS has exactly 3 lines"
+    else
+        echo "FAIL: case14 expected 3 lines in SHA256SUMS, got ${LINE_COUNT14}"
+        FAILED=$((FAILED + 1))
+    fi
+else
+    echo "FAIL: case14 SHA256SUMS was not written"
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+NAMES14="$(awk '{print $2}' "${SUMS14}" 2>/dev/null)"
+EXPECTED14="$(printf 'paladin-linux-amd64.tar.gz\npaladin-linux-arm64.tar.gz\npaladin-macos-amd64.tar.gz')"
+if [ "${NAMES14}" = "${EXPECTED14}" ]; then
+    echo "PASS: case14 SHA256SUMS lines are sorted by filename under LC_ALL=C"
+else
+    echo "FAIL: case14 unexpected SHA256SUMS filename order:"
+    echo "${NAMES14}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+assert_contains "case14: SHA256SUMS appears in the published asset list" "${DIR14}/run1.md" '`SHA256SUMS`'
+assert_contains "case14: verification block names the Linux form" "${DIR14}/run1.md" 'sha256sum -c SHA256SUMS'
+assert_contains "case14: verification block names the macOS form" "${DIR14}/run1.md" 'shasum -a 256 -c SHA256SUMS'
+assert_contains "case14: SBOM section states root paladin-ai package scope" "${DIR14}/run1.md" 'root `paladin-ai` package'
+assert_not_contains "case14: SBOM section never claims workspace-wide coverage" "${DIR14}/run1.md" 'cover the workspace'
+assert_not_contains "case14: per-crate changelogs are never inlined or linked" "${DIR14}/run1.md" 'CHANGELOG'
+
+ASSERTIONS=$((ASSERTIONS + 1))
+UPLOAD_SUMS_CALLS14="$(grep -cx 'UPLOAD SHA256SUMS' "${DIR14}/call_log" 2>/dev/null || true)"
+UPLOAD_SUMS_CALLS14="${UPLOAD_SUMS_CALLS14:-0}"
+if [ "${UPLOAD_SUMS_CALLS14}" = "1" ]; then
+    echo "PASS (call-count): case14 uploads SHA256SUMS exactly once"
+else
+    echo "FAIL: case14 expected exactly 1 SHA256SUMS upload, got ${UPLOAD_SUMS_CALLS14}"
+    FAILED=$((FAILED + 1))
+fi
+
+assert_contains "case14: SHA256SUMS upload passes --clobber" "${DIR14}/upload_args_log" "SHA256SUMS --clobber"
+
+# --- Case 15: zero downloaded archives -> no SHA256SUMS is written, no
+#     upload is attempted, and the composed body carries no verification
+#     section (an empty checksum file must never be attached). -------------
+DIR15="${SCRATCH}/case15"
+mkdir -p "${DIR15}/download_source"
+write_gh_stub "${DIR15}"
+printf '%s' "${CURATED1}" > "${DIR15}/current_body"
+ASSETS_DIR15="${DIR15}/assets"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if FINALIZE_RELEASE_BODY_LIB_ONLY=0 GH_BIN="${DIR15}/gh-stub.sh" bash "${GUARD}" \
+    --tag v2.0.1 --aggregate-checksums --assets-dir "${ASSETS_DIR15}" \
+    --output "${DIR15}/run1.md" >"${DIR15}/run1.log" 2>&1; then
+    echo "PASS: case15 zero-archive aggregation run exits 0 (not a failure)"
+else
+    echo "FAIL: case15 zero-archive aggregation run did not exit 0"
+    sed 's/^/  | /' "${DIR15}/run1.log"
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ -f "${ASSETS_DIR15}/SHA256SUMS" ]; then
+    echo "FAIL: case15 SHA256SUMS should not exist when zero archives were downloaded"
+    FAILED=$((FAILED + 1))
+else
+    echo "PASS: case15 no SHA256SUMS written for zero downloaded archives"
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+UPLOAD_SUMS_CALLS15="$(grep -cx 'UPLOAD SHA256SUMS' "${DIR15}/call_log" 2>/dev/null || true)"
+UPLOAD_SUMS_CALLS15="${UPLOAD_SUMS_CALLS15:-0}"
+if [ "${UPLOAD_SUMS_CALLS15}" = "0" ]; then
+    echo "PASS: case15 no SHA256SUMS upload attempted for zero downloaded archives"
+else
+    echo "FAIL: case15 expected 0 SHA256SUMS uploads, got ${UPLOAD_SUMS_CALLS15}"
+    FAILED=$((FAILED + 1))
+fi
+
+assert_not_contains "case15: no verification section when no sums file was attached" "${DIR15}/run1.md" "sha256sum -c"
+
+# --- Case 16: the downloads section lists exactly the asset names the
+#     release reports, in stable LC_ALL=C sorted order -- even though the
+#     underlying registry was seeded out of order. --------------------------
+DIR16="${SCRATCH}/case16"
+mkdir -p "${DIR16}"
+write_gh_stub "${DIR16}"
+printf '%s' "${CURATED1}" > "${DIR16}/current_body"
+printf 'zeta.tar.gz\nalpha.tar.gz\nbeta.tar.gz\n' > "${DIR16}/assets_registry"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR16}" "run1.md" --tag v2.0.2; then
+    echo "PASS: case16 finalize run (no aggregation) exits 0"
+else
+    echo "FAIL: case16 finalize run did not exit 0"
+    sed 's/^/  | /' "${DIR16}/run1.md.log"
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+DOWNLOAD_LINES16="$(grep -E '^- `' "${DIR16}/run1.md" | sed -E 's/^- `([^`]+)`$/\1/')"
+EXPECTED16="$(printf 'alpha.tar.gz\nbeta.tar.gz\nzeta.tar.gz')"
+if [ "${DOWNLOAD_LINES16}" = "${EXPECTED16}" ]; then
+    echo "PASS: case16 downloads section lists assets in stable LC_ALL=C sorted order"
+else
+    echo "FAIL: case16 expected sorted asset order, got:"
+    echo "${DOWNLOAD_LINES16}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 17: the SBOM line names the attached document and states its
+#     real scope via the pure composer directly. -----------------------------
+compose_to case17 body17.md "${CURATED1}" "" "" "" "" "" "paladin-v2.0.0.cdx.json"
+BODY17="${LAST_COMPOSE_FILE}"
+assert_contains "case17: SBOM section names the attached document" "${BODY17}" '`paladin-v2.0.0.cdx.json`'
+assert_contains "case17: SBOM section states root paladin-ai package scope" "${BODY17}" 'root `paladin-ai` package'
+
+# --- Case 18: composing twice over the same release state -- with
+#     aggregation, an existing asset registry, and a SBOM asset all
+#     active at once -- is byte-identical. -----------------------------------
+DIR18="${SCRATCH}/case18"
+mkdir -p "${DIR18}/download_source"
+write_gh_stub "${DIR18}"
+printf '%s' "${CURATED1}" > "${DIR18}/current_body"
+printf 'binary-content-x' > "${DIR18}/download_source/paladin-linux-amd64.tar.gz"
+printf 'binary-content-y' > "${DIR18}/download_source/paladin-linux-arm64.tar.gz"
+printf 'paladin-linux-amd64.tar.gz\npaladin-linux-arm64.tar.gz\n' > "${DIR18}/assets_registry"
+ASSETS_DIR18="${DIR18}/assets"
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR18}" "run1.md" --tag v2.0.3 --aggregate-checksums \
+    --assets-dir "${ASSETS_DIR18}" --sbom-asset "paladin-v2.0.3.cdx.json"; then
+    echo "PASS: case18 first run (aggregation + assets + SBOM) exits 0"
+else
+    echo "FAIL: case18 first run did not exit 0"
+    sed 's/^/  | /' "${DIR18}/run1.md.log"
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if run_finalize "${DIR18}" "run2.md" --tag v2.0.3 --aggregate-checksums \
+    --assets-dir "${ASSETS_DIR18}" --sbom-asset "paladin-v2.0.3.cdx.json"; then
+    echo "PASS: case18 second run exits 0"
+else
+    echo "FAIL: case18 second run did not exit 0"
+    sed 's/^/  | /' "${DIR18}/run2.md.log"
+    FAILED=$((FAILED + 1))
+fi
+
+assert_cmp "case18: composing twice over the same release state is byte-identical" \
+    "${DIR18}/run1.md" "${DIR18}/run2.md"
 
 # --- The real tree must never be mutated by this test: scripts/ and
 #     .github/workflows/ (this guard only invokes the stubbed GH_BIN, never
