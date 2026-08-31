@@ -128,50 +128,29 @@ jobs:
             echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Generate changelog
+      # Extract changelog section (ARTIFACT-01, D-01/D-02/D-03): the release
+      # body is the curated `## [X.Y.Z]` section from the root CHANGELOG.md,
+      # not a commit-subject list -- this project maintains a hand-authored
+      # Keep-a-Changelog corpus on purpose, and the previous step discarded
+      # it (1,014 commit subjects for v0.8.0) while also advertising a
+      # `docker pull` instruction naming the mutable "latest" tag this
+      # workflow has never pushed on a tag ref. Neither the commit-log body
+      # nor the mutable-tag pull block is replaced with a new static
+      # template here -- the artifact sections arrive later from real job
+      # outputs (plan 21-03/21-04, D-04).
+      # A missing section is a hard, named failure with no fallback (D-01).
+      - name: Extract changelog section
         id: changelog
         env:
           # Indirect through env: rather than interpolating the tainted
           # output directly into the run: block (CR-01) -- the version
           # ultimately traces back to the workflow_dispatch `tag` input.
-          # REGISTRY and IMAGE_NAME are already real shell environment
-          # variables here (from the workflow-level env: block), so no
-          # further indirection is needed for them.
           RELEASE_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
-          # Generate changelog from git commits since last tag, written to
-          # a file under $RUNNER_TEMP rather than appended to
-          # $GITHUB_OUTPUT via a heredoc -- a commit subject line that is
-          # exactly the heredoc's own delimiter could otherwise terminate
-          # it early and inject arbitrary key=value lines into
-          # $GITHUB_OUTPUT. Writing to a file removes that hazard class
-          # entirely rather than defending against it, and this is the
-          # file the create-or-reuse script's --body-file consumes.
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          CHANGELOG_FILE="${RUNNER_TEMP}/release-changelog.md"
-          {
-            echo "## What's Changed"
-            echo ""
-            if [ -z "$PREV_TAG" ]; then
-              git log --pretty=format:"- %s" HEAD
-            else
-              git log --pretty=format:"- %s" "$PREV_TAG"..HEAD
-            fi
-            echo ""
-            echo ""
-            echo "## Docker Images"
-            echo ""
-            echo "Multi-architecture Docker images are available:"
-            echo '```bash'
-            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:${RELEASE_VERSION}"
-            echo "docker pull ${REGISTRY}/${IMAGE_NAME}:latest"
-            echo '```'
-            echo ""
-            echo "Supported platforms:"
-            echo "- linux/amd64"
-            echo "- linux/arm64"
-          } > "$CHANGELOG_FILE"
-          echo "changelog_file=$CHANGELOG_FILE" >> "$GITHUB_OUTPUT"
+          ./scripts/extract-changelog-section.sh \
+            --changelog CHANGELOG.md \
+            --version "$RELEASE_VERSION" \
+            --output "${RUNNER_TEMP}/release-body.md"
 
       # Create-or-reuse (D-01/D-02/PUBOPS-03): looks the release up by tag
       # first -- HTTP 200 reuses it, HTTP 404 creates it, anything else is a
@@ -189,7 +168,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.get_version.outputs.version }}
           RELEASE_REPOSITORY: ${{ github.repository }}
-          RELEASE_BODY_FILE: ${{ steps.changelog.outputs.changelog_file }}
+          RELEASE_BODY_FILE: ${{ steps.changelog.outputs.section_file }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/create-or-reuse-release.sh \
