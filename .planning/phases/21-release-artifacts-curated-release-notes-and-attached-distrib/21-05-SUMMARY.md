@@ -172,3 +172,10 @@ None — no external service configuration required.
 ---
 *Phase: 21-release-artifacts-curated-release-notes-and-attached-distrib*
 *Completed: 2026-08-31*
+
+## Self-Check: PASSED
+
+- FOUND: docs/src/appendix/release-automation.md
+- FOUND: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-05-SUMMARY.md
+- FOUND commit: 13eedb56 (Task 1)
+- FOUND commit: fca1daf1 (Task 2)
