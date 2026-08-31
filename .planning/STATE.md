@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 21
-current_phase_name: Release Artifacts — Curated Release Notes and Attached Distributables
+current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 status: executing
 stopped_at: Phase 21 context gathered
-last_updated: "2026-08-31T12:47:57.774Z"
-last_activity: 2026-08-30
-last_activity_desc: Phase 20 complete, transitioned to Phase 21
+last_updated: "2026-08-31T12:49:27.599Z"
+last_activity: 2026-08-31
+last_activity_desc: Phase 21 execution started
 progress:
   total_phases: 4
   completed_phases: 3
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-08-09)
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 20 — release-pipeline-recovery-idempotent-re-runs-and-a-pre-publi
+**Current focus:** Phase 21 — release-artifacts-curated-release-notes-and-attached-distrib
 not yet discussed or planned.
 
 **Progress:** [██████████] 100%
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 21 — Release Artifacts — Curated Release Notes and Attached Distributables
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-30 — Phase 20 complete, transitioned to Phase 21
+Phase: 21 (release-artifacts-curated-release-notes-and-attached-distrib) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 21
+Last activity: 2026-08-31 — Phase 21 execution started
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable

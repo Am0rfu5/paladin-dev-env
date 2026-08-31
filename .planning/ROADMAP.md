@@ -367,7 +367,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 21-01-PLAN.md — Curated release body: extract the `CHANGELOG.md` section, fail on a missing one, drop the unreachable pull instruction (ARTIFACT-01, -03)
+- [x] 21-01-PLAN.md — Curated release body: extract the `CHANGELOG.md` section, fail on a missing one, drop the unreachable pull instruction (ARTIFACT-01, -03)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
