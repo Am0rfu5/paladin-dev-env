@@ -180,6 +180,178 @@ else
     echo "SKIP: portability case skipped -- tar, gzip and shasum must all be present on the test host" >&2
 fi
 
+# --- Case 4 (unknown target): a target triple with no manifest entry at all
+#     is a named failure, not a silently-empty expected list. ---------------
+DIR4="${SCRATCH}/case4"
+mkdir -p "${DIR4}"
+run_script "${DIR4}" --target totally-unknown-triple --archive-name whatever
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ "${LAST_STATUS}" -ne 0 ] && grep -qF "unknown target" <<<"${LAST_OUTPUT}"; then
+    echo "PASS: an unrecognised target triple is a named failure"
+else
+    echo "FAIL: expected a named failure for an unrecognised target triple"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 5 (narrowed manifest): exercised through the
+#     PACKAGE_RELEASE_BINARIES_LIB_ONLY sourcing seam with a locally
+#     overridden expected_binaries_for_target -- the shipped manifest is
+#     never edited. A target narrowed to a single binary archives exactly
+#     that binary and nothing else. --------------------------------------
+DIR5="${SCRATCH}/case5"
+mkdir -p "${DIR5}"
+printf 'only-bin' > "${DIR5}/paladin"
+printf 'not-expected' > "${DIR5}/paladin-cli"
+LIB_CASE5_OUTPUT="$(
+    # shellcheck source=scripts/package-release-binaries.sh
+    PACKAGE_RELEASE_BINARIES_LIB_ONLY=1 source "${GUARD}"
+    expected_binaries_for_target() {
+        case "$1" in
+            narrow-target) echo "paladin" ;;
+            *) return 1 ;;
+        esac
+    }
+    package_release_binaries_main --target narrow-target --release-dir "${DIR5}" --archive-name narrow-archive --strip-cmd "${STRIP_STUB}" 2>&1
+)"
+LIB_CASE5_STATUS=$?
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ "${LIB_CASE5_STATUS}" -eq 0 ]; then
+    echo "PASS: a manifest narrowed to a single binary runs successfully"
+else
+    echo "FAIL: narrowed-manifest run expected exit 0, got ${LIB_CASE5_STATUS}"
+    echo "${LIB_CASE5_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+NARROW_MEMBERS="$(tar tzf "${DIR5}/narrow-archive.tar.gz" 2>/dev/null | tr '\n' ',')"
+if [ "${NARROW_MEMBERS}" = "paladin," ]; then
+    echo "PASS: a narrowed manifest archives exactly that one binary and nothing else"
+else
+    echo "FAIL: expected archive members 'paladin,' got '${NARROW_MEMBERS}'"
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 6 (empty manifest): a target whose manifest resolves to an empty
+#     list is a hard, named failure -- never a silent no-op archive. --------
+DIR6="${SCRATCH}/case6"
+mkdir -p "${DIR6}"
+LIB_CASE6_OUTPUT="$(
+    # shellcheck source=scripts/package-release-binaries.sh
+    PACKAGE_RELEASE_BINARIES_LIB_ONLY=1 source "${GUARD}"
+    expected_binaries_for_target() {
+        case "$1" in
+            empty-target) echo "" ;;
+            *) return 1 ;;
+        esac
+    }
+    package_release_binaries_main --target empty-target --release-dir "${DIR6}" --archive-name empty-archive --strip-cmd "${STRIP_STUB}" 2>&1
+)"
+LIB_CASE6_STATUS=$?
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ "${LIB_CASE6_STATUS}" -ne 0 ] && grep -qF "::error::" <<<"${LIB_CASE6_OUTPUT}" && grep -qiF "empty" <<<"${LIB_CASE6_OUTPUT}"; then
+    echo "PASS: a manifest resolving to an empty list is a named failure"
+else
+    echo "FAIL: expected a named ::error:: for an empty resolved manifest"
+    echo "${LIB_CASE6_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ ! -e "${DIR6}/empty-archive.tar.gz" ]; then
+    echo "PASS: an empty resolved manifest creates no archive"
+else
+    echo "FAIL: an archive was created despite an empty resolved manifest"
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 7 (exact-name matching): a directory entry named 'paladin-cli'
+#     does not satisfy the expected entry 'paladin' -- no prefix or glob
+#     matching. ---------------------------------------------------------
+DIR7="${SCRATCH}/case7"
+mkdir -p "${DIR7}"
+printf 'not-paladin' > "${DIR7}/paladin-cli"
+printf 'server' > "${DIR7}/paladin-server"
+# 'paladin' itself is deliberately absent -- only 'paladin-cli' exists.
+run_script "${DIR7}" --target x86_64-unknown-linux-gnu --archive-name exact-name
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ "${LAST_STATUS}" -ne 0 ] && grep -qF "expected binaries not built for x86_64-unknown-linux-gnu: paladin" <<<"${LAST_OUTPUT}" \
+    && ! grep -qF "paladin-cli" <<<"$(grep 'expected binaries not built' <<<"${LAST_OUTPUT}")"; then
+    echo "PASS: an entry named 'paladin-cli' does not satisfy the expected entry 'paladin'"
+else
+    echo "FAIL: expected 'paladin' to be reported missing despite 'paladin-cli' being present"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 8 (extra executable ignored): the manifest, not the directory
+#     listing, decides membership -- an extra unexpected executable is
+#     archived without it. -----------------------------------------------
+DIR8="${SCRATCH}/case8"
+mkdir -p "${DIR8}"
+printf 'a' > "${DIR8}/paladin"
+printf 'b' > "${DIR8}/paladin-cli"
+printf 'c' > "${DIR8}/paladin-server"
+printf 'd' > "${DIR8}/paladin-extra-tool"
+run_script "${DIR8}" --target x86_64-unknown-linux-gnu --archive-name extra-archive
+
+ASSERTIONS=$((ASSERTIONS + 1))
+EXTRA_MEMBER_COUNT="$(tar tzf "${DIR8}/extra-archive.tar.gz" 2>/dev/null | wc -l | tr -d ' ')"
+if [ "${LAST_STATUS}" -eq 0 ] && [ "${EXTRA_MEMBER_COUNT}" = "3" ]; then
+    echo "PASS: an extra unexpected executable in the directory is not archived (member count == manifest length)"
+else
+    echo "FAIL: expected exactly 3 archive members (manifest length), got '${EXTRA_MEMBER_COUNT}' (status ${LAST_STATUS})"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 9 (non-regular-file entry): a directory sharing a binary's name
+#     counts as missing, not present. -------------------------------------
+DIR9="${SCRATCH}/case9"
+mkdir -p "${DIR9}"
+mkdir -p "${DIR9}/paladin" # a directory, not a regular file, named like a binary
+printf 'b' > "${DIR9}/paladin-cli"
+printf 'c' > "${DIR9}/paladin-server"
+run_script "${DIR9}" --target x86_64-unknown-linux-gnu --archive-name dir-entry-archive
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if [ "${LAST_STATUS}" -ne 0 ] && grep -qF "expected binaries not built for x86_64-unknown-linux-gnu: paladin" <<<"${LAST_OUTPUT}" \
+    && ! grep -qF "paladin-cli" <<<"$(grep 'expected binaries not built' <<<"${LAST_OUTPUT}")"; then
+    echo "PASS: a directory sharing a binary's name counts as missing, not present"
+else
+    echo "FAIL: expected only 'paladin' (the directory entry) reported missing"
+    echo "${LAST_OUTPUT}" | sed 's/^/  | /'
+    FAILED=$((FAILED + 1))
+fi
+
+# --- Case 10 (deterministic ordering): two consecutive runs over identical
+#     inputs produce the same tar tzf member order. -----------------------
+DIR10A="${SCRATCH}/case10a"
+DIR10B="${SCRATCH}/case10b"
+mkdir -p "${DIR10A}" "${DIR10B}"
+for d in "${DIR10A}" "${DIR10B}"; do
+    printf 'a' > "${d}/paladin"
+    printf 'b' > "${d}/paladin-cli"
+    printf 'c' > "${d}/paladin-server"
+done
+run_script "${DIR10A}" --target x86_64-unknown-linux-gnu --archive-name order-archive
+run_script "${DIR10B}" --target x86_64-unknown-linux-gnu --archive-name order-archive
+tar tzf "${DIR10A}/order-archive.tar.gz" > "${SCRATCH}/order1.txt" 2>/dev/null
+tar tzf "${DIR10B}/order-archive.tar.gz" > "${SCRATCH}/order2.txt" 2>/dev/null
+
+ASSERTIONS=$((ASSERTIONS + 1))
+if cmp -s "${SCRATCH}/order1.txt" "${SCRATCH}/order2.txt"; then
+    echo "PASS: two consecutive runs over identical inputs produce the same tar tzf member order"
+else
+    echo "FAIL: member order differs between two runs over identical inputs"
+    FAILED=$((FAILED + 1))
+fi
+
 # --- The real tree must never be mutated by this test: scripts/ and
 #     .github/workflows/ (every fixture lives under $SCRATCH). --------------
 ASSERTIONS=$((ASSERTIONS + 1))
