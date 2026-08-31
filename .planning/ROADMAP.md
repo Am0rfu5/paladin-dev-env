@@ -379,7 +379,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 21-04-PLAN.md — Aggregated `SHA256SUMS`, one-command verification instructions, SBOM scope stated (ARTIFACT-03, -05)
+- [x] 21-04-PLAN.md — Aggregated `SHA256SUMS`, one-command verification instructions, SBOM scope stated (ARTIFACT-03, -05)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
