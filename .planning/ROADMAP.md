@@ -383,7 +383,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 21-05-PLAN.md — Release documentation: body source, artifact inventory, verification, signing/provenance deferral (ARTIFACT-01, -02, -05, -06)
+- [x] 21-05-PLAN.md — Release documentation: body source, artifact inventory, verification, signing/provenance deferral (ARTIFACT-01, -02, -05, -06)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
