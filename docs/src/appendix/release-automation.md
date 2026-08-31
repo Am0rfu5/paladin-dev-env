@@ -172,6 +172,98 @@ make publish-dry-run
 See [Dry-Run Claim Boundary](#dry-run-claim-boundary) below for exactly what a green dry run does
 and does not prove.
 
+## Release Notes and Attached Artifacts
+
+This section describes what a `vX.Y.Z` release actually hands a consumer — where the notes come
+from, exactly what is attached, how to verify it, and whether any of it is signed.
+
+### Body source
+
+The release body for `vX.Y.Z` is the root `CHANGELOG.md` `## [X.Y.Z]` section, extracted by
+`scripts/extract-changelog-section.sh` — everything between that heading and the next `## [`
+heading. A tag whose version has no such section fails the `create-release` job outright; the job
+log prints the exact remedy:
+
+```
+run make release VERSION=X.Y.Z (finalizes changelogs) before tagging
+```
+
+The pipeline has no alternate body source — there is no fallback to a commit-log summary. A
+heading-only section (no body text before the next heading) is accepted and extracts to an empty
+string, because `scripts/finalize-crate-changelogs.sh` legitimately produces one for a quiet
+prerelease; presence of the heading is the pass signal, not presence of content. The ten per-crate
+changelogs that ship inside the published crates contribute nothing to the release body — they are
+a separate, per-package artifact, not release notes.
+
+### Artifact inventory
+
+| Artifact | Detail |
+|---|---|
+| Binaries | `paladin`, `paladin-cli`, `paladin-server` — all three, per target |
+| Feature set | `cli,web-server` on every leg, plus `vendored-openssl` on the aarch64 Linux leg (the `cross` container has no target-arch system OpenSSL) |
+| Targets | `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin` |
+| Archive naming | `paladin-<os>-<arch>.tar.gz`, one per target (`paladin-linux-amd64`, `paladin-linux-arm64`, `paladin-macos-amd64`, `paladin-macos-arm64`) |
+| Per-asset checksums | `<archive>.tar.gz.sha256`, one per archive |
+| Aggregated checksums | `SHA256SUMS`, covering every archive actually visible on the release at finalize time |
+| SBOM | A CycloneDX document for the root `paladin-ai` package, `paladin-<version>.cdx.json` |
+| Container image | Multi-arch (`linux/amd64`, `linux/arm64`) image pushed to `ghcr.io` |
+
+This table states fact only for what the pipeline produces. `expected_binaries_for_target` in
+`scripts/package-release-binaries.sh` is the single place a target's binary set is narrowed — if a
+future leg ships fewer than three binaries, that function's case entries are where the change is
+made and recorded, and this table must be updated to match.
+
+### Verification
+
+After downloading the archives and `SHA256SUMS` from the release:
+
+```
+sha256sum -c SHA256SUMS
+```
+
+On macOS, where GNU coreutils' `sha256sum` is absent:
+
+```
+shasum -a 256 -c SHA256SUMS
+```
+
+To verify the container image is the exact one this release built (rather than trusting a mutable
+tag), pull it by the immutable digest the release body names:
+
+```
+docker pull ghcr.io/your-org/paladin@sha256:<digest>
+```
+
+These commands are quoted here word-for-word from what `scripts/finalize-release-body.sh` composes
+into the release body itself, so the two cannot drift apart.
+
+### Assembly order
+
+`create-release` publishes the curated notes alone, from the `CHANGELOG.md` section above. A
+terminal `finalize-release-body` job then appends the artifact sections described here, reading
+them from the real outputs of `build-docker`, `build-binaries` and `sbom` — never from a
+hand-reconstructed guess. A leg that failed or was skipped contributes no section, so the release
+never advertises an artifact the run did not actually produce.
+
+### Signing and build provenance
+
+**The attached artifacts carry checksums but no signature and no build attestation.** A checksum
+proves integrity against the release as published — that the bytes you downloaded match what the
+release page says — it does not prove who built them or that they came from this project's own CI
+run rather than a compromised upload. Do not read a passing `sha256sum -c` as proof of origin.
+
+This is a deliberate deferral, not an oversight. Adopting a signing or provenance mechanism —
+`cosign` or GitHub's native artifact attestations — would add new action surface plus key and
+identity management in the same phase that removed archived, unpinned actions, and no consumer
+requirement demands it yet. `actions/attest-build-provenance` is the natural candidate when signing
+is taken up: it is GitHub-native, requires no new key material to manage, and integrates directly
+with the existing `gh release upload` flow. Revisit when a consumer or a registry policy actually
+requires provenance, not before.
+
+The measured image size is reported the same way — advisory prose against a 500 MB target, never a
+gate. A run whose image exceeds the target still finishes green, honestly reporting the figure in
+the release body rather than failing on an unvalidated threshold.
+
 ## Trusted Publishing
 
 The `publish-crates` job holds `id-token: write` at job scope, runs under the `crates-io` GitHub
