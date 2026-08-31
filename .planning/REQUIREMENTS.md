@@ -242,7 +242,7 @@ than during execution.*
       someone forgot to finalize the changelog. Whether the ten per-crate changelogs also contribute
       is recorded either way.
 
-- [ ] **ARTIFACT-02**: **Every binary the release attaches is built with the features its target
+- [x] **ARTIFACT-02**: **Every binary the release attaches is built with the features its target
       requires, and a leg that produces no executable fails.**
       This is a live defect, not a hardening measure. `[[bin]] paladin` declares
       `required-features = ["cli"]`; `cli` is absent from
@@ -273,7 +273,7 @@ than during execution.*
       states the measured size as advisory. An artifact job that reports success while producing
       nothing usable is the Phase 12 defect in a new place.
 
-- [ ] **ARTIFACT-05**: **Attached artifacts are verifiable, and the release says how.**
+- [x] **ARTIFACT-05**: **Attached artifacts are verifiable, and the release says how.**
       Per-asset `.sha256` files are produced today and explained nowhere in the release body or in
       `docs/src/appendix/`. The release carries checksums in a form a consumer can verify in one
       command, and identifies the CycloneDX SBOM that `sbom` attaches as covering the **root
@@ -282,7 +282,7 @@ than during execution.*
       artifacts are additionally signed or carry build provenance is **decided in this phase and
       recorded with its reasoning**; deferring is acceptable, leaving it unexamined is not.
 
-- [ ] **ARTIFACT-06**: **The artifact path runs on maintained actions and carries no branch for a
+- [x] **ARTIFACT-06**: **The artifact path runs on maintained actions and carries no branch for a
       target that is not built, and the whole path is exercised on a throwaway tag.**
       `actions/create-release@v1` and `actions/upload-release-asset@v1` have been archived upstream
       since 2021, and the `upload_url` plumbing exists only to serve them — `build-binaries` and
@@ -315,11 +315,11 @@ than during execution.*
 | PUBOPS-04 | Phase 20 | Complete |
 | PUBOPS-05 | Phase 20 | Complete |
 | ARTIFACT-01 | Phase 21 | Pending |
-| ARTIFACT-02 | Phase 21 | Pending |
+| ARTIFACT-02 | Phase 21 | Complete |
 | ARTIFACT-03 | Phase 21 | Pending |
 | ARTIFACT-04 | Phase 21 | Pending |
-| ARTIFACT-05 | Phase 21 | Pending |
-| ARTIFACT-06 | Phase 21 | Pending |
+| ARTIFACT-05 | Phase 21 | Complete |
+| ARTIFACT-06 | Phase 21 | Complete |
 
 **Coverage:**
 
