@@ -5,8 +5,8 @@ milestone_name: Security Tooling
 current_phase: 21
 current_phase_name: Release Artifacts — Curated Release Notes and Attached Distributables
 status: planning
-stopped_at: Completed 20-07-PLAN.md — phase 20 complete (7/7 plans), PUBOPS-03 and PUBOPS-05 both proven with recorded evidence
-last_updated: "2026-08-30T19:35:10.886Z"
+stopped_at: Phase 21 context gathered
+last_updated: "2026-08-31T12:00:33.722Z"
 last_activity: 2026-08-30
 last_activity_desc: Phase 20 complete, transitioned to Phase 21
 progress:
@@ -761,14 +761,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Completed 20-07-PLAN.md — phase 20 complete (7/7 plans), PUBOPS-03 and PUBOPS-05 both proven with recorded evidence
+**Stopped at:** Phase 21 context gathered
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-30T19:17:06.547Z
-Resume file: None
+Last session: 2026-08-31T12:00:33.668Z
+Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-CONTEXT.md
 
 Prior session: 2026-07-31T19:27:35.303Z
 
