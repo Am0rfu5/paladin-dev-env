@@ -130,6 +130,18 @@ ordinary publish failure but is actually a self-inflicted race. If you discover 
 flight, either let it finish before starting another, or cancel it first (`gh run cancel
 <run-id>`) — do not start a second run "just in case" while the first is still executing.
 
+### Re-running the body-finalizing job
+
+The terminal `finalize-release-body` job (`scripts/finalize-release-body.sh`) is safe to re-run
+under either re-run shape above. It reads the release body back with `gh release view`, truncates
+it at a fixed marker, and **rebuilds the artifact sections from the run's current job outputs —
+it never appends.** Re-running it after nothing else changed converges on the same body, byte for
+byte. Re-running it after a previously-failed artifact leg (`build-docker`, `build-binaries`, or
+`sbom`) has since succeeded adds that leg's section, because the rebuild reads whatever outputs
+are available at the moment it runs — it does not need every leg to have succeeded together in
+the same run. Asset uploads (`gh release upload ... --clobber`) are idempotent by name, so a
+re-run's checksum aggregation and binary uploads replace rather than duplicate.
+
 ## 4. When completing forward is not enough
 
 A version that has landed on crates.io is never deleted and never re-uploaded. crates.io does
@@ -208,6 +220,11 @@ normally written by the release tooling (`make release`'s changelog finalization
 to cover all ten crate changelogs alongside the root one) as part of cutting the release, not by
 hand. Fix: run the release flow rather than hand-editing eleven files; if you are seeing this
 locally before tagging, it means the finalization step has not run yet.
+
+This gate's clause checks the same root-changelog condition as the `create-release` job's own
+`extract-changelog-section.sh` step, which fails first and separately if the root `CHANGELOG.md`
+has no `## [X.Y.Z]` section — see [Body source](release-automation.md#body-source). Whichever
+side of the pipeline you hit this from, the fix is the same: finalize the changelog and re-tag.
 
 ### `CI_MISMATCH`
 
