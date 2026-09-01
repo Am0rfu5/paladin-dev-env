@@ -182,11 +182,14 @@ assert_contains "case5b: 501 MB reads as over target" "${LAST_COMPOSE_FILE}" "ov
 #   - `release edit TAG --notes-file PATH`      -> copies PATH back into
 #     DIR/current_body, so a second run reads exactly what the first run
 #     published (the read-modify-write round trip)
-#   - `release download TAG --pattern ... --dir DEST` -> copies every file
-#     from DIR/download_source (when present) into DEST, unfiltered -- the
-#     pattern-matching semantics under test belong to aggregate_checksums
-#     itself, not to this stub, so a stray non-archive fixture file proves
-#     the real filtering code, not an assumption baked into the stub
+#   - `release download TAG --pattern ... --dir DEST` -> when
+#     DIR/download_source contains at least one file, copies every file from
+#     it into DEST, unfiltered -- the pattern-matching semantics under test
+#     belong to aggregate_checksums itself, not to this stub, so a stray
+#     non-archive fixture file proves the real filtering code, not an
+#     assumption baked into the stub. When DIR/download_source is absent or
+#     empty, mirrors the real CLI's "no assets match the file pattern"
+#     failure: writes nothing to DEST and exits 1 (case 15 depends on this)
 #   - `release upload TAG PATH --clobber`       -> records the call, copies
 #     PATH into DIR/uploaded_<basename>, and appends <basename> to
 #     DIR/assets_registry exactly once (a re-upload of the same name is not
@@ -238,10 +241,23 @@ elif [ "${1:-}" = "release" ] && [ "${2:-}" = "edit" ]; then
 elif [ "${1:-}" = "release" ] && [ "${2:-}" = "download" ]; then
     echo "DOWNLOAD" >> "${CALL_LOG}"
     DEST_DIR="$(_stub_flag_value --dir "$@")"
-    mkdir -p "${DEST_DIR}"
+    SOURCE_COUNT=0
     if [ -d "${SCRATCH_DIR}/download_source" ]; then
-        find "${SCRATCH_DIR}/download_source" -maxdepth 1 -type f -exec cp {} "${DEST_DIR}/" \;
+        SOURCE_COUNT="$(find "${SCRATCH_DIR}/download_source" -maxdepth 1 -type f | wc -l | tr -d ' ')"
     fi
+    # Mirror the real `gh release download` CLI: when nothing on the release
+    # matches the requested pattern, it exits non-zero and writes nothing to
+    # DEST_DIR (verified live: `gh release download ... --pattern
+    # '*.definitely-not-a-real-extension-xyz'` prints "no assets match the
+    # file pattern" and exits 1). Case 15 depends on this to prove
+    # aggregate_checksums survives the real failure mode, not a stub that
+    # always succeeds.
+    if [ "${SOURCE_COUNT}" = "0" ]; then
+        echo "no assets match the file pattern" >&2
+        exit 1
+    fi
+    mkdir -p "${DEST_DIR}"
+    find "${SCRATCH_DIR}/download_source" -maxdepth 1 -type f -exec cp {} "${DEST_DIR}/" \;
     exit 0
 elif [ "${1:-}" = "release" ] && [ "${2:-}" = "upload" ]; then
     # $3 is the release tag; $4 is the first uploaded file path (aggregation

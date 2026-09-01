@@ -53,7 +53,14 @@ jobs:
             # so an annotated tag does not collide with a pre-existing lightweight
             # ref (`would clobber existing tag`).
             git fetch --tags --force --quiet origin
-            SHA=$(git rev-list -n 1 -- "$RELEASE_TAG")
+            # No `--` here: `$RELEASE_TAG` must resolve as a revision, not a
+            # pathspec. `git rev-list -n 1 -- "$RELEASE_TAG"` places it after
+            # `--`, which git treats as a pathspec; with no `<commit>` given,
+            # rev-list prints its usage message and exits 129 on every
+            # workflow_dispatch run. `set -euo pipefail` already fails this
+            # step loudly (non-zero exit, no SHA assigned) when the tag does
+            # not exist as a revision.
+            SHA=$(git rev-list -n 1 "$RELEASE_TAG")
           else
             # On a tag push the checked-out commit is already the release commit.
             SHA="${{ github.sha }}"
@@ -230,12 +237,17 @@ jobs:
 
       - name: Verify image size
         id: size
+        env:
+          # CR-01: route the tag-derived JSON blob through env: rather than
+          # inlining `${{ steps.meta.outputs.json }}` into the run: body, matching
+          # every other tainted value (tag, version, SHA, digest) in this file.
+          META_JSON: ${{ steps.meta.outputs.json }}
         run: |
           # Use the exact tag metadata-action produced. It already lowercases the
           # repository name (ghcr requires lowercase, but env.IMAGE_NAME keeps the
           # original `DF3NDR/...` casing) and strips the leading `v` from the
           # semver tag, so reconstructing the reference by hand is error-prone.
-          IMAGE=$(echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[0]')
+          IMAGE=$(echo "$META_JSON" | jq -r '.tags[0]')
           echo "Inspecting image: $IMAGE"
           docker pull "$IMAGE"
           SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
@@ -542,11 +554,12 @@ jobs:
           set -euo pipefail
           IMAGE_DIGEST=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.digest // empty')
           TAGS_JSON=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.tags_json // empty')
-          # Positional, not by field name: this is the sole other reference
-          # to build-docker's size output in this file (see the job comment
-          # above) -- order matches build-docker's `outputs:` declaration
-          # (digest, tags_json, size in whole megabytes).
-          IMAGE_SIZE_MB=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r 'to_entries[2].value // empty')
+          # By field name, not position: a positional `to_entries[N]` lookup
+          # relies on toJSON(needs.build-docker.outputs) preserving field
+          # order exactly matching build-docker's `outputs:` declaration --
+          # not guaranteed by the JSON spec, and silently wrong (or empty) if
+          # a future edit reorders or inserts a field there.
+          IMAGE_SIZE_MB=$(echo "$DOCKER_OUTPUTS_JSON" | jq -r '.image_size_mb // empty')
           IMAGE_REF=""
           if [ -n "$TAGS_JSON" ] && [ "$TAGS_JSON" != "null" ]; then
             IMAGE_REF=$(echo "$TAGS_JSON" | jq -r '.tags[0] // empty')

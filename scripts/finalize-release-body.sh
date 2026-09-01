@@ -167,7 +167,13 @@ aggregate_checksums() {
 
     mkdir -p "${assets_dir}"
 
-    "${gh}" release download "${tag}" --pattern '*.tar.gz' --dir "${assets_dir}" --clobber
+    if ! "${gh}" release download "${tag}" --pattern '*.tar.gz' --dir "${assets_dir}" --clobber; then
+        : # No assets matched *.tar.gz (e.g. every build-binaries leg failed, or
+          # this job ran before any archive was uploaded) -- `gh release download`
+          # exits non-zero in that case, but that is not a failure of this
+          # function's own contract. Fall through to the archives=() check below,
+          # which already treats zero archives as a normal, non-failing outcome.
+    fi
 
     local -a archives=()
     local archive_path
