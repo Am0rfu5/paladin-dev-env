@@ -16,35 +16,30 @@ and `docker pull`). crates.io is reached only incidentally, by the D-14 rehearsa
 the unmodified `publish-crates` job — its capability surface is Phase 20's and is not re-decided
 here.
 
-## GitHub REST API (via `gh`)
+## Capability matrix (GitHub REST API via `gh`, and ghcr.io via Docker)
 
 | capability | decision | reason |
 |---|---|---|
-| Get release by tag — `GET repos/{owner}/{repo}/releases/tags/{tag}` via `create-or-reuse-release.sh` (plan 21-01) | INTEGRATE | |
-| Create release with a body — `POST repos/{owner}/{repo}/releases` via `create-or-reuse-release.sh` `--body-file` (plan 21-01) | INTEGRATE | |
-| Read current release body — `gh release view <tag> --json body -q .body` (plan 21-03) | INTEGRATE | |
-| Edit release notes — `gh release edit <tag> --notes-file <path>` (`PATCH .../releases/{id}`, plan 21-03) | INTEGRATE | |
-| Upload release asset — `gh release upload <tag> <file> --clobber` (plans 21-02, 21-04) | INTEGRATE | |
-| Download release assets — `gh release download <tag> --pattern '*.tar.gz'` (plan 21-04) | INTEGRATE | |
-| Read `upload_url` from the release object (response field) | OPT-OUT | D-07 deletes the `upload_url` plumbing; `gh release upload` resolves the release by tag itself, so no workflow job consumes the field again |
-| Delete release — `DELETE repos/{owner}/{repo}/releases/{id}` | OPT-OUT | never used: a release object is reused and rewritten in place (Phase 20 D-03 recovery posture), never destroyed |
-| Delete release asset — `DELETE .../releases/assets/{id}` | OPT-OUT | `--clobber` performs the replace internally; hand-rolling delete-then-upload reintroduces the interrupted-upload data-loss window (RESEARCH.md "Don't Hand-Roll") |
-| List releases — `GET repos/{owner}/{repo}/releases` | OPT-OUT | every call in this phase addresses one known tag; no listing or pagination is needed |
-| Publish/unpublish toggling — `PATCH .../releases/{id}` with `draft`/`prerelease` | OPT-OUT | prerelease flagging is already decided by `create-or-reuse-release.sh`'s hyphen rule (Phase 20); this phase only rewrites `body` |
-| Re-run workflow / failed jobs — `POST .../actions/runs/{id}/rerun*` | OPT-OUT | Phase 20 D-15 keeps re-runs an operator action in the Actions UI; automating it would let CI retrigger its own publish path |
-| Release reactions / discussions — `POST .../releases/{id}/reactions`, `discussion_category_name` | OPT-OUT | not needed by any ARTIFACT requirement; the release is a distribution surface here, not a discussion surface |
-
-## ghcr.io (via Docker)
-
-| capability | decision | reason |
-|---|---|---|
-| Push multi-arch image and read the returned content digest — `docker/build-push-action@v5` `steps.build.outputs.digest` (plan 21-03) | INTEGRATE | |
-| Read the exact pushed tag list — `docker/metadata-action@v5` `steps.meta.outputs.json` (plan 21-03) | INTEGRATE | |
-| Pull an image by tag and inspect its size — `docker pull` + `docker image inspect --format='{{.Size}}'` (plan 21-03) | INTEGRATE | |
-| Pull an image by immutable digest — `docker pull <image>@sha256:<hex>` (plan 21-06; in-CI corroboration only — the out-of-band pull-by-digest is pending human confirmation, UAT item 1 in `21-UAT.md`; 21-VERIFICATION.md holds this at human_needed) | INTEGRATE | |
-| Registry tag listing — `GET /v2/{name}/tags/list` | OPT-OUT | the pushed tag list already comes from `metadata-action`'s own output; querying the registry would be a second, divergent source of truth for the same fact |
-| Manifest delete / untag — `DELETE /v2/{name}/manifests/{ref}` | OPT-OUT | no phase deliverable removes an image; the `:latest` change (D-09) is a body-text deletion, not a registry mutation |
-| Package visibility / retention settings — `PATCH /user/packages/container/{name}` | OPT-OUT | registry administration is an operator concern, out of scope per CONTEXT.md |
+| gh: get release by tag | INTEGRATE | `GET repos/{owner}/{repo}/releases/tags/{tag}` via `create-or-reuse-release.sh` (plan 21-01) |
+| gh: create release with body | INTEGRATE | `POST repos/{owner}/{repo}/releases` via `create-or-reuse-release.sh` `--body-file` (plan 21-01) |
+| gh: read release body | INTEGRATE | `gh release view <tag> --json body -q .body` (plan 21-03) |
+| gh: edit release notes | INTEGRATE | `gh release edit <tag> --notes-file <path>` (`PATCH .../releases/{id}`, plan 21-03) |
+| gh: upload release asset | INTEGRATE | `gh release upload <tag> <file> --clobber` (plans 21-02, 21-04) |
+| gh: download release assets | INTEGRATE | `gh release download <tag> --pattern '*.tar.gz'` (plan 21-04) |
+| gh: read upload_url field | OPT-OUT | D-07 deletes the `upload_url` plumbing; `gh release upload` resolves the release by tag itself, so no workflow job consumes the field again |
+| gh: delete release | OPT-OUT | never used: a release object is reused and rewritten in place (Phase 20 D-03 recovery posture), never destroyed |
+| gh: delete release asset | OPT-OUT | `--clobber` performs the replace internally; hand-rolling delete-then-upload reintroduces the interrupted-upload data-loss window (RESEARCH.md "Don't Hand-Roll") |
+| gh: list releases | OPT-OUT | every call in this phase addresses one known tag; no listing or pagination is needed |
+| gh: toggle draft/prerelease | OPT-OUT | prerelease flagging is already decided by `create-or-reuse-release.sh`'s hyphen rule (Phase 20); this phase only rewrites `body` |
+| gh: re-run workflow/jobs | OPT-OUT | Phase 20 D-15 keeps re-runs an operator action in the Actions UI; automating it would let CI retrigger its own publish path |
+| gh: reactions/discussions | OPT-OUT | not needed by any ARTIFACT requirement; the release is a distribution surface here, not a discussion surface |
+| ghcr: push image, read digest | INTEGRATE | `docker/build-push-action@v5` `steps.build.outputs.digest` (plan 21-03) |
+| ghcr: read pushed tag list | INTEGRATE | `docker/metadata-action@v5` `steps.meta.outputs.json` (plan 21-03) |
+| ghcr: pull by tag, inspect size | INTEGRATE | `docker pull` + `docker image inspect --format='{{.Size}}'` (plan 21-03) |
+| ghcr: pull by immutable digest | INTEGRATE | `docker pull <image>@sha256:<hex>` (plan 21-06); in-CI corroboration only — out-of-band pull pending human confirmation, UAT item 1 in `21-UAT.md` |
+| ghcr: registry tag listing | OPT-OUT | the pushed tag list already comes from `metadata-action`'s own output; querying the registry would be a second, divergent source of truth for the same fact |
+| ghcr: manifest delete/untag | OPT-OUT | no phase deliverable removes an image; the `:latest` change (D-09) is a body-text deletion, not a registry mutation |
+| ghcr: package visibility/retention | OPT-OUT | registry administration is an operator concern, out of scope per CONTEXT.md |
 
 ## Cross-cutting call discipline (applies to every INTEGRATE row above)
 
