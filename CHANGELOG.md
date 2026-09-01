@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-01
+
+**First stable release since 0.5.1 (2026-06-04), and the first cut by the rebuilt release
+pipeline.** Versions 0.6.0, 0.7.0 and 0.8.0 were finalized in this changelog but never tagged or
+published; 0.8.1 existed only as the rc.1–rc.5 prerelease line used to prove the pipeline work
+below (their sections follow this one). From this release forward, release version numbers are
+reconciled with the project's planning milestones — 0.9.0 is the "Security Tooling" milestone.
+
+### Security
+
+- **Publishing to crates.io no longer uses a long-lived credential.** The `publish-crates` job
+  mints a short-lived token per run from its GitHub OIDC identity via crates.io Trusted
+  Publishing, under a `crates-io` GitHub Environment restricted to `v*.*.*` tags. The old
+  publish-scoped token was revoked and the `CARGO_REGISTRY_TOKEN` repository secret deleted
+  (both 2026-08-27, operator-confirmed at the registry); the branch that let a release finish
+  green while silently publishing nothing was removed. All eleven publishable crates —
+  `paladin-herald` now included in the publish order — carry a Trust Publisher Configuration.
+  See [`docs/src/appendix/release-automation.md`](docs/src/appendix/release-automation.md).
+- **CodeQL Rust static analysis runs on every pull request, advisory-only.** The scanner was
+  measured against a five-class planted-vulnerability probe before any adoption decision and
+  **disqualified as a merge-gating Rust SAST** at CodeQL 2.26.3 / `rust-queries` 0.1.40 (SQL
+  injection, path traversal and regex injection never fired, across four independent
+  measurements with 385/385-file coverage proven on every run). The scan is retained for its one
+  reliably-working class (hardcoded credentials) behind a governed dismissal register
+  (`.github/CODEQL-DISMISSALS.md` + offline guard); the manual credential-handling review
+  remains the primary control. See `.github/instructions/security.instructions.md`.
+
+### Added
+
+- **A pre-publish consistency gate.** No crate is published until the tag, all eleven manifest
+  versions, the root and ten per-crate changelog sections, and the tagged commit's recorded CI
+  conclusion agree (`scripts/check-release-consistency.sh`, run as a `release.yml` job that
+  `publish-crates` structurally cannot bypass, and locally via `make check-release-consistency`).
+  Every mismatch is reported in one pass.
+- **Idempotent release re-runs and a recovery runbook.** `create-release` looks the GitHub
+  release up by tag and reuses it (no more hard failure on retry); already-published crates are
+  detected from crates.io registry state with a bounded index-visibility poll (replacing
+  error-prose matching and a fixed `sleep 20`); the publish job emits a per-crate outcome table
+  and fails a run in which no crate moved. The stuck-halfway runbook, including the yank policy,
+  is at [`docs/src/appendix/release-recovery.md`](docs/src/appendix/release-recovery.md) — and
+  was proven by live recovery rehearsals (0.8.1-rc.3/rc.4).
+- **Real, verifiable release artifacts.** The release body is extracted from this changelog's
+  section for the tagged version (a missing section fails the run — no commit-log fallback);
+  `paladin`, `paladin-cli` and `paladin-server` are built with the features their targets
+  require, with existence asserts before archiving; the container image is referenced by its
+  immutable `sha256:` digest; an aggregated `SHA256SUMS` ships with one-command verification
+  instructions; and the attached CycloneDX SBOM is identified as covering the root `paladin-ai`
+  package. Proven end-to-end on 0.8.1-rc.5 — the first fully-green release run in this
+  project's history.
+
+### Changed
+
+- **The release workflow no longer uses archived actions.** `actions/create-release@v1` and
+  `actions/upload-release-asset@v1` (archived upstream since 2021) are replaced by `gh`-CLI
+  calls, and the `upload_url` plumbing that served them is removed. Signing/build provenance was
+  examined and deferred with recorded reasoning (`actions/attest-build-provenance` is the named
+  future candidate).
+- **Notable items consolidated from the 0.8.1-rc prerelease line** (full detail in the rc
+  sections below): the Qwen adapter's default `base_url` is the Singapore (international)
+  DashScope endpoint with `DASHSCOPE_BASE_URL` as the region override, Qwen's declared
+  temperature range narrowed to the measured `[0.0, 1.99]`, and the facade's `llm-*` provider
+  flags now genuinely gate their adapters (the default build still compiles `openai`,
+  `anthropic`, `deepseek` — no consumer action required; ADR-0046).
+
 ## [0.8.1-rc.5] - 2026-08-31
 
 ## [0.8.1-rc.4] - 2026-08-29

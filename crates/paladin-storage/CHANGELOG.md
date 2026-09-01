@@ -7,6 +7,8 @@ and this project follows lockstep workspace versioning.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-01
+
 ## [0.8.1-rc.5] - 2026-08-31
 
 ## [0.8.1-rc.4] - 2026-08-29
