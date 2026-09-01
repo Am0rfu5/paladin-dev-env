@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
 current_phase: 21
-current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
-status: executing
-stopped_at: "Phase 21 executed 6/6; verification human_needed (2 UAT items: out-of-band digest pull, paladin-cli execution); awaiting /gsd-verify-work 21"
-last_updated: "2026-08-31T22:18:28.624Z"
-last_activity: 2026-08-31
-last_activity_desc: Phase 21 execution started
+status: completed
+stopped_at: Phase 21 complete (UAT 2/2 passed, security threat-secure, verification passed) — v0.9.0 all 4 phases done; ready for /gsd-complete-milestone
+last_updated: "2026-09-01T13:06:14.501Z"
+last_activity: 2026-09-01
+last_activity_desc: Phase 21 complete
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 25
   completed_plans: 25
+current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 ---
 
 # Project State
@@ -43,10 +43,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 21 (release-artifacts-curated-release-notes-and-attached-distrib) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 21
-Last activity: 2026-08-31 — Phase 21 execution started
+Phase: 21
+Plan: Not started
+Status: All phases complete
+Last activity: 2026-09-01 — Phase 21 complete
 
 Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
 `REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
@@ -57,7 +57,7 @@ valid outcome, not a failure.
 
 **Velocity:**
 
-- Total plans completed: 181
+- Total plans completed: 187
 - Average duration: —
 - Total execution time: —
 
@@ -83,6 +83,7 @@ valid outcome, not a failure.
 | 18 | 7 | - | - |
 | 19 | 5 | - | - |
 | 20 | 7 | - | - |
+| 21 | 6 | - | - |
 
 *Updated after each plan completion*
 
@@ -761,14 +762,14 @@ The full debt inventory — 25 recorded items across 10 phases, plus 12 open and
 
 ## Session Continuity
 
-**Stopped at:** Phase 21 executed 6/6; verification human_needed (2 UAT items: out-of-band digest pull, paladin-cli execution); awaiting /gsd-verify-work 21
+**Stopped at:** Phase 21 complete (UAT 2/2 passed, security threat-secure, verification passed) — v0.9.0 all 4 phases done; ready for /gsd-complete-milestone
 Phase 11 closed with UAT 3/3 passed, canonical verification `passed`, and security
 `threats_open: 0` (34 threats: 24 mitigate verified closed, 10 accept documented).
 Phases 1-4 complete and archived to `.planning/milestones/v0.7.1-phases/`.
 See the milestone-boundary note under Project Reference before planning Phase 12.
 
-Last session: 2026-08-31T22:18:28.594Z
-Resume file: .planning/phases/21-release-artifacts-curated-release-notes-and-attached-distrib/21-UAT.md
+Last session: 2026-09-01T13:06:14.469Z
+Resume file:
 
 Prior session: 2026-07-31T19:27:35.303Z
 

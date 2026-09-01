@@ -1362,6 +1362,18 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-09-01 after **Phase 21: Release Artifacts — Curated Release Notes and Attached
+Distributables** completed and verified — the final phase of v0.9.0 Security Tooling. The release
+body is now the curated `CHANGELOG.md` section (missing section fails, no git-log fallback); all
+three declared binaries build under explicit features with existence asserts; the image is bound to
+the release by immutable digest; checksums verify in one command; the archived-actions/`upload_url`
+era is removed; and the whole path was proven live on throwaway tag `v0.8.1-rc.5` (run 33436573814,
+all 12 jobs green) with both residual items closed by human UAT (out-of-band pull-by-digest;
+`paladin-cli` executed from the released archive). ARTIFACT-01 … ARTIFACT-06 complete — v0.9.0 is
+20/20 requirements. Signing/provenance examined and deferred with recorded reasoning
+(`docs/src/appendix/release-automation.md`). Milestone close-out is the next step.*
+
+---
 *Last updated: 2026-08-24 after **Phase 16: Documentation Currency & the Architecture Gap**
 completed and verified — 14 plans across 6 waves, all four requirements (DOCS-01 … DOCS-04) closed,
 `16-VERIFICATION.md` `passed` on its second pass at 4/4 must-haves. This phase closed the **last

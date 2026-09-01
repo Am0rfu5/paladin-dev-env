@@ -181,7 +181,7 @@ Phase artifacts: `milestones/v0.8.0-phases/`
 - [x] **Phase 18: Rust SAST — Evaluate and Adopt CodeQL** - Prove a Rust-capable SAST actually analyses this tree before adopting it, then wire it as a non-blocking scan and only afterwards as a required check (completed 2026-08-25)
 - [x] **Phase 19: crates.io Trusted Publishing — Replace the Long-Lived Registry Token** - Exchange the standing `CARGO_REGISTRY_TOKEN` secret for OIDC-issued ephemeral publish tokens, prove the new path works before revoking the old credential, and record the per-crate trust configuration the eleven-crate workspace needs (completed 2026-08-28)
 - [x] **Phase 20: Release Pipeline Recovery — Idempotent Re-Runs and a Pre-Publish Gate** - Make a re-run on the same tag the supported way to finish a half-published release, refuse to publish until tag, manifest versions, changelogs and the tagged commit's CI conclusion agree, and write the stuck-halfway runbook including a yank policy (completed 2026-08-30)
-- [ ] **Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables** - Build the release body from the curated `CHANGELOG.md` section instead of a commit log, and make the attached distributables real: binaries that actually compile under the features their targets require, an image bound to the release by digest, and verifiable checksums
+- [x] **Phase 21: Release Artifacts — Curated Release Notes and Attached Distributables** - Build the release body from the curated `CHANGELOG.md` section instead of a commit log, and make the attached distributables real: binaries that actually compile under the features their targets require, an image bound to the release by digest, and verifiable checksums (completed 2026-09-01)
 
 ## Phase Details
 
@@ -362,7 +362,7 @@ Plans:
 
   7. **A release is proven end-to-end on a throwaway tag before this is called done.** The evidence is a real run that produced downloadable assets whose checksums verify, an image that pulls by the digest the release names, and a body that matches the `CHANGELOG.md` section for that version. A workflow that is merely re-read and reasoned about does not satisfy this — the binaries defect above survived every previous reading of this file precisely because no release since it was introduced was checked for the artifacts it claimed to attach. If the rehearsal is not run, the phase records the artifact path as unverified rather than presenting it as working — the same honesty rule Phases 18-20 apply to their own evidence.
 
-**Plans:** 6 plans
+**Plans:** 6/6 plans complete
 
 Plans:
 **Wave 1**
@@ -411,7 +411,7 @@ Plans:
 | 18. Rust SAST — Evaluate and Adopt CodeQL | v0.9.0 | 7/7 | Complete    | 2026-08-25 |
 | 19. crates.io Trusted Publishing | v0.9.0 | 5/5 | Complete    | 2026-08-28 |
 | 20. Release Pipeline Recovery | v0.9.0 | 7/7 | Complete    | 2026-08-30 |
-| 21. Release Artifacts | v0.9.0 | 0/6 | Planned | — |
+| 21. Release Artifacts | v0.9.0 | 6/6 | Complete    | 2026-09-01 |
 
 **v0.8.0 shipped 2026-08-24:** 14 phases, 149 plans, 65/65 requirements, 1,014 commits
 (`be2ff05..48ac11a5`). Audit status `tech_debt` — no blockers; see

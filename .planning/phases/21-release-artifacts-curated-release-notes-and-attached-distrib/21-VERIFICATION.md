@@ -1,14 +1,16 @@
 ---
 phase: 21-release-artifacts-curated-release-notes-and-attached-distrib
 verified: 2026-08-31T23:45:00Z
-status: human_needed
+status: passed
 score: 11/13 must-haves verified
 behavior_unverified: 2
 overrides_applied: 0
 human_verification:
+
   - test: "From a machine with working `docker` (or a `packages:read`-scoped credential) outside CI, run `docker pull ghcr.io/df3ndr/paladin-dev-env@sha256:9e6d22d7bc01c459447719cf4f7753c1fc18095d5aff5c3d5d5fa44d1517f1c2` (or the digest of the next real release) and confirm the pull succeeds."
     expected: "The image pulls cleanly by the immutable digest the release body names — the literal ARTIFACT-06 acceptance clause ('whose image pulls by the digest the release names')."
     why_human: "21-ARTIFACT-EVIDENCE.md's own 'What this run does not prove' section states this executor could not do this: no local `docker` in the sandbox, an anonymous ghcr.io token was refused (401), and the operator's fine-grained PAT lacked the `packages:read` scope (403/404). The two corroborating readings cited in the evidence are both from *inside* the same CI run — the build step's self-reported digest, and a later `docker pull` in that job that pulled by *tag*, not by digest. Neither is the specific out-of-band pull-by-digest ARTIFACT-06 asks for. `COVERAGE.md` row 'Pull an image by immutable digest ... INTEGRATE ... 21-06 (rehearsal proof)' overstates this — it was not literally exercised."
+
   - test: "Run `./paladin-cli --help` (or equivalent) on the actual `ubuntu-latest`-built `x86_64-unknown-linux-gnu` archive from a host with glibc >= 2.39, or in the CI runner's own environment."
     expected: "The binary executes and produces real output (matching the clean runs already observed for `paladin` and `paladin-server` from the same archive)."
     why_human: "21-ARTIFACT-EVIDENCE.md D-14 Item 4 records `paladin-cli` failing with `GLIBC_2.38'/'GLIBC_2.39' not found` in this executor's Debian 12 sandbox. The binary was confirmed to be a well-formed, correctly linked ELF executable by static inspection (`readelf`) and its checksum verified, but no process was ever actually run from it in any verification pass to date."
