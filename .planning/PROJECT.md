@@ -111,9 +111,18 @@ trustworthy enough to anchor a gate.
 
 **Shipped: v0.9.0 "Security Tooling" (2026-09-01)** — Phases 18-21, 25 plans, 20/20 requirements
 (SAST-01…04, PUB-01…05, PUBOPS-01…05, ARTIFACT-01…06). Audit status `tech_debt`, no blockers:
-`.planning/milestones/v0.9.0-MILESTONE-AUDIT.md`. No git tag was cut (main-only tag enforcement;
-the close happened on the unmerged `chore/21-close` branch) — the milestone identity lives in
-`MILESTONES.md` and the `milestones/v0.9.0-*` archives.
+`.planning/milestones/v0.9.0-MILESTONE-AUDIT.md`.
+
+**Released for real on 2026-09-01, hours after the close** (superseding the close-time "no tag
+was cut" note): at the user's direction, release numbers were reconciled with milestone names.
+PR #50 bumped all twelve manifests `0.8.1-rc.5` → `0.9.0` and curated the changelog; tag
+`v0.9.0` was cut on merge commit `0b5d4106`; release run `33542459191` completed fully green —
+**all eleven crates published to crates.io at `0.9.0`** via Trusted Publishing
+(registry-verified), with a stable GitHub release carrying four binary archives, per-asset
+checksums, `SHA256SUMS`, the SBOM, and a digest-pinned image reference. **First stable release
+since 0.5.1 (2026-06-04)** — 0.6.0, 0.7.0 and 0.8.0 were finalized in the changelog but never
+released, and the 0.8.1-rc line never graduates. From v0.9.0 forward, release versions track
+milestone names.
 
 What v0.9.0 settled, in one paragraph each:
 
@@ -153,8 +162,10 @@ Carried-in open items for the next planning pass:
   re-probe trigger condition, the untested `workflow_dispatch` publish path, two pre-existing
   Phase 20 review findings (`workflow_dispatch` triggering, `make publish-dry-run`), and the dead
   `upload_url` output in `scripts/create-or-reuse-release.sh`.
-- The manifests still read `0.8.0` while eleven crates are published at `0.8.1-rc.x` prereleases —
-  the next real release decides the version and exercises the new pipeline for real.
+- ~~The manifests still read `0.8.0` while eleven crates are published at `0.8.1-rc.x`
+  prereleases~~ — **resolved 2026-09-01**: v0.9.0 released for real (see Current State above);
+  manifests, tag, changelogs and crates.io all agree at `0.9.0`, and the pipeline had its first
+  live stable run.
 
 ## Requirements
 

@@ -33,8 +33,10 @@ provider, transport, or storage implementation.
 **Previous milestone:** v0.9.0 "Security Tooling" shipped 2026-09-01 — 4 phases (18-21), 25
 plans, 20/20 requirements, 240 commits (`48ac11a5..3957d701`). Archived to
 `milestones/v0.9.0-ROADMAP.md`, `v0.9.0-REQUIREMENTS.md`, `v0.9.0-MILESTONE-AUDIT.md` (status
-`tech_debt`, 0 blockers) and `v0.9.0-phases/`. No git tag cut — main-only tag enforcement, close
-performed on the unmerged `chore/21-close` branch; see MILESTONES.md.
+`tech_debt`, 0 blockers) and `v0.9.0-phases/`. **Released for real post-close (2026-09-01):**
+tag `v0.9.0` on merge commit `0b5d4106`, release run `33542459191` fully green, all eleven crates
+on crates.io at `0.9.0` — first stable release since 0.5.1; release numbers now track milestone
+names. See MILESTONES.md.
 
 **Prior:** v0.8.0 shipped 2026-08-24 — 14 phases, 149 plans, 65/65 requirements,
 1,014 commits (`be2ff05..48ac11a5`). Archived to `milestones/v0.8.0-ROADMAP.md`,

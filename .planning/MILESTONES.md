@@ -11,7 +11,16 @@ artifact acknowledged (the same user-owned coverage-reproduction todo carried fr
 close); see STATE.md *Deferred Items*
 **Audit:** `milestones/v0.9.0-MILESTONE-AUDIT.md` (status `tech_debt` — all requirements
 satisfied, no critical blockers, 8 debt items recorded with owners)
-- **No git tag was cut**, same rule as v0.8.0: the repository enforces main-only tags, this
+- ~~**No git tag was cut**~~ (**Superseded 2026-09-01, hours after the close**: the user directed
+  a release-number reconciliation — planning milestones and release versions now share one line —
+  and **v0.9.0 was released for real** through the documented PR-merge flow: PR #50 bumped all
+  twelve manifests to `0.9.0` and curated the changelog, tag `v0.9.0` was cut on merge commit
+  `0b5d4106`, and release run `33542459191` completed fully green — all eleven crates published
+  to crates.io at `0.9.0` via Trusted Publishing (registry-verified), stable GitHub release with
+  binaries, digest-bound image and `SHA256SUMS`. **First stable release since 0.5.1**; 0.6.0,
+  0.7.0 and 0.8.0 were never released, and the 0.8.1-rc line never graduates. The original
+  rationale below was true at close time and is retained per the amend-at-source convention.)
+  Original: the repository enforces main-only tags, this
   milestone closed on an unmerged branch (`chore/21-close`), and a `v*` tag push now triggers the
   release pipeline whose pre-publish gate would correctly refuse a tree whose manifests still read
   `0.8.0`. The milestone identity lives in this entry and the `milestones/v0.9.0-*` archives.

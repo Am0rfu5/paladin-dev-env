@@ -233,8 +233,10 @@ milestone. No next milestone is defined yet — start one with `/gsd-new-milesto
 
 **v0.9.0 shipped 2026-09-01:** 4 phases, 25 plans, 20/20 requirements, 240 commits
 (`48ac11a5..3957d701`). Audit status `tech_debt` — no blockers; see
-[`milestones/v0.9.0-MILESTONE-AUDIT.md`](milestones/v0.9.0-MILESTONE-AUDIT.md). No git tag cut
-(main-only tag enforcement; closed on an unmerged branch — see MILESTONES.md).
+[`milestones/v0.9.0-MILESTONE-AUDIT.md`](milestones/v0.9.0-MILESTONE-AUDIT.md). Tag `v0.9.0`
+cut post-close (2026-09-01) on merge commit `0b5d4106`: release run `33542459191` fully green,
+all eleven crates on crates.io at `0.9.0` — the first stable release since 0.5.1, reconciling
+release numbers with milestone names. See MILESTONES.md.
 
 ## Not In This Roadmap
 
