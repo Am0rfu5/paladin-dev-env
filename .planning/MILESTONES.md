@@ -1,5 +1,79 @@
 # Milestones
 
+## v0.9.0 Security Tooling (Shipped: 2026-09-01)
+
+**Phases completed:** 4 phases (18-21), 25 plans
+**Requirements:** 20/20 satisfied (SAST-01…04, PUB-01…05, PUBOPS-01…05, ARTIFACT-01…06)
+**Timeline:** 2026-08-24 → 2026-09-01 (8 days, 240 commits)
+**Git range:** `48ac11a5` → `3957d701`
+**Closeout type:** override_closeout — 0 verification overrides (all 4 phases `passed`), 1 open
+artifact acknowledged (the same user-owned coverage-reproduction todo carried from the v0.8.0
+close); see STATE.md *Deferred Items*
+**Audit:** `milestones/v0.9.0-MILESTONE-AUDIT.md` (status `tech_debt` — all requirements
+satisfied, no critical blockers, 8 debt items recorded with owners)
+- **No git tag was cut**, same rule as v0.8.0: the repository enforces main-only tags, this
+  milestone closed on an unmerged branch (`chore/21-close`), and a `v*` tag push now triggers the
+  release pipeline whose pre-publish gate would correctly refuse a tree whose manifests still read
+  `0.8.0`. The milestone identity lives in this entry and the `milestones/v0.9.0-*` archives.
+
+**Delivered:** The supply-chain posture this milestone existed to settle is settled: the Rust-SAST
+question is answered with measured evidence rather than assumption, publishing to crates.io no
+longer depends on any long-lived credential, a half-published release is now a recoverable state
+with a written and rehearsed runbook, and a published release finally hands a consumer curated
+notes, real binaries, a digest-pinned image and verifiable checksums — proven by the first
+fully-green release run in this project's history.
+
+**Key accomplishments:**
+
+- **The Rust-SAST gap is closed by verdict, not by adoption.** CodeQL was proven to analyse all
+  385 first-party `.rs` files (the exact distinction the Snyk failure blurred), then measured
+  against a five-class planted-vulnerability probe across four independent measurement rounds —
+  and **disqualified as a required-check-grade Rust SAST**, version-scoped to CodeQL `2.26.3` /
+  `rust-queries` `0.1.40`: SQL injection, path traversal and regex injection never fired.
+  `codeql.yml` is retained advisory-only for its one reliably-working class (hardcoded
+  credentials) behind a schema-checked dismissal register, the probe fixture stays in the tree
+  with a recorded re-run trigger, and every document that said "no Rust SAST" now states the
+  measured, dated outcome (SAST-01…04).
+
+- **The standing crates.io publish credential no longer exists.** `publish-crates` mints its
+  token per run via GitHub OIDC (`id-token: write` on that job alone, under the protected
+  `crates-io` environment), all eleven crates — `paladin-herald` reconciled into the set —
+  published `0.8.1-rc.2` through the new path with crates.io's own `trustpub_data` as proof, and
+  only then was the "Paladin" token revoked at the registry and the `CARGO_REGISTRY_TOKEN`
+  secret deleted, in ratchet order, with an honest Revocation Ledger (PUB-01…05).
+
+- **No release begins until its facts agree, and a half-published release is finishable.** A
+  pre-publish consistency gate (tag ↔ eleven manifest versions ↔ eleven changelog sections ↔ the
+  tagged SHA's recorded CI conclusion, every mismatch reported) structurally blocks
+  `cargo publish`; `create-release` is create-or-reuse by tag so a same-tag re-run reaches the
+  publish step; already-published is read from registry state with a bounded index poll instead
+  of error-prose grep and `sleep 20`; a run that moves zero crates fails with a per-crate outcome
+  table; and the stuck-halfway runbook with its yank policy was proven by two live rehearsals
+  (v0.8.1-rc.3/rc.4) that found and fixed two real gate bugs (PUBOPS-01…05).
+
+- **A release now hands a consumer something real.** The body is the curated `CHANGELOG.md`
+  section byte-for-byte (a missing section fails the run — no git-log fallback), the three
+  binaries actually build under the features their targets require with existence asserts before
+  archiving, the container image is pinned in the body by its registry-issued `sha256:` digest,
+  an aggregated `SHA256SUMS` ships with one-command verification instructions, the SBOM's
+  root-package-only scope is stated, and the archived `create-release@v1` /
+  `upload-release-asset@v1` actions and their `upload_url` plumbing are gone (ARTIFACT-01…06).
+
+- **The whole artifact path was proven, not re-read — then human-confirmed.** Throwaway tag
+  `v0.8.1-rc.5` (run `33436573814`) produced the first fully-green release run in this project's
+  history — assets downloaded and checksum-verified, binaries executed, the digest confirmed, the
+  body matching the changelog section — and every human-verification backstop the phase
+  verifications declared was closed by recorded UAT before the close: the crates.io token
+  revocation (operator, 2026-08-28), the out-of-band pull by immutable digest, and `paladin-cli`
+  executed from the released archive (user, 2026-09-01).
+
+**Known deferred items:** 5 debt items with owners in `milestones/v0.9.0-MILESTONE-AUDIT.md`
+(CodeQL re-probe trigger, `workflow_dispatch` publish path untested, two pre-existing Phase 20
+review findings, dead `upload_url` script output, Nyquist validation for Phases 18-21), plus the
+carried coverage-reproduction todo surfaced in STATE.md *Deferred Items*.
+
+---
+
 ## v0.8.0 Milestone 2-12 close-out & Provider Expansion (Shipped: 2026-08-24)
 
 **Phases completed:** 14 phases (5-17, including inserted 15.1), 149 plans
@@ -64,12 +138,15 @@ shipped as six new LLM provider adapters.
   control. Open item — owner Am0rfu5, revisit 2027-02-25 or on a qualifying CodeQL/`rust-queries`
   release, whichever is first. See
   `.planning/phases/18-rust-sast-evaluate-and-adopt-codeql/18-CODEQL-EVIDENCE.md`.
+
 - **Local coverage reproduction unverified.** CI's 82.39% is confirmed (run `31727496744`); the
   documented local procedure has never been walked on a Docker-capable machine. Owner: repo
   maintainer.
+
 - **Nyquist validation unreconciled** for all 14 phases — every `VALIDATION.md` reads
   `status: draft`, so `nyquist_compliant` is not authoritative (#2117). Phase 06 has none at all.
   A coverage TODO, not a compliance failure.
+
 - **No git tag was cut.** v0.8.0 ships through the normal release process from `main`; this
   milestone closed on an unmerged branch, and the repository enforces main-only tags.
 

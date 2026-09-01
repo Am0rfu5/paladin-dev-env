@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: Security Tooling
-current_phase: 21
-status: completed
+status: Awaiting next milestone
 stopped_at: Phase 21 complete (UAT 2/2 passed, security threat-secure, verification passed) — v0.9.0 all 4 phases done; ready for /gsd-complete-milestone
-last_updated: "2026-09-01T13:06:14.501Z"
+last_updated: "2026-09-01T13:18:37.211Z"
 last_activity: 2026-09-01
-last_activity_desc: Phase 21 complete
+last_activity_desc: Milestone v0.9.0 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 25
   completed_plans: 25
+current_phase: 21
 current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 ---
 
@@ -20,17 +20,23 @@ current_phase_name: release-artifacts-curated-release-notes-and-attached-distrib
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-09)
+See: .planning/PROJECT.md (updated 2026-09-01 after the v0.9.0 milestone close)
 
 **Core value:** A Rust developer can compose and run multi-agent workflows against any supported
 LLM provider through stable port abstractions — without their own domain code depending on a
 provider, transport, or storage implementation.
-**Current focus:** Phase 21 — release-artifacts-curated-release-notes-and-attached-distrib
-not yet discussed or planned.
+**Current focus:** Planning next milestone (`/gsd-new-milestone` — new phases start at Phase 22;
+`.planning/REQUIREMENTS.md` is removed and opened fresh there).
 
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 100% — v0.9.0 shipped
 
-**Previous milestone:** v0.8.0 shipped 2026-08-24 — 14 phases, 149 plans, 65/65 requirements,
+**Previous milestone:** v0.9.0 "Security Tooling" shipped 2026-09-01 — 4 phases (18-21), 25
+plans, 20/20 requirements, 240 commits (`48ac11a5..3957d701`). Archived to
+`milestones/v0.9.0-ROADMAP.md`, `v0.9.0-REQUIREMENTS.md`, `v0.9.0-MILESTONE-AUDIT.md` (status
+`tech_debt`, 0 blockers) and `v0.9.0-phases/`. No git tag cut — main-only tag enforcement, close
+performed on the unmerged `chore/21-close` branch; see MILESTONES.md.
+
+**Prior:** v0.8.0 shipped 2026-08-24 — 14 phases, 149 plans, 65/65 requirements,
 1,014 commits (`be2ff05..48ac11a5`). Archived to `milestones/v0.8.0-ROADMAP.md`,
 `v0.8.0-REQUIREMENTS.md`, `v0.8.0-MILESTONE-AUDIT.md` and `v0.8.0-phases/`.
 
@@ -43,15 +49,10 @@ not yet discussed or planned.
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: All phases complete
-Last activity: 2026-09-01 — Phase 21 complete
-
-Phase 18 carries `SAST-01`…`SAST-04`, minted at roadmap time and carried into the fresh
-`REQUIREMENTS.md` rather than archived with v0.8.0. Its goal is to settle whether a Rust-capable
-SAST actually analyses this tree — a zero-finding probe result disqualifies the tool and is a
-valid outcome, not a failure.
+Phase: Milestone v0.9.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-09-01 — Milestone v0.9.0 completed and archived
 
 ## Performance Metrics
 
@@ -690,6 +691,25 @@ requirement.
 - Phase 21 added: Release Artifacts — Curated Release Notes and Attached Distributables (v0.9.0; ARTIFACT-01..06 minted, twenty-second prefix)
 
 ## Deferred Items
+
+### Acknowledged at v0.9.0 milestone close (2026-09-01)
+
+**Verification overrides: 0** — all 4 phases (18-21) report `phase_complete: true` and
+`verification_status: passed`. **Open artifacts acknowledged: 1** (the same user-owned pending
+todo acknowledged at the v0.8.0 close, unchanged). Closeout type `override_closeout`, on the
+strength of that todo rather than any unverified phase.
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| Testing | `2026-08-13-verify-local-coverage-reproduction` | Open — owner: repo maintainer. Unchanged since the v0.8.0 close: verifies the documented local procedure (`make services-up`, then `make coverage`) reproduces CI's 82.39% on a Docker-capable machine. Deliberately carries no `resolves_phase` tag so a close cannot silently absorb it | v0.8.0 close, re-acknowledged v0.9.0 |
+| Testing | Nyquist validation unreconciled for Phases 18-21 | All 4 `VALIDATION.md` files read `status: draft` (NOT-VALIDATED per #2117) — coverage TODO, not a compliance failure. Run `/gsd-validate-phase <N>`. Joins the same open item for archived Phases 05-17 | v0.9.0 close |
+
+Every human-verification backstop the phase verifications declared was closed by recorded UAT
+before the close: the Phase 19 crates.io token revocation (operator, 2026-08-28, `19-UAT.md`) and
+both Phase 21 checks — out-of-band pull-by-digest and `paladin-cli` execution (user, 2026-09-01,
+`21-UAT.md`). The remaining v0.9.0 debt items (CodeQL re-probe trigger, `workflow_dispatch`
+publish path, `make publish-dry-run`, dead `upload_url` script output) are inventoried in
+`milestones/v0.9.0-MILESTONE-AUDIT.md`, not duplicated here.
 
 ### Acknowledged at v0.8.0 milestone close (2026-08-24)
 

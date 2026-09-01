@@ -15,7 +15,11 @@ providers (OpenAI, Anthropic, DeepSeek, Mock), MCP tool servers, short-term conv
 Its audience is Rust developers and teams embedding agent orchestration inside their own
 services — not end users of a hosted product.
 
-The product **already works**. It is a brownfield project at v0.7.0 with a Cargo workspace of
+The product **already works**. It is a brownfield project at v0.7.0 (**amended at the v0.9.0
+close, 2026-09-01**: the manifests now read `0.8.0`, all eleven publishable crates are live on
+crates.io at `0.8.1-rc.x` prereleases via OIDC Trusted Publishing, and the release pipeline has
+had its first fully-green end-to-end run — the next real release sets the next version) with a
+Cargo workspace of
 **ten library crates** (`paladin-core`, `paladin-ports`, `paladin-battalion`, `paladin-herald`,
 `paladin-llm`, `paladin-memory`, `paladin-storage`, `paladin-notifications`, `paladin-content`,
 `paladin-web`) plus a `doc-examples` crate and the root facade package `paladin-ai`, 22 runnable
@@ -103,53 +107,81 @@ Reported test totals are deliberately excluded from the metric: across the corpu
 999 → 1,292 → 1,674 → 1,628 → 853, i.e. not a monotonic series, so no single figure is
 trustworthy enough to anchor a gate.
 
-## Current Milestone: v0.9.0 Security Tooling
+## Current State
 
-**Goal:** Close the one gap the v0.8.0 audit named as genuinely open — this project has no static
-taint analysis for first-party Rust — either by adopting a scanner that provably finds real defects
-in this tree, or by recording, with evidence, that no candidate does.
+**Shipped: v0.9.0 "Security Tooling" (2026-09-01)** — Phases 18-21, 25 plans, 20/20 requirements
+(SAST-01…04, PUB-01…05, PUBOPS-01…05, ARTIFACT-01…06). Audit status `tech_debt`, no blockers:
+`.planning/milestones/v0.9.0-MILESTONE-AUDIT.md`. No git tag was cut (main-only tag enforcement;
+the close happened on the unmerged `chore/21-close` branch) — the milestone identity lives in
+`MILESTONES.md` and the `milestones/v0.9.0-*` archives.
 
-**Phases:** 18 (numbering continues; Phases 1-4 shipped as v0.7.1, Phases 5-17 as v0.8.0)
+What v0.9.0 settled, in one paragraph each:
 
-**Target features:**
+- **The Rust-SAST question is answered by measurement, not adoption.** CodeQL provably analyses
+  all 385 first-party `.rs` files — the exact coverage proof whose absence disqualified Snyk —
+  and was then itself disqualified as a required-check-grade Rust SAST (version-scoped: CodeQL
+  `2.26.3` / `rust-queries` `0.1.40`; SQL injection, path traversal and regex injection never
+  fired across four independent measurements). `codeql.yml` is retained advisory-only behind a
+  governed dismissal register, and the manual credential-handling review remains the primary
+  control, stated plainly everywhere the gap was previously recorded.
+- **Publishing runs on ephemeral OIDC credentials.** All eleven crates publish through
+  per-run tokens minted under the protected `crates-io` environment; the long-lived "Paladin"
+  token is revoked at the registry (operator-confirmed) and the `CARGO_REGISTRY_TOKEN` secret is
+  deleted — proven in ratchet order by a real `0.8.1-rc.2` publish before anything was revoked.
+- **A release is now gated, idempotent, and recoverable.** A pre-publish consistency gate (tag ↔
+  eleven manifests ↔ eleven changelogs ↔ recorded CI conclusion) structurally blocks
+  `cargo publish`; a same-tag re-run is the supported recovery and reaches the publish step;
+  already-published is read from registry state; a run that moves nothing fails; and the
+  stuck-halfway runbook with its yank policy was rehearsed live (v0.8.1-rc.3/rc.4).
+- **A release hands a consumer something real.** Curated `CHANGELOG.md` body (missing section
+  fails the run), binaries that actually build under their required features, an image pinned by
+  immutable digest, aggregated `SHA256SUMS` with one-command verification, SBOM scope stated —
+  proven end-to-end on `v0.8.1-rc.5`, the first fully-green release run in this project's
+  history, with every declared human check closed by recorded UAT.
 
-- **A scanner measured before it is adopted, never after** — the four-vulnerability Rust probe that
-  disqualified Snyk, re-run against each candidate, with the finding count recorded either way. A
-  zero-finding result satisfies the requirement by disqualifying the tool (SAST-01)
-- **A scan that cannot be path-filtered into silence** — `pull_request` with no path filter, plus
-  `push` on `main` and a schedule (SAST-02)
-- **Promotion on measured behaviour** — a recorded non-blocking window reporting false-positive rate
-  and wall-clock against 385 `.rs` files and ~142k lines, before any merge gate; then the
-  required-check set updated in all four places it is written down (SAST-03)
-- **The "Known gap: no Rust SAST" section rewritten to match the evidence**, narrowed rather than
-  deleted, with the manual credential-handling review keeping whatever it still owns (SAST-04)
+## Next Milestone Goals
 
-**Key context carried in:**
+**Not yet defined** — start with `/gsd-new-milestone` (questioning → research → requirements →
+roadmap). New phases start at Phase 22; `.planning/REQUIREMENTS.md` is opened fresh at that point.
 
-- **Primary candidate is CodeQL.** Its Rust support left public preview and reached general
-  availability in October 2025, is supported in default and advanced setup, and carries real Rust
-  queries. The repository is public, so code scanning and CodeQL carry no licence cost, and
-  `github/codeql-action/upload-sarif@v3` is already wired into `ci.yml` for OSV results — code
-  scanning is enabled today, and unlike Snyk no token or vendor account is needed.
-- **Semgrep is a complement, not the primary.** It is pattern matching rather than interprocedural
-  taint analysis, and thin Rust rule coverage is the same failure shape as Snyk.
-- **The Snyk lesson is the governing constraint.** A probe carrying a hardcoded credential, command
-  injection, path traversal and SQL injection returned **0 findings** in Rust while the identical
-  four in JavaScript returned 3. A clean result there meant nothing was analysed — worse than no
-  scan, because it read as assurance. `.github/instructions/security.instructions.md` forbids
-  reintroducing Snyk or recording a phase as blocked on it.
-- **Three backwards couplings constrain the wiring.** Phase 9/12 built the advisory register and
-  its enforcing guard, the governance shape new findings must fit; Phase 15.1 applied the three
-  GitHub rulesets and wrote `scripts/check-workflow-triggers.sh`, whose `CLAUSE_CONTEXT` and
-  reachability clauses constrain how a required check may be added; Phase 16 removed the last
-  `SNYK_TOKEN` references, so this milestone starts from a clean documentation state.
-- **Inbound from the v0.8.0 close-out, not owned by this milestone:** the local
-  coverage-reproduction walkthrough (owner: repo maintainer) and Nyquist validation left
-  unreconciled across all 14 archived phases (`/gsd-validate-phase <N>`).
+Carried-in open items for the next planning pass:
+
+- The user-owned local coverage-reproduction walkthrough (STATE.md *Deferred Items*, unchanged
+  since the v0.8.0 close).
+- Nyquist validation unreconciled for all archived phases 05-21 (`/gsd-validate-phase <N>`).
+- The five v0.9.0 debt items inventoried in `milestones/v0.9.0-MILESTONE-AUDIT.md`: the CodeQL
+  re-probe trigger condition, the untested `workflow_dispatch` publish path, two pre-existing
+  Phase 20 review findings (`workflow_dispatch` triggering, `make publish-dry-run`), and the dead
+  `upload_url` output in `scripts/create-or-reuse-release.sh`.
+- The manifests still read `0.8.0` while eleven crates are published at `0.8.1-rc.x` prereleases —
+  the next real release decides the version and exercises the new pipeline for real.
 
 ## Requirements
 
 ### Validated
+
+**Security Tooling — shipped v0.9.0, 2026-09-01** (Phases 18-21, 25 plans, 20/20 requirements
+verified). Archive: `.planning/milestones/v0.9.0-ROADMAP.md`. Requirements:
+`.planning/milestones/v0.9.0-REQUIREMENTS.md`. Audit:
+`.planning/milestones/v0.9.0-MILESTONE-AUDIT.md` (status `tech_debt`).
+
+- ✓ A Rust SAST measured against a five-class planted-vulnerability probe before any adoption
+  decision, with the disqualifying verdict recorded version-scoped and evidence-cited, the scan
+  retained advisory-only behind a governed dismissal register, and every "no Rust SAST" record
+  rewritten to the measured outcome (SAST-01 … SAST-04) — v0.9.0
+- ✓ crates.io publishing authenticated per run via OIDC under a protected environment, the
+  eleven-crate publish set reconciled (`paladin-herald` bootstrapped), the new path proven by a
+  real publish before the old token was revoked and deleted in ratchet order, and the silent-skip
+  green publish branch removed (PUB-01 … PUB-05) — v0.9.0
+- ✓ A pre-publish consistency gate that blocks `cargo publish` until tag, manifests, changelogs
+  and the tagged SHA's CI conclusion agree; same-tag re-runs as the supported recovery;
+  registry-state already-published detection; per-crate outcome reporting with a no-crate-moved
+  failure; and a rehearsed stuck-halfway runbook with a yank policy (PUBOPS-01 … PUBOPS-05)
+  — v0.9.0
+- ✓ Release artifacts made real and verifiable: curated-changelog release body with no git-log
+  fallback, feature-correct binaries with existence asserts, digest-bound container image,
+  aggregated checksums with verification instructions, stated SBOM scope, archived actions
+  removed, all proven on a throwaway tag end-to-end (ARTIFACT-01 … ARTIFACT-06) — v0.9.0
 
 **Milestone 2-12 close-out & Provider Expansion — shipped v0.8.0, 2026-08-24** (Phases 5-17,
 149 plans, 65/65 requirements verified). Archive: `.planning/milestones/v0.8.0-ROADMAP.md`.
@@ -442,157 +474,15 @@ while the code ships):
 
 ### Active
 
-Current scope is **milestone close-out**: make the planning record match the shipped code, resolve
-the contested type and gate definitions, close the residual functional gaps, make the quality
-numbers real, make the release and security gates actually hold, and build the one epic-set nobody
-ever started. **65 requirements remaining across 13 phases (5-17)** — 61 from the ingest-derived
-corpus plus the four-requirement Phase 17 forward addition (PROV-01 … PROV-04, user direction
-2026-08-15, the first phase beyond the ingest) — see `.planning/ROADMAP.md`.
-The first 25, covering Phases 1-4, shipped as **v0.7.1** on 2026-08-04 and have moved to
-*Validated* above.
+**None.** v0.9.0 shipped 2026-09-01 and its 20 requirements moved to Validated above; no next
+milestone is defined yet. Requirements for the next milestone are minted by `/gsd-new-milestone`
+(new phases start at Phase 22, with a fresh `.planning/REQUIREMENTS.md`).
 
-**The 9 requirements under *Milestone 2-3 close-out* immediately below are the scope of the current
-milestone, v0.7.2 (Phases 5-6).** The remaining 52 across Phases 7-16 stay in this list as
-forward scope and are not part of v0.7.2.
-
-*Milestone 2-3 close-out (Phases 5-6, 9 requirements) — **v0.7.2, current milestone**:*
-
-- [ ] Upgrade the Milestone 2-3 ledger from component-level file evidence to `file:line`
-      per-criterion verdicts for all 118 run-2 requirements, recording the historical-path caveat
-      (VERIFY-01)
-- [ ] Verify the three open-checkbox blocks `code-verification.md` left unverified — Epic 22 (81),
-      Epic 14 (45), Epic 24 (29) — producing a verdict per block, not a task list (VERIFY-02)
-- [ ] Fix the Milestone 3 epic-numbering defect at its source and withdraw the release-notes claims
-      verified absent from the tree (VERIFY-03)
-- [ ] Record the two vision surfaces as deliberate coexistence, and answer whether Epic 13's
-      encryption-at-rest requirement was consciously dropped (VERIFY-04)
-- [ ] Extend the coverage answer across all four competing gate positions and place the two
-      module-scoped gates relative to it (VERIFY-05)
-- [ ] Record one answer for live-API-test behaviour when keys are missing (VERIFY-06)
-- [ ] Close the one verified defect — Grove routing's hardcoded `model: "gpt-4"` at
-      `grove_service.rs:537` (CLOSE-01) — plus whatever VERIFY-02 proves outstanding (CLOSE-02) and
-      apply the Phase 5 decisions that have code consequences (CLOSE-03)
-
-*Milestone 4-6 close-out (Phases 7-8, 12 requirements):*
-
-- [ ] Upgrade the Milestone 4-6 ledger to `file:line` per-criterion verdicts for all 115 run-3
-      requirements, and record the corrected workspace shape (ARCH-01)
-- [ ] Fix the milestone/tier numbering collision at its source — the Milestone 4-6 overviews
-      number themselves "Milestone 1/2/3" by refactoring tier, and PRDs cross-reference
-      "Milestone 1 / Epic 2" meaning Milestone 4 Epic 2 (ARCH-02)
-- [ ] Record one answer per run-3 variant pair: Rust edition, the `paladin-core` dependency
-      allowlist, ownership of `PaladinResult`/`StopReason`/`TokenUsage`, and the LLM config bridge
-      location — all four settled by shipped code, three of four PRDs unamended (ARCH-03)
-- [ ] Record the Milestone 6 facade re-export policy and whether it makes Milestone 6 a breaking
-      change requiring a major version bump (ARCH-04)
-- [ ] Correct the five documented positions shipped code contradicts, and record that the four
-      "missing" documentation deliverables are relocated into the mdbook (ARCH-05)
-- [ ] Answer and document the binary-target architecture question Milestone 4 Epic 3 left open
-      (ARCH-06), and make the ≥ 50% incremental-rebuild target falsifiable (ARCH-07)
-- [ ] Fix the `api-surface` CI job, which has failed on every run since the `project/` → `.project/`
-      rename left its baseline path stale (DEBT-01)
-- [ ] Add the `#[deprecated]` annotations Milestone 4 Epic 2 FR-8 requires — zero exist in the tree
-      — or withdraw the requirement with a recorded reason (DEBT-02)
-- [ ] Re-enable `paladin-ports` doctests and drop the CI `--exclude`, so the ~25 port traits have
-      executing examples again (DEBT-03)
-- [ ] Finish CLI dependency isolation — `structopt`, `colored` and `comfy-table` still compile into
-      library-only builds (DEBT-04)
-- [ ] Consolidate the three shipped `TokenUsage` definitions to one (DEBT-05)
-
-*Milestone 7-8 close-out (Phases 9-11, 16 requirements):*
-
-- [ ] Reconcile the RustSec exception set across the four surfaces that encode it differently, give
-      every suppressed advisory an owner and an expiry, and dispose of the **2026-09-30** acceptance
-      before it lapses — the only dated item in the corpus (SEC-01)
-- [ ] Settle whether the project is MIT or `MIT OR Apache-2.0` and make the manifests say so
-      (SEC-02); add a crates.io name-collision guardrail earlier than dry-run, or accept the dry run
-      with its cost recorded (SEC-03)
-- [ ] Add the missing `paladin-herald` CHANGELOG (SEC-04) and stop `Dockerfile.chef`'s planner COPY
-      list going stale on every crate addition (SEC-05)
-- [ ] Upgrade the Milestone 7-8 ledger to `file:line` per-criterion verdicts for all 86 run-4
-      requirements, with the 14 "superseded by outcome" entries unmissable (HARD-01)
-- [ ] Make `facade-cleanup-RECONCILIATION-2026-06-04.md` the authoritative account of Milestone 8,
-      preserving its three in-execution corrections, and record that Epics 3 and 6 are complete and
-      `paladin-herald` exists despite the non-goal that forbade it (HARD-02)
-- [ ] Record the version trajectory as history so REL-01 does not converge on an rc.1 figure
-      (HARD-03), and close the fourth milestone-numbering collision (HARD-04)
-- [ ] Decide whether the extracted-crate dependency rule permits optional feature-gated leaf-to-leaf
-      edges — it is stated absolutely and violated once (HARD-05); decide whether PDF extraction is
-      still supported, since `pdf = []` gates nothing while an advisory suppression assumes
-      `pdf-extract` is in the graph (HARD-06); pick one `cargo doc` bar (HARD-07)
-- [ ] Close deferred item D5 — the 17 `println!` occurrences across 6 files (FACADE-01) — and give
-      D1-D4 decisions with owners instead of effort ratings (FACADE-02)
-- [ ] Record both deliberately removed features with their reintroduction conditions intact,
-      especially the `paladin-ml` leaf-crate placement condition (FACADE-03)
-- [ ] Triage the Milestone 9 candidate list the reconciliation superseded (FACADE-04). *(Run-5
-      outcome: run 5 read the Milestone 9 documents directly and did **not** re-plan any relocation,
-      so the trap did not spring — but the list remains uncorrected at source and still names two
-      crates that do not exist.)*
-
-*Milestone 9-12 + Deferred-QA close-out (Phases 12-16, 24 requirements):*
-
-- [ ] Delete `ci.yml:389-406` — **two CI jobs both named "Security Audit" are configured to reach
-      different verdicts on the same `Cargo.lock`**, and Milestone 10 Epic 2's own success metric
-      ("no inline advisory-ignore flags remain in CI") is false on a milestone recorded 100%
-      complete. One 18-line deletion (SUPPLY-01)
-      (**Corrected by Phase 12 (plan 12-01), dated 2026-08-09, citing `ci.yml:465-482` and commit
-      `cb75b2b`:** this line citation was already stale — the duplicate job was actually at
-      `ci.yml:465-482`, not `:389-406`. **The deletion is done**, not outstanding: Phase 9's plan
-      09-06 deleted it in commit `cb75b2b`, dated 2026-08-08, before this checkbox's item was ever
-      read against the live tree. This checkbox describes closed work; see SUPPLY-01's "Verified by
-      Phase 12" closure block in `REQUIREMENTS.md`.)
-- [ ] Give all fifteen advisory suppressions an owner and a review date — thirteen have documented
-      reasoning and neither — and ratify or remove the three 2026 vulnerability ignores that no
-      ingested document authorises (SUPPLY-02); decide whether to promote the two supply-chain ADR
-      candidates, which are the same subject from two milestones (SUPPLY-03)
-- [ ] Upgrade the Milestone 9-12 ledger to `file:line` per-criterion verdicts for all 120 run-5
-      requirements (ORCH-01), and record one verdict per open-checkbox block — including that
-      Milestone 12's three are feature-branch scaffolding and project-management's one is a
-      template formatting example (ORCH-02)
-- [ ] Correct the run-5 positions the tree contradicts: the `/agents` versus `/v1` route surface
-      (four Epics against a fifth), and four stale module and document paths written into
-      requirements as recently as June 2026 (ORCH-03)
-- [ ] Turn Milestone 12's two recorded *defaults* into decisions — where `AgentProvisioner` lives,
-      which constrains the queue/worker and sidecar topologies; and whether Garrison and Arsenal
-      for HTTP-served agents are planned scope or a permanent property of the topology (ORCH-04)
-- [ ] Complete the version trajectory v0.3.0 → v0.4.0 → v0.5.0 → v0.6.0 so REL-01 converges with
-      the whole chain in view, and close the fifth milestone-numbering collision that was predicted
-      and did not occur (ORCH-05)
-- [x] **Resolve the token mechanism** — *validated in Phase 14: API Contract Truthfulness
-      (2026-08-12).* The vocabulary was renamed end to end to the mechanism actually shipped —
-      opaque server-issued bearer tokens (WEB-01, ADR-0040) — dissolving Milestone 12 Epic 5's
-      Open Question 4 rather than answering it. The Kubernetes Deployment was pinned to neither
-      literal exit: the shipped manifests authenticate with static API keys and now state the
-      in-process store's single-replica scope, with the shared store deferred under a named
-      trigger (WEB-02, ADR-0041)
-- [ ] Make `ProviderCapabilities` report the tool-calling support the adapters actually have — a
-      correctness defect independent of Epic 27 (WEB-03) — and decide whether LLM tool calling is
-      in scope at all, given that Arsenal/MCP already provides tool execution (WEB-04)
-- [ ] Build the quality gates Deferred-QA Epic 25 specified and nobody started: `cli-tests` and
-      `bench-check` jobs (PIPE-01), a combined coverage job with `.codecov.yml` at a settled
-      threshold (PIPE-02), four Makefile targets (PIPE-03), eight deprecated GitHub Actions
-      replaced (PIPE-04), and the `CONTRIBUTING.md` coverage section (PIPE-05)
-- [ ] Close the coverage register those gates measure: the shared `Send + Sync` mock infrastructure
-      three registers name and none has built (DEFER-01), `user_service.rs` **sequenced against
-      deferred item D2 rather than scheduled independently of it** (DEFER-02), and the listener
-      orchestrator re-measured because its 57.83% baseline predates Milestone 9's tests on the same
-      module (DEFER-03)
-- [ ] Settle Milestone 11's fourteen content-currency files **by content** — the only open checkbox
-      count in all 542 that survives verification (DOCS-01)
-- [ ] Decide whether `design-and-architecture.md` is archive material or a live deliverable. It is
-      **still exactly 311 lines with zero mentions of Commander, Council, Conclave, Grove, Maneuver,
-      Sanctum or Sentinel and zero diagrams**, because Milestone 11 relocated it into the one
-      chapter its own rewrite epic was exempted from touching (DOCS-02)
-- [ ] Apply one `cargo doc` bar with a CI gate and document every public item to it (DOCS-03), and
-      record the demos decision so an empty `docs/assets/` stops implying work in flight (DOCS-04)
-- [ ] Talk to the providers users actually deploy: narrow the candidate field to a recorded
-      decision rather than brand recognition (PROV-01), ship every survivor against the full
-      `LlmPort` contract with a truthful `get_capabilities` (PROV-02), feature-gate each one so the
-      default feature set and every existing provider's behaviour are unchanged (PROV-03), and hold
-      the new code to the coverage, rustdoc and advertised-surface standards already in force
-      (PROV-04). **Delivered and verified in Phase 17 (2026-08-23); the bullets stay in Active
-      pending the v0.7.2 milestone close, per this project's convention of graduating requirements
-      to Validated at ship time.**
+*(The long-form forward-scope listing that previously lived here — the 90 ingest-derived
+requirements across Phases 5-16 plus Phase 17's `PROV-*` additions — shipped with v0.8.0 and is
+preserved verbatim in `.planning/milestones/v0.8.0-REQUIREMENTS.md` and this file's git history;
+it is not restated because every item in it is either Validated above or recorded in the
+archives.)*
 
 ### Out of Scope
 
@@ -660,6 +550,12 @@ forward scope and are not part of v0.7.2.
   benchmark baselines would be guesswork. Tracked as v2.
 
 ## Context
+
+**Current state stamp (v0.9.0 close, 2026-09-01):** 4 shipped planning milestones (v0.7.1,
+v0.8.0, v0.9.0 on top of the twelve historical ones), 21 phases / 212 plans completed, ~142k
+lines of Rust across 385 first-party `.rs` files, eleven publishable crates. Supply-chain
+posture: no long-lived publish credential, OIDC-only publishing, gated + idempotent + rehearsed
+release pipeline, advisory-only CodeQL with the manual credential review as primary control.
 
 **THE SINGLE MOST IMPORTANT FACT ABOUT THIS CORPUS: nothing in it is locked.** Across all **263**
 documents — five ingest runs, twelve milestones, 554 requirements, eighteen months of planning —
@@ -1225,6 +1121,21 @@ corpus:
 | [`AgentProvisioner` placement — stays in `paladin-web`](.planning/decisions/0038-agent-provisioner-placement.md) (ADR-0038) | `AgentSpec`, the type the trait's only method takes, derives `utoipa::ToSchema` and is documented as sent in the body of `POST /agents` — an OpenAPI-annotated HTTP request DTO, not a portable core type; `paladin-ports` carries no `utoipa` dependency, and promoting the trait there would be the first `paladin-ports` dependency whose entire reason to exist is web-framework documentation tooling, exactly the class ADR-0015 Decision (i) bars. Ratified at plan 13-09's blocking checkpoint by a human operator (D-00i). | conforms — Phase 13 plan 13-09 — ORCH-04(a) |
 | [Garrison and Arsenal absent from HTTP-served agents — a permanent topology property](.planning/decisions/0039-http-topology-no-garrison-no-arsenal.md) (ADR-0039) | The absence of Garrison (memory) and Arsenal (tools/MCP) wiring on HTTP-served agents, previously stated once in a Milestone 12 non-goal, is ratified as a **permanent property of the shipped topology** rather than planned scope — `AgentSpec` has no fields for memory or tool configuration, and expressing an MCP server's identity, credentials and lifetime in a JSON request body is genuine API design no milestone has scheduled. `docs/src/deployment-topologies/http-service-host.md` and `overview.md` now state the limitation in prose. Ratified at plan 13-09's blocking checkpoint by a human operator (D-00i). | must change — Phase 13 itself is the executor; plan 13-09 performs both doc-page corrections — ORCH-04(b) |
 
+**v0.9.0 (Phases 18-21) minted no new ADRs.** Its decisions were recorded as per-phase locked
+decisions (`D-xx`) in each phase's `CONTEXT.md`/`DISCUSSION-LOG.md`, now archived under
+`.planning/milestones/v0.9.0-phases/`. The four with standing consequences, all applied in the
+tree and none contradicted since: the **CodeQL disqualified-advisory posture** (verdict
+version-scoped to CodeQL `2.26.3`; the probe fixture and a written re-probe trigger stay in the
+tree; `codeql.yml` deliberately not pinned in any ruleset — ✓ Good); **Trusted-Publishing ratchet
+order** (prove the OIDC path with a real publish before revoking the standing token — ✓ Good,
+exercised live); **registry state over error prose** for publish idempotency (crates.io index as
+the source of already-published truth, bounded polling instead of `sleep 20` — ✓ Good, proven by
+the rc.3/rc.4 recovery rehearsals); and the **curated-changelog release body with no git-log
+fallback** (a missing section fails the release — ✓ Good, proven on `v0.8.1-rc.5`). The
+signing/provenance question was examined and **deferred with recorded reasoning**
+(`docs/src/appendix/release-automation.md`, naming `actions/attest-build-provenance` as the
+future candidate) — Pending.
+
 Six competing-variant pairs are Phase 1's scope (`BattalionConfig`, `BattalionResult`, Formation
 minimum Paladin count, temperature validation, the Herald trait signature, and the coverage gate);
 all six are recorded above. See `.planning/decisions/` for conventions, the numbering index and the
@@ -1360,6 +1271,16 @@ This document evolves at phase transitions and milestone boundaries.
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
+
+---
+*Last updated: 2026-09-01 after the **v0.9.0 "Security Tooling" milestone close** (Phases 18-21,
+25 plans, 20/20 requirements, 240 commits `48ac11a5..3957d701`, 2026-08-24 → 2026-09-01). Audit
+`tech_debt`, 0 blockers, 5 debt items with owners; every declared human-verification backstop
+closed by recorded UAT before the close. Closeout type `override_closeout` on the strength of one
+acknowledged open artifact (the user-owned coverage-reproduction todo), not any unverified phase.
+Archived: `milestones/v0.9.0-ROADMAP.md`, `v0.9.0-REQUIREMENTS.md`, `v0.9.0-MILESTONE-AUDIT.md`,
+`v0.9.0-phases/`. No git tag cut (main-only tag enforcement; closed on `chore/21-close`). Next:
+`/gsd-new-milestone` — new phases start at Phase 22.*
 
 ---
 *Last updated: 2026-09-01 after **Phase 21: Release Artifacts — Curated Release Notes and Attached
